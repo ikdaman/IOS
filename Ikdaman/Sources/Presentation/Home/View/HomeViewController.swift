@@ -10,13 +10,13 @@ import RxSwift
 import RxCocoa
 
 final class HomeViewController: BaseViewController {
-    //MARK: - Properties
+    // MARK: - Properties
     var disposeBag = DisposeBag()
     private let viewModel: HomeViewModel
     
-    //MARK: - UI
+    // MARK: - UI
     
-    //MARK: - Init
+    // MARK: - Init
     init(viewModel: HomeViewModel) {
         self.viewModel = viewModel
         super.init()
@@ -43,13 +43,13 @@ final class HomeViewController: BaseViewController {
         let output = viewModel.transform(input: input)
         
         output.books
-            .bind { [weak self] books in
+            .bind { [weak self] _ in
                 // tableView 업데이트
             }.disposed(by: disposeBag)
     }
 }
 
-//MARK: - Layout
+// MARK: - Layout
 extension HomeViewController {
     private func setupViews() {
         
@@ -59,4 +59,3 @@ extension HomeViewController {
         
     }
 }
-

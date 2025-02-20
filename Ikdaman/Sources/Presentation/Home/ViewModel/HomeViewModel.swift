@@ -22,7 +22,7 @@ struct HomeViewModelOutput {
 }
 
 protocol HomeViewModel {
-    //MARK: - Binding
+    // MARK: - Binding
     func transform(input: HomeViewModelInput) -> HomeViewModelOutput
     
     // 기능 인터페이스 추가
