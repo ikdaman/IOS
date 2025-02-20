@@ -26,7 +26,7 @@ class BaseViewController: UIViewController {
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = .white
+        self.view.backgroundColor = UIColor(red: 254/255, green: 246/255, blue: 238/255, alpha: 1)
     }
 }
 

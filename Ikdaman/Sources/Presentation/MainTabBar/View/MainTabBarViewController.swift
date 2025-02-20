@@ -212,7 +212,7 @@ extension MainTabBarViewController {
         
         // ViewControllers 초기화
         let bookcaseVC = UIViewController().then { $0.view.backgroundColor = .red }
-        let homeVC =  HomeViewController(viewModel: DefaultHomeViewModel()).then { $0.view.backgroundColor = .orange }
+        let homeVC =  HomeViewController(viewModel: DefaultHomeViewModel())
         let myVC =  UIViewController().then { $0.view.backgroundColor = .blue }
         viewControllers = [bookcaseVC, homeVC, myVC]
     }
