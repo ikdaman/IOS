@@ -34,6 +34,7 @@ final class HomeViewController: BaseViewController {
         initialLayout()
         
         bind()
+        view.backgroundColor = .orange
     }
     
     private func bind() {

@@ -39,7 +39,7 @@ final class DefaultHomeViewModel: HomeViewModel {
     let books = PublishSubject<[Book]>()
     
     // MARK: - Init
-    init(fetchBooksUseCase: FetchBooksUseCase) {
+    init(fetchBooksUseCase: FetchBooksUseCase = DefaultFetchBooksUseCase()) {
         self.fetchBooksUseCase = fetchBooksUseCase
     }
     

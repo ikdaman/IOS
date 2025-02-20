@@ -30,6 +30,8 @@ final class MainTabBarViewController: BaseViewController {
     private let viewModel: MainTabBarViewModel
     private let disposeBag = DisposeBag()
     private var animator: UIViewPropertyAnimator?
+    private var viewControllers: [UIViewController] = []
+    private var currentViewController: UIViewController?
     
     // MARK: - UI
     private let containterView = UIView()
@@ -82,6 +84,10 @@ final class MainTabBarViewController: BaseViewController {
         initialLayout()
         
         bind()
+        
+        // 앱 실행 시 homeButton을 선택된 상태로 설정
+        tabSelected(at: 1)  // homeButton이 두 번째 버튼이므로 index 1로 설정
+        showViewController(at: 1)  // homeViewController를 첫 화면으로 설정
     }
 
     // MARK: - Binding
@@ -97,6 +103,7 @@ final class MainTabBarViewController: BaseViewController {
         output.selectedScene
             .bind { [weak self] index in
                 self?.tabSelected(at: index)
+                self?.showViewController(at: index)
             }.disposed(by: disposeBag)
         
     }
@@ -135,6 +142,27 @@ final class MainTabBarViewController: BaseViewController {
         animator?.startAnimation()
     }
     
+    private func showViewController(at index: Int) {
+        guard index < viewControllers.count else { return }
+        
+        let selectedVC = viewControllers[index]
+        
+        // 이전 뷰 컨트롤러 제거
+        if let currentVC = currentViewController {
+            currentVC.willMove(toParent: nil)
+            currentVC.view.removeFromSuperview()
+            currentVC.removeFromParent()
+        }
+        
+        // 새로운 뷰 컨트롤러 추가
+        addChild(selectedVC)
+        selectedVC.view.frame = containterView.bounds
+        containterView.addSubview(selectedVC.view)
+        selectedVC.didMove(toParent: self)
+        
+        // 현재 뷰 컨트롤러 업데이트
+        currentViewController = selectedVC
+    }
 }
 
 // MARK: - Layout
@@ -181,5 +209,11 @@ extension MainTabBarViewController {
             $0.center.equalTo(homeButton)
             $0.size.equalTo(50)
         }
+        
+        // ViewControllers 초기화
+        let bookcaseVC = UIViewController().then { $0.view.backgroundColor = .red }
+        let homeVC =  HomeViewController(viewModel: DefaultHomeViewModel()).then { $0.view.backgroundColor = .orange }
+        let myVC =  UIViewController().then { $0.view.backgroundColor = .blue }
+        viewControllers = [bookcaseVC, homeVC, myVC]
     }
 }

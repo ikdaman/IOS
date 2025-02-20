@@ -22,7 +22,7 @@ final class DefaultFetchBooksUseCase: FetchBooksUseCase {
     
     // MARK: - Init
     init(
-        booksAPIService: BooksAPIService
+        booksAPIService: BooksAPIService = DefaultBooksAPIService()
     ) {
         self.booksAPIService = booksAPIService
     }
