@@ -168,13 +168,17 @@ final class MainTabBarViewController: BaseViewController {
 // MARK: - Layout
 extension MainTabBarViewController {
     private func setupViews() {
-        view.addSubview(containterView)
-        view.addSubview(tabbarView)
+        view.addSubviews([
+            containterView,
+            tabbarView
+        ])
         
-        tabbarView.addSubview(buttonBackground)
-        tabbarView.addSubview(bookcaseButton)
-        tabbarView.addSubview(homeButton)
-        tabbarView.addSubview(myButton)
+        tabbarView.addSubviews([
+            buttonBackground,
+            bookcaseButton,
+            homeButton,
+            myButton
+        ])
     }
     
     private func initialLayout() {
