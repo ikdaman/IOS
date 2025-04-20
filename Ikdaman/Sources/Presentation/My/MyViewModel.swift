@@ -60,7 +60,8 @@ extension DefaultMyViewModel {
             ]),
             Section(items: [
                 .arrow(title: "공지사항"),
-                .arrow(title: "이용약관"),
+                .arrow(title: "서비스 이용약관"),
+                .arrow(title: "개인정보 처리방침"),
                 .arrow(title: "1:1 문의")
             ])
         ]

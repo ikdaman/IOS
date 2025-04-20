@@ -14,7 +14,7 @@ class SwitchTableViewCell: UITableViewCell {
         $0.font = .systemFont(ofSize: 20, weight: .regular)
     }
     
-    private let toggleSwitch = UISwitch().then {
+    let toggleSwitch = UISwitch().then {
         $0.onTintColor = .systemBlue
     }
     
@@ -32,14 +32,18 @@ class SwitchTableViewCell: UITableViewCell {
         contentView.addSubview(toggleSwitch)
         
         titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(34)
+            $0.leading.equalToSuperview().inset(20)
             $0.centerY.equalToSuperview()
         }
         
         toggleSwitch.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-36)
+            $0.trailing.equalToSuperview().inset(20)
             $0.centerY.equalToSuperview()
         }
+    }
+    
+    private func attribute() {
+        selectionStyle = .none
     }
     
     func configure(with title: String, isOn: Bool = false) {

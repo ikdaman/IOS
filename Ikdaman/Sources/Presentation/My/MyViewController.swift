@@ -70,7 +70,7 @@ class MyViewController: BaseViewController {
 extension MyViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         let footerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 1))
-        footerView.backgroundColor = #colorLiteral(red: 0.937312007, green: 0.937312007, blue: 0.937312007, alpha: 1)
+        footerView.backgroundColor = #colorLiteral(red: 0.9764705882, green: 0.9764705882, blue: 0.9764705882, alpha: 1)
         return section != 2 ? footerView : nil
     }
     

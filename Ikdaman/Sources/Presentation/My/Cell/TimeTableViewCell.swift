@@ -33,14 +33,18 @@ class TimeTableViewCell: UITableViewCell {
         contentView.addSubview(timeLabel)
         
         titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(34)
+            $0.leading.equalToSuperview().inset(20)
             $0.centerY.equalToSuperview()
         }
         
         timeLabel.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-36)
+            $0.trailing.equalToSuperview().inset(20)
             $0.centerY.equalToSuperview()
         }
+    }
+    
+    private func attribute() {
+        selectionStyle = .none
     }
     
     func configure(with title: String, time: String) {

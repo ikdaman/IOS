@@ -53,6 +53,7 @@ class MyView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
+        bind()
     }
     
     required init?(coder: NSCoder) {
@@ -71,6 +72,14 @@ class MyView: UIView {
             $0.top.equalTo(headerView.snp.bottom).offset(24)
             $0.horizontalEdges.bottom.equalToSuperview()
         }
+    }
+    
+    private func bind() {
+        tableView.rx.itemSelected
+            .subscribe(onNext: { indexPath in
+                
+            })
+            .disposed(by: disposeBag)
     }
     
     @discardableResult
@@ -95,11 +104,6 @@ class MyView: UIView {
                     }
                 }
             )
-            
-            // 헤더 설정 (필요시)
-            dataSource.titleForHeaderInSection = { dataSource, index in
-                return "" // 헤더 타이틀이 필요하면 추가
-            }
             
             // 바인딩
             sections

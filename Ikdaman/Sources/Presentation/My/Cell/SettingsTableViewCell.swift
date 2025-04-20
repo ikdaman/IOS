@@ -34,16 +34,20 @@ class SettingsTableViewCell: UITableViewCell {
         contentView.addSubview(arrowImageView)
         
         titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(34)
+            $0.leading.equalToSuperview().inset(20)
             $0.centerY.equalToSuperview()
         }
         
         arrowImageView.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-36)
+            $0.trailing.equalToSuperview().inset(20)
             $0.centerY.equalToSuperview()
             $0.width.equalTo(12)
             $0.height.equalTo(18)
         }
+    }
+    
+    private func attribute() {
+        selectionStyle = .none
     }
     
     func configure(with title: String, showArrow: Bool = true) {
