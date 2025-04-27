@@ -9,7 +9,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 
-class SearchViewController: BaseViewController {
+class SearchViewController: UIViewController {
     // MARK: - Properties
     private let subView = SearchView()
     
@@ -22,7 +22,11 @@ class SearchViewController: BaseViewController {
     
     // MARK: - Methods
     private func setupLayout() {
+        view.addSubview(subView)
         
+        subView.snp.makeConstraints {
+            $0.directionalEdges.equalToSuperview()
+        }
     }
     
     private func bind() {
