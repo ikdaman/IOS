@@ -16,22 +16,12 @@ enum SnsType {
     case apple
 }
 
-// [START] Interface
-//struct SignUpViewModelActions {
-//    let signUpAction: Observable<SignUpActionType>
-//    let setNickname: Observable<Void>
-//}
-
 struct SignUpViewModelInput {
     let signUpAction: Observable<SnsType>
-//    let isVaildNickname: Observable<String>
-//    let completeSignUp: Observable<Void>
 }
 
 struct SignUpViewModelOutput {
     var passSnsLogin: PublishSubject<Bool>
-//    var isValidNickName: PublishSubject<Bool>
-//    var completeSignUp: PublishSubject<Void>
 }
 
 protocol SignUpViewModel {
@@ -60,6 +50,7 @@ final class DefaultSignUpViewModel: SignUpViewModel {
         signUpRepository: SignUpRepositoryImpl()
     )) {
         self.signUpUseCase = signUpUseCase
+        bindAuthToken()
     }
 
     // MARK: - Methods
@@ -67,31 +58,17 @@ final class DefaultSignUpViewModel: SignUpViewModel {
         input.signUpAction
             .subscribe(onNext: { [weak self] type in
                 self?.handleSnsSignUp(type: type)
-//                self?.test()
             }).disposed(by: disposeBag)
-        
-//        input.isVaildNickname
-//            .subscribe(onNext: { [weak self] nickname in
-//                self?.isValidNickname(nickname: nickname)
-//            }).disposed(by: disposeBag)
-//
-//        input.completeSignUp
-//            .subscribe(onNext: { [weak self] _ in
-//                self?.completedSignUp()
-//            }).disposed(by: disposeBag)
 
         return SignUpViewModelOutput(passSnsLogin: passSnsLogin.asObserver())
-//                                     ,
-//                                     isValidNickName: isValidNickName.asObserver(), completeSignUp: completeSignUp.asObserver())
     }
-    
 
     // MARK: - Private Methods
     
     private func handleSnsSignUp(type: SnsType) {
         switch type {
         case .google(let viewController):
-            AuthService.shared.googleLoginPase(viewcontroller: viewController)
+            AuthService.shared.googleLogin(viewController: viewController) { _,_ in }
         case .naver:
             AuthService.shared.getInstance()
         case .kakao:
@@ -101,24 +78,23 @@ final class DefaultSignUpViewModel: SignUpViewModel {
         }
     }
     
-    private func test() {
-        signUpUseCase.test()
-            .subscribe { event in
-                switch event {
-                case .success(let loginInfo):
-                    print(loginInfo)
-                case .failure(let error):
-                    print(error)
+    private func bindAuthToken() {
+        AuthService.shared.token
+            .compactMap { $0 } // nil 거르고
+            .flatMapLatest { [weak self] token -> Observable<LoginInfo> in
+                guard let self else { return .empty() }
+                return self.signUpUseCase.login().asObservable()
+            }
+            .subscribe(
+                onNext: { [weak self] loginInfo in
+                    print("로그인 성공: \(loginInfo)")
+                    self?.passSnsLogin.onNext(true)
+                },
+                onError: { error in
+                    print("로그인 실패: \(error)")
                 }
-            }.disposed(by: disposeBag)
-            
+            )
+            .disposed(by: disposeBag)
     }
-    
-    private func isValidNickname(nickname: String) {
-        
-    }
-    
-    private func completedSignUp() {
-        
-    }
+
 }

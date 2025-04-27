@@ -9,8 +9,7 @@ import RxSwift
 import UIKit
 
 protocol SignUpUseCase {
-    func login() -> Single<LoginInfo>
-    func test() -> Single<User>
+    func login() -> Observable<LoginInfo>
 }
 
 final class DefaultSignUpUseCase :SignUpUseCase {
@@ -20,11 +19,8 @@ final class DefaultSignUpUseCase :SignUpUseCase {
         self.signUpRepository = signUpRepository
     }
     
-    func login() -> Single<LoginInfo> {
+    func login() -> Observable<LoginInfo> {
         signUpRepository.login()
     }
     
-    func test() -> Single<User> {
-        signUpRepository.test()
-    }
 }

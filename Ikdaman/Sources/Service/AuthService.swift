@@ -12,6 +12,7 @@ import KakaoSDKUser
 import NaverThirdPartyLogin
 import AuthenticationServices
 import GoogleSignIn
+import RxRelay
 
 class AuthService: NSObject {
     // 싱글톤 인스턴스
@@ -20,9 +21,11 @@ class AuthService: NSObject {
     let disposeBag = DisposeBag()
     
     // 현재 로그인된 사용자 정보 (옵셔널)
-    private(set) var currentUser: User?
+    private(set) var token = BehaviorRelay<String?>(value: nil)
+//    var authToken = String
     
-    private override init() {} // 외부에서 생성 불가능하게 private 생성자
+    
+//    private override init() {} // 외부에서 생성 불가능하게 private 생성자
     
     // 로그인 메서드
     func login(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
@@ -39,12 +42,13 @@ class AuthService: NSObject {
     
     // 로그아웃 메서드
     func logout() {
-        currentUser = nil
+        token.accept(nil)
     }
     
     // 로그인 여부 확인
     func isLoggedIn() -> Bool {
-        return currentUser != nil
+//        return token.
+        return false
     }
 }
 
@@ -87,12 +91,9 @@ extension AuthService {
                 print("UserApi.shared.me fail")
             } else {
                 if let uid = userInfo?.id {
-//                    let fcmToken = Defaults.shared.get(for: .fcmToken)
-//                    let pushId = fcmToken == nil ? nil : fcmToken
-//                    let loginData = LoginSnsReqData(snsType: "K", encSnsUid: String(uid), snsEmail: nil, userName: nil, pushId: pushId)
-//                    self.loginSnsData.accept(loginData)
+                    let token = TokenManager().getToken()?.accessToken
+                    self.token.accept(token)
                     print("UserApi.shared.me success")
-                    print("\(userInfo)")
                 }
             }
         }
@@ -127,22 +128,8 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
         guard let accessToken = instance.accessToken else { return }
 
         let token = "\(tokenType) \(accessToken)"
-
-//        // 네이버로그인 성공시 받아온 토큰값으로 유저조회
-//        getNaverUserAction.execute(token).asObservable()
-//            .subscribe(onNext: { [weak self] userInfo in
-//                guard let `self` = self else { return }
-//                guard let uid = userInfo.id else { return }
-//                let fcmToken = Defaults.shared.get(for: .fcmToken)
-//                let pushId = fcmToken == nil ? nil : fcmToken
-//                let loginData = LoginSnsReqData(snsType: "N", encSnsUid: uid, snsEmail: nil, userName: nil, pushId: pushId)
-//                self.loginSnsData.accept(loginData)
-//                LoginService.shared.oauth20ConnectionDidFinishDeleteToken()
-//                }, onError: { error in
-//                    Log.d("##NaverLogin## -> Error: \(String(describing: error))")
-//                    Toast("네이버아이디 로그인에 실패했습니다.").show()
-//                    self.oauth20ConnectionDidFinishDeleteToken()
-//            }).disposed(by: disposeBag)
+        self.token.accept(accessToken)
+        
     }
 
     // 접근 토큰 갱신
@@ -207,19 +194,31 @@ extension AuthService: ASAuthorizationControllerDelegate {
 
 // MARK: Google Login
 extension AuthService {
-    func googleLoginPase(viewcontroller: UIViewController) {
-        GIDSignIn.sharedInstance.signIn(withPresenting: viewcontroller) { signInResult, error in
-            guard error == nil else { return }
+    func googleLogin(viewController: UIViewController, completion: @escaping (String?, String?) -> Void) {
+        GIDSignIn.sharedInstance.signIn(withPresenting: viewController) { result, error in
+            if let error = error {
+                print("❌ 로그인 실패: \(error.localizedDescription)")
+                completion(nil, nil)
+                return
+            }
             
-            guard let signInResult = signInResult else { return }
-//            let user = signInResult.user
-//            let emailAddress = user.profile?.email
-//            let fullName = user.profile?.name
-//            let givenName = user.profile?.givenName
-//            let familyName = user.profile?.familyName
-//            let profilePicUrl = user.profile?.imageURL(withDimension: 320)
+            guard let user = result?.user,
+                  let idToken = user.idToken?.tokenString
+            else {
+                print("❌ 토큰 가져오기 실패")
+                completion(nil, nil)
+                return
+            }
+            let accessToken = user.accessToken.tokenString
+            self.token.accept(accessToken)
+
+            print("✅ idToken: \(idToken)")
+            print("✅ accessToken: \(accessToken)")
+            completion(idToken, accessToken)
         }
     }
+
+
 }
 
 struct NaverUserModel: Codable {

@@ -6,6 +6,7 @@
 //
 
 struct LoginInfo: Codable {
-    let provider: String
-    let providerId: String
+//    let provider: String
+//    let providerId: String
+    let nickname: String
 }

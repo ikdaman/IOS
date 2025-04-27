@@ -22,9 +22,7 @@ class SignUpViewController: BaseViewController {
     var loginContainerView = UIView().then {
         $0.isHidden = false
     }
-//    var nicknameContainerView = UIView().then {
-//        $0.isHidden = true
-//    }
+
     var completeContainerView = UIView().then {
         $0.isHidden = true
     }
@@ -175,31 +173,6 @@ extension SignUpViewController {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(50)
         }
-        
-//        view.addSubview(nicknameContainerView)
-//        nicknameContainerView.snp.makeConstraints {
-//            $0.edges.equalToSuperview()
-//        }
-//
-//        nicknameContainerView.addSubview(guideNicknameLabel)
-//        guideNicknameLabel.snp.makeConstraints {
-//            $0.top.equalToSuperview().offset(100)
-//            $0.leading.equalToSuperview().offset(30)
-//        }
-//
-//        nicknameContainerView.addSubview(nicknameTextField)
-//        nicknameTextField.snp.makeConstraints {
-//            $0.top.equalTo(guideNicknameLabel.snp.bottom).offset(20)
-//            $0.leading.equalToSuperview().offset(20)
-//            $0.trailing.equalToSuperview().inset(20)
-//            $0.height.equalTo(30)
-//        }
-//
-//        nicknameContainerView.addSubview(isVaildNicknameLabel)
-//        isVaildNicknameLabel.snp.makeConstraints {
-//            $0.top.equalTo(nicknameTextField.snp.bottom).offset(20)
-//            $0.leading.equalToSuperview().offset(30)
-//        }
         
         view.addSubview(completeContainerView)
         completeContainerView.snp.makeConstraints {

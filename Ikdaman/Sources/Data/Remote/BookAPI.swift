@@ -144,8 +144,19 @@ extension BookAPI: TargetType {
     }
 
     var headers: [String: String]? {
-        return ["Content-Type": "application/json"]
-    }
+            var defaultHeaders = ["Content-Type": "application/json"]
+            
+            // 로그인 케이스에서 Authorization 및 refresh-token 추가
+            switch self {
+            case .login:
+                defaultHeaders["Authorization"] = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0Mzg1ODcxMiwiaWF0IjoxNzQzODU4NzEyfQ.W0voYJiMYw7-CmHVMUpnz9fcNnTKoPLNcQjRPpwHk3A"
+                defaultHeaders["refresh-token"] = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0Mzg1ODcxMiwiaWF0IjoxNzQzODU4NzEyfQ.W0voYJiMYw7-CmHVMUpnz9fcNnTKoPLNcQjRPpwHk3A"
+            default:
+                break
+            }
+            
+            return defaultHeaders
+        }
 }
 
 extension BookAPI: BaseTargetType {}

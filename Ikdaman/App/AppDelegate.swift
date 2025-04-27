@@ -33,7 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let clientID = "957982912983-ft1n53ruu3ekbq5hepedt7b9ulga8mgb.apps.googleusercontent.com"
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         
-        KakaoSDK.initSDK(appKey: "569b46893b34e3474de39ccd723f8bed")
+        KakaoSDK.initSDK(appKey: "f7c657a31a53ae9ea50ae17d61d4345d")
         return true
     }
 
