@@ -50,35 +50,72 @@ class MyViewController: BaseViewController {
     }
     
     private func bind() {
-//        let input = MyViewModelInput(
-//            setupTableView: () // userId
-//        )
         let input = MyViewModelInput(viewDidLoad: requestTrigger.asObservable())
         let output = viewModel.transform(input: input)
         
         subView
             .setupDI(sections: output.sections)
         
-        output.sections
-//        output.books
-//            .bind { [weak self] _ in
-//                // tableView 업데이트
-//            }.disposed(by: disposeBag)
     }
 }
 
 extension MyViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 1))
+        headerView.backgroundColor = .white
+        return headerView
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        switch section {
+        case 0:
+            return 7
+        case 1:
+            return 17
+        case 2:
+            return 21
+        default:
+            return 0
+        }
+    }
+    
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        let footerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 1))
+        let footerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 10))
         footerView.backgroundColor = #colorLiteral(red: 0.9764705882, green: 0.9764705882, blue: 0.9764705882, alpha: 1)
         return section != 2 ? footerView : nil
     }
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        16
+        10
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        60
+        switch indexPath.section {
+        case 0:
+            return 80
+        case 1:
+            switch indexPath.row {
+            case 0:
+                return 46
+            case 1:
+                return 77
+            default:
+                return 0
+            }
+        case 2:
+            return 38
+        default:
+            return 0
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if indexPath.section == 0 {
+            let vc = ManageMyViewController()
+//            vc.navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+//            self.modalPresentationStyle = .currentContext
+            vc.navigationItem.backButtonTitle = ""
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 }
