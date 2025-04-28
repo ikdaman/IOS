@@ -12,6 +12,7 @@ import Then
 final class TopBarView: UIView {
     
     // MARK: - UI Components
+    
     let colorPickerView = ColorPickerView().then {
         $0.alpha = 0
     }
@@ -57,7 +58,6 @@ final class TopBarView: UIView {
         addSubview(colorPickerView)
         
         stackView.addArrangedSubview(colorButton)
-        stackView.addArrangedSubview(UIView())
         stackView.addArrangedSubview(menuButton)
     }
     
