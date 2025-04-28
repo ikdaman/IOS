@@ -7,35 +7,32 @@
 
 import Foundation
 import RxSwift
+import RxRelay
 
-// [START] Interface
-struct HomeViewModelActions {
-    let fetchBooks: () -> Void
+protocol HomeViewModel {
+    func transform(input: HomeViewModelInput) -> HomeViewModelOutput
 }
 
 struct HomeViewModelInput {
     let fetchBooks: Observable<Int>
+    let selectColor: Observable<ColorType>
+    let toggleColorPicker: Observable<Void>
 }
 
 struct HomeViewModelOutput {
-    var books: PublishSubject<[Book]>
+    let books: PublishSubject<[Book]>
+    let selectedColorType: Observable<ColorType>
+    let isColorPickerVisible: Observable<Bool>
 }
-
-protocol HomeViewModel {
-    // MARK: - Binding
-    func transform(input: HomeViewModelInput) -> HomeViewModelOutput
-    
-    // 기능 인터페이스 추가
-}
-
-// [END] Interface
 
 final class DefaultHomeViewModel: HomeViewModel {
-    // MARK: - Properties
-    private var disposeBag = DisposeBag()
-    private let fetchBooksUseCase: FetchBooksUseCase
     
-    // MARK: - Output
+    // MARK: - Properties
+    private let disposeBag = DisposeBag()
+    private let fetchBooksUseCase: FetchBooksUseCase
+    private let selectedColorRelay = BehaviorRelay<ColorType>(value: .purple)
+    private let colorPickerVisibleRelay = BehaviorRelay<Bool>(value: false)
+    
     let books = PublishSubject<[Book]>()
     
     // MARK: - Init
@@ -43,22 +40,40 @@ final class DefaultHomeViewModel: HomeViewModel {
         self.fetchBooksUseCase = fetchBooksUseCase
     }
     
-    // MARK: - Methods
+    // MARK: - Transform
     func transform(input: HomeViewModelInput) -> HomeViewModelOutput {
+        
         input.fetchBooks
             .subscribe(onNext: { [weak self] userId in
                 self?.fetch(userId: userId)
-            }).disposed(by: disposeBag)
+            })
+            .disposed(by: disposeBag)
         
-        return HomeViewModelOutput(books: books.asObserver())
+        input.selectColor
+            .bind(onNext: { [weak self] colorType in
+                self?.selectedColorRelay.accept(colorType)
+            })
+            .disposed(by: disposeBag)
+        
+        input.toggleColorPicker
+            .withLatestFrom(colorPickerVisibleRelay)
+            .map { !$0 }
+            .bind(to: colorPickerVisibleRelay)
+            .disposed(by: disposeBag)
+        
+        return HomeViewModelOutput(
+            books: books.asObserver(),
+            selectedColorType: selectedColorRelay.asObservable(),
+            isColorPickerVisible: colorPickerVisibleRelay.asObservable()
+        )
     }
     
-    // MARK: - Private Methods
     private func fetch(userId: Int) {
         fetchBooksUseCase.execute(requestValue: .init(userId: userId))
             .compactMap { $0 }
             .subscribe(onNext: { [weak self] bookList in
                 self?.books.onNext(bookList.books)
-            }).disposed(by: disposeBag)
+            })
+            .disposed(by: disposeBag)
     }
 }
