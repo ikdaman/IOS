@@ -26,7 +26,7 @@ struct SignUpViewModelOutput {
 
 protocol SignUpViewModel {
     //MARK: - Binding
-    func transform(input: SignUpViewModelInput) -> SignUpViewModelOutput
+    func transform(input: SignUpViewModelInput)
     
     // 기능 인터페이스 추가
 }
@@ -54,13 +54,11 @@ final class DefaultSignUpViewModel: SignUpViewModel {
     }
 
     // MARK: - Methods
-    func transform(input: SignUpViewModelInput) -> SignUpViewModelOutput {
+    func transform(input: SignUpViewModelInput) {
         input.signUpAction
             .subscribe(onNext: { [weak self] type in
                 self?.handleSnsSignUp(type: type)
             }).disposed(by: disposeBag)
-
-        return SignUpViewModelOutput(passSnsLogin: passSnsLogin.asObserver())
     }
 
     // MARK: - Private Methods
@@ -83,12 +81,13 @@ final class DefaultSignUpViewModel: SignUpViewModel {
             .compactMap { $0 } // nil 거르고
             .flatMapLatest { [weak self] token -> Observable<LoginInfo> in
                 guard let self else { return .empty() }
+                UserDefaults.standard.authToken = token
                 return self.signUpUseCase.login().asObservable()
             }
             .subscribe(
                 onNext: { [weak self] loginInfo in
                     print("로그인 성공: \(loginInfo)")
-                    self?.passSnsLogin.onNext(true)
+                    self?.loginSuccess()
                 },
                 onError: { error in
                     print("로그인 실패: \(error)")
@@ -96,5 +95,19 @@ final class DefaultSignUpViewModel: SignUpViewModel {
             )
             .disposed(by: disposeBag)
     }
+    
+    func loginSuccess() {
+            // 메인 화면으로 이동
+            guard let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+                  let window = sceneDelegate.window else { return }
+
+            window.rootViewController = MainTabBarViewController(viewModel: DefaultMainTabBarViewModel())
+
+            // 전환 애니메이션 추가 (optional)
+            UIView.transition(with: window,
+                              duration: 0.5,
+                              options: .transitionFlipFromRight,
+                              animations: nil)
+        }
 
 }

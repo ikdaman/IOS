@@ -22,10 +22,6 @@ class AuthService: NSObject {
     
     // 현재 로그인된 사용자 정보 (옵셔널)
     private(set) var token = BehaviorRelay<String?>(value: nil)
-//    var authToken = String
-    
-    
-//    private override init() {} // 외부에서 생성 불가능하게 private 생성자
     
     // 로그인 메서드
     func login(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
@@ -169,22 +165,37 @@ extension AuthService: ASAuthorizationControllerDelegate {
         authorizationController.delegate = self
         authorizationController.performRequests()
     }
-
-    /// 요청에 성공했을때 데이터 처리
+    
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        switch authorization.credential {
-        case let appleIDCredential as ASAuthorizationAppleIDCredential:
-            // 처음 로그인할때는 이름,이메일,아이덴티 모두 제공
-            // 첫 로그인아닐때는 아이덴티만 제공
-            let uid = appleIDCredential.user
-//            let fcmToken = Defaults.shared.get(for: .fcmToken)
-//            let pushId = fcmToken == nil ? nil : fcmToken
-//            let loginData = LoginSnsReqData(snsType: "A", encSnsUid: uid, snsEmail: nil, userName: nil, pushId: pushId)
-//            self.loginSnsData.accept(loginData)
-        default:
-            break
+            if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+
+                // 🛑 여기서 ID Token 가져옴
+                if let identityToken = appleIDCredential.identityToken,
+                   let tokenString = String(data: identityToken, encoding: .utf8) {
+                    print("Apple ID Token: \(tokenString)")
+                    self.token.accept(tokenString)
+                    // 👉 서버에 토큰 보내거나 저장하거나 등등
+                } else {
+                    print("Unable to fetch identity token")
+                }
+            }
         }
-    }
+
+//    /// 요청에 성공했을때 데이터 처리
+//    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+//        switch authorization.credential {
+//        case let appleIDCredential as ASAuthorizationAppleIDCredential:
+//            // 처음 로그인할때는 이름,이메일,아이덴티 모두 제공
+//            // 첫 로그인아닐때는 아이덴티만 제공
+//            let uid = appleIDCredential.user
+////            let fcmToken = Defaults.shared.get(for: .fcmToken)
+////            let pushId = fcmToken == nil ? nil : fcmToken
+////            let loginData = LoginSnsReqData(snsType: "A", encSnsUid: uid, snsEmail: nil, userName: nil, pushId: pushId)
+////            self.loginSnsData.accept(loginData)
+//        default:
+//            break
+//        }
+//    }
 
     /// 요청에 실패했을때 에러처리
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
