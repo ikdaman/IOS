@@ -54,7 +54,7 @@ final class HomeView: UIView {
         }
         
         emptyLibraryView.snp.makeConstraints {
-            $0.top.equalTo(topBarView.snp.bottom).offset(35)
+            $0.top.equalTo(topBarView.snp.bottom).offset(110)
             $0.leading.trailing.equalToSuperview()
         }
         
