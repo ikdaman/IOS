@@ -11,11 +11,11 @@ class SwitchTableViewCell: UITableViewCell {
     static let identifier = "SwitchTableViewCell"
     
     private let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 20, weight: .regular)
+        $0.font = .systemFont(ofSize: 18, weight: .medium)
     }
     
     let toggleSwitch = UISwitch().then {
-        $0.onTintColor = .systemBlue
+        $0.onTintColor = .systemGray
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
