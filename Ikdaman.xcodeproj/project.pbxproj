@@ -15,6 +15,13 @@
 		EB9014332DB60A8F00BE5CDE /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = EB9014322DB60A8F00BE5CDE /* Moya */; };
 		EB9014352DB60A8F00BE5CDE /* ReactiveMoya in Frameworks */ = {isa = PBXBuildFile; productRef = EB9014342DB60A8F00BE5CDE /* ReactiveMoya */; };
 		EB9014372DB60A8F00BE5CDE /* RxMoya in Frameworks */ = {isa = PBXBuildFile; productRef = EB9014362DB60A8F00BE5CDE /* RxMoya */; };
+		EB9015BC2DB77F6D00BE5CDE /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015BB2DB77F6D00BE5CDE /* GoogleSignIn */; };
+		EB9015BE2DB77F6D00BE5CDE /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015BD2DB77F6D00BE5CDE /* GoogleSignInSwift */; };
+		EB9015C12DB7805100BE5CDE /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C02DB7805100BE5CDE /* KakaoSDK */; };
+		EB9015C32DB7805100BE5CDE /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C22DB7805100BE5CDE /* KakaoSDKAuth */; };
+		EB9015C52DB7805100BE5CDE /* KakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */; };
+		EB9015C72DB7805100BE5CDE /* KakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C62DB7805100BE5CDE /* KakaoSDKUser */; };
+		EB9015CF2DB7818B00BE5CDE /* NaverThirdPartyLogin in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */; };
 		FB0D6E962D86B274002A5D42 /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = FB0D6E952D86B274002A5D42 /* Differentiator */; };
 		FB0D6E982D86B274002A5D42 /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = FB0D6E972D86B274002A5D42 /* RxDataSources */; };
 /* End PBXBuildFile section */
@@ -82,14 +89,21 @@
 			buildActionMask = 2147483647;
 			files = (
 				EB9014372DB60A8F00BE5CDE /* RxMoya in Frameworks */,
+				EB9015C12DB7805100BE5CDE /* KakaoSDK in Frameworks */,
 				EB51B5F72D62B71000A14560 /* Then in Frameworks */,
+				EB9015BC2DB77F6D00BE5CDE /* GoogleSignIn in Frameworks */,
+				EB9015C72DB7805100BE5CDE /* KakaoSDKUser in Frameworks */,
+				EB9015BE2DB77F6D00BE5CDE /* GoogleSignInSwift in Frameworks */,
 				2B9BE5152D5B0A3D00D1F06E /* RxCocoa in Frameworks */,
 				EB9014332DB60A8F00BE5CDE /* Moya in Frameworks */,
+				EB9015C32DB7805100BE5CDE /* KakaoSDKAuth in Frameworks */,
 				2B9BE5212D5B0D3D00D1F06E /* SnapKit in Frameworks */,
 				2B9BE5172D5B0A3D00D1F06E /* RxRelay in Frameworks */,
 				EB9014352DB60A8F00BE5CDE /* ReactiveMoya in Frameworks */,
+				EB9015CF2DB7818B00BE5CDE /* NaverThirdPartyLogin in Frameworks */,
 				FB0D6E982D86B274002A5D42 /* RxDataSources in Frameworks */,
 				FB0D6E962D86B274002A5D42 /* Differentiator in Frameworks */,
+				EB9015C52DB7805100BE5CDE /* KakaoSDKCommon in Frameworks */,
 				2B9BE4612D5AE57200D1F06E /* RxSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -169,6 +183,13 @@
 				EB9014322DB60A8F00BE5CDE /* Moya */,
 				EB9014342DB60A8F00BE5CDE /* ReactiveMoya */,
 				EB9014362DB60A8F00BE5CDE /* RxMoya */,
+				EB9015BB2DB77F6D00BE5CDE /* GoogleSignIn */,
+				EB9015BD2DB77F6D00BE5CDE /* GoogleSignInSwift */,
+				EB9015C02DB7805100BE5CDE /* KakaoSDK */,
+				EB9015C22DB7805100BE5CDE /* KakaoSDKAuth */,
+				EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */,
+				EB9015C62DB7805100BE5CDE /* KakaoSDKUser */,
+				EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */,
 			);
 			productName = Ikdaman;
 			productReference = 2B9BE3E12D5AD8DB00D1F06E /* Ikdaman.app */;
@@ -253,6 +274,9 @@
 				2B46A7F22D66C7200071562F /* XCRemoteSwiftPackageReference "SwiftLint" */,
 				FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */,
 				EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */,
+				EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
+				EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B9BE3E22D5AD8DB00D1F06E /* Products */;
@@ -355,6 +379,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Ikdaman/Ikdaman.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -386,6 +411,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Ikdaman/Ikdaman.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -681,6 +707,30 @@
 				minimumVersion = 15.0.3;
 			};
 		};
+		EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kakao/kakao-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.24.1;
+			};
+		};
+		EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/naver/naveridlogin-sdk-ios.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources";
@@ -731,6 +781,41 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */;
 			productName = RxMoya;
+		};
+		EB9015BB2DB77F6D00BE5CDE /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		EB9015BD2DB77F6D00BE5CDE /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		EB9015C02DB7805100BE5CDE /* KakaoSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDK;
+		};
+		EB9015C22DB7805100BE5CDE /* KakaoSDKAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDKAuth;
+		};
+		EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDKCommon;
+		};
+		EB9015C62DB7805100BE5CDE /* KakaoSDKUser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDKUser;
+		};
+		EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */;
+			productName = NaverThirdPartyLogin;
 		};
 		FB0D6E952D86B274002A5D42 /* Differentiator */ = {
 			isa = XCSwiftPackageProductDependency;
