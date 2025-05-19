@@ -79,7 +79,7 @@ final class DefaultSignUpViewModel: SignUpViewModel {
     private func bindAuthToken() {
         AuthService.shared.token
             .compactMap { $0 } // nil 거르고
-            .flatMapLatest { [weak self] token -> Observable<LoginInfo> in
+            .flatMapLatest { [weak self] token -> Observable<Profile> in
                 guard let self else { return .empty() }
                 UserDefaults.standard.authToken = token
                 return self.signUpUseCase.login().asObservable()

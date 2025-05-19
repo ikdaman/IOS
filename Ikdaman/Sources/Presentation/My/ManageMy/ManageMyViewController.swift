@@ -13,7 +13,7 @@ class ManageMyViewController: BaseViewController {
     
     // MARK: - Properties
     var disposeBag = DisposeBag()
-//    private let viewModel: MyViewModel
+    private let viewModel: ManageMyViewModel
     
     // MARK: - UI Components
     private let manageMyTitleLabel = UILabel().then {
@@ -85,9 +85,9 @@ class ManageMyViewController: BaseViewController {
     private let contentView = UIView()
     
     // MARK: - Init
-    override init() {
-//        self.viewModel = viewModel
+    init(viewModel: ManageMyViewModel) {
         super.init()
+        self.viewModel = viewModel
     }
     
     required init?(coder: NSCoder) {
@@ -201,5 +201,19 @@ class ManageMyViewController: BaseViewController {
             $0.top.equalTo(logoutButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().offset(20)
         }
+    }
+    
+    private func bind() {
+        
+        
+        viewModel.transform(input: .init(
+            viewWillAppear: rx.viewWillAppear.map { _ in },
+            nicknameChanged: nicknameTextField.rx.text.orEmpty.asObservable(),
+            birthdateChanged: birthdateTextField.rx.text.orEmpty.asObservable(),
+            genderSelected: genderSelectedObservable, // 예: 버튼 탭 시 Gender 리턴
+            saveTapped: saveButton.rx.tap.asObservable(),
+            logoutTapped: logoutButton.rx.tap.asObservable(),
+            withdrawTapped: withdrawButton.rx.tap.asObservable()
+        ))
     }
 }

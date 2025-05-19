@@ -12,9 +12,9 @@ import RxMoya
 class SignUpRepositoryImpl: SignUpRepository {
     private let networkProvider = NetworkProvider.shared
 
-    func login() -> Observable<LoginInfo> {
+    func login() -> Observable<Profile> {
         return networkProvider
-            .request(BookAPI.login, type: LoginInfo.self)
+            .request(BookAPI.login, type: Profile.self)
             .asObservable()
     }
     

@@ -111,7 +111,7 @@ extension MyViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.section == 0 {
-            let vc = ManageMyViewController()
+            let vc = ManageMyViewController(viewModel: DefaultManageMyViewModel() as! ManageMyViewModel)
 //            vc.navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 //            self.modalPresentationStyle = .currentContext
             vc.navigationItem.backButtonTitle = ""
