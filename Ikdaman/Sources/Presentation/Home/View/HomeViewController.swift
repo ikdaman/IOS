@@ -58,6 +58,7 @@ final class HomeViewController: BaseViewController {
             .withUnretained(self)
             .subscribe(onNext: { `self`, _ in
                 let vc = SearchViewController()
+                vc.viewModel = SearchViewModel()
                 self.navigationController?.pushViewController(vc, animated: true)
             })
             .disposed(by: disposeBag)

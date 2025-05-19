@@ -10,8 +10,10 @@ import RxSwift
 import RxCocoa
 
 class SearchView: UIView {
-    // MARK: - Properties
+    private let disposeBag = DisposeBag()
+    private let actionTriggers = PublishRelay<SearchTriggerType>()
     
+    // MARK: - Properties
     private lazy var searchContainerView = UIView().then {
         $0.backgroundColor = .white
         $0.layer.cornerRadius = 30
@@ -45,23 +47,33 @@ class SearchView: UIView {
     }
     
     private lazy var noResultBookView = UIView().then {
-        $0.addSubviews([noBookLabel, enterDirectlyBtn])
+        $0.addSubviews([searchedBookLabel, noBookLabel])
+        
+        searchedBookLabel.snp.makeConstraints {
+            $0.top.horizontalEdges.equalToSuperview()
+        }
         
         noBookLabel.snp.makeConstraints {
-            $0.left.equalToSuperview()
-            $0.right.equalTo(enterDirectlyBtn.snp.left).offset(-7)
-            $0.centerY.equalTo(enterDirectlyBtn)
+            $0.top.equalTo(searchedBookLabel.snp.bottom)
+            $0.horizontalEdges.bottom.equalToSuperview()
+            $0.centerX.equalTo(searchedBookLabel)
         }
         
-        enterDirectlyBtn.snp.makeConstraints {
-            $0.verticalEdges.right.equalToSuperview()
-        }
+        $0.isHidden = true
+    }
+    
+    private let searchedBookLabel = UILabel().then {
+        $0.textColor = .black
+        $0.font = .systemFont(ofSize: 15, weight: .bold)
+        $0.textAlignment = .center
     }
     
     private let noBookLabel = UILabel().then {
-        $0.text = "찾으시는 책이 없으신가요?"
+        $0.text = "에 대한 검색결과가 없어요.\n\n검색 결과를 다시한번 확인해 주세요."
         $0.textColor = .black
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.font = .systemFont(ofSize: 15, weight: .regular)
+        $0.textAlignment = .center
+        $0.numberOfLines = 0
     }
     
     private let enterDirectlyBtn = UIButton().then {
@@ -74,6 +86,14 @@ class SearchView: UIView {
             ]
         )
         $0.setAttributedTitle(attributedString, for: .normal)
+    }
+    
+    private lazy var tableView = UITableView().then {
+        $0.backgroundColor = .clear
+        $0.estimatedRowHeight = 144
+        $0.delegate = self
+//        $0.dataSource = self
+        $0.register(SearchResultsCell.self, forCellReuseIdentifier: SearchResultsCell.identifier)
     }
 
 
@@ -89,9 +109,14 @@ class SearchView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        applyGradient(to: self)
+    }
+    
     // MARK: - Methods
     private func setupLayout() {
-        addSubviews([searchContainerView, noResultBookView])
+        addSubviews([searchContainerView, noResultBookView, tableView])
         
         // SnapKit을 사용한 레이아웃 설정
         searchContainerView.snp.makeConstraints {
@@ -101,16 +126,103 @@ class SearchView: UIView {
         }
         
         noResultBookView.snp.makeConstraints {
-            $0.top.equalTo(searchContainerView.snp.bottom).offset(15)
-            $0.centerX.equalTo(searchContainerView)
+            $0.center.equalTo(tableView)
+        }
+        
+        tableView.snp.makeConstraints {
+            $0.top.equalTo(searchContainerView.snp.bottom).offset(20)
+            $0.horizontalEdges.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(safeAreaInsets.bottom + 60)
         }
     }
     
     private func attribute() {
-        backgroundColor = UIColor(hex: "FFF6ED", alpha: 0.8)
+        applyGradient(to: self)
     }
     
     private func bind() {
+        searchTextField.rx.text
+            .orEmpty
+            .distinctUntilChanged()
+            .map { .searchQuery($0) }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
         
+        searchButton.rx.tap
+            .map { .searchBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
+        tableView.rx.modelSelected(AladinBook.self)
+            .map { .selectBook($0) }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
     }
+    
+    func applyGradient(to view: UIView) {
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.frame = view.bounds
+        gradientLayer.colors = [
+            UIColor(hex: "BE9FD9", alpha: 1).cgColor,
+            UIColor.white.cgColor
+        ]
+        
+        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        gradientLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
+        
+        view.layer.sublayers?.filter { $0 is CAGradientLayer }.forEach { $0.removeFromSuperlayer() }
+        view.layer.insertSublayer(gradientLayer, at: 0)
+    }
+    
+    // MARK: - Data Binding
+    @discardableResult
+    func setupDI(searchBookResults: Observable<[AladinBook]>, searchQuery: BehaviorRelay<String>) -> Self {
+        searchBookResults
+            .skip(1)
+            .withUnretained(self)
+            .subscribe(onNext: { `self`, books in
+                self.noResultBookView.isHidden = !books.isEmpty
+                guard books.isEmpty else { return }
+                self.searchedBookLabel.text = searchQuery.value
+//                self.tableView.isHidden = books.isEmpty
+            })
+            .disposed(by: disposeBag)
+        
+        searchBookResults.bind(to: tableView.rx.items(cellIdentifier: SearchResultsCell.identifier, cellType: SearchResultsCell.self)) { row, book, cell in
+            cell.backgroundColor = .clear
+            cell.configure(image: book.cover, title: book.title, subtitle: book.author)
+        }.disposed(by: disposeBag)
+        
+        return self
+    }
+    
+    /// 유저 액션
+    @discardableResult
+    func setupDI(action: PublishRelay<SearchTriggerType>) -> Self {
+        actionTriggers
+            .bind(to: action)
+            .disposed(by: disposeBag)
+        
+        return self
+    }
+}
+
+extension SearchView: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        3
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: SearchResultsCell.identifier, for: indexPath) as? SearchResultsCell else { return UITableViewCell() }
+        cell.backgroundColor = .clear
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 144
+    }
+}
+
+extension UIColor {
+    
 }
