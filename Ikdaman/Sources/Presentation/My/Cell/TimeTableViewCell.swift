@@ -11,11 +11,11 @@ class TimeTableViewCell: UITableViewCell {
     static let identifier = "TimeTableViewCell"
     
     private let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 20, weight: .regular)
+        $0.font = .systemFont(ofSize: 18, weight: .medium)
     }
     
     private let timeLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 20, weight: .regular)
+        $0.font = .systemFont(ofSize: 18, weight: .regular)
         $0.textColor = .black
     }
     
@@ -32,15 +32,17 @@ class TimeTableViewCell: UITableViewCell {
         contentView.addSubview(titleLabel)
         contentView.addSubview(timeLabel)
         
-        titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(20)
-            $0.centerY.equalToSuperview()
-        }
-        
         timeLabel.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(20)
-            $0.centerY.equalToSuperview()
+            $0.top.equalToSuperview().inset(11)
+            $0.bottom.equalToSuperview().inset(30)
         }
+        
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().inset(20)
+            $0.centerY.equalTo(timeLabel)
+        }
+        
     }
     
     private func attribute() {

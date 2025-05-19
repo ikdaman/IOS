@@ -10,9 +10,7 @@ import UIKit
 class SettingsTableViewCell: UITableViewCell {
     static let identifier = "SettingsTableViewCell"
     
-    private let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 20, weight: .regular)
-    }
+    private let titleLabel = UILabel()
     
     private let arrowImageView = UIImageView().then {
         $0.image = UIImage(systemName: "chevron.right")
@@ -39,7 +37,7 @@ class SettingsTableViewCell: UITableViewCell {
         }
         
         arrowImageView.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(21)
             $0.centerY.equalToSuperview()
             $0.width.equalTo(12)
             $0.height.equalTo(18)
@@ -52,6 +50,7 @@ class SettingsTableViewCell: UITableViewCell {
     
     func configure(with title: String, showArrow: Bool = true) {
         titleLabel.text = title
+        titleLabel.font = .systemFont(ofSize: showArrow ? 18 : 16, weight: .medium)
         arrowImageView.isHidden = !showArrow
     }
 }

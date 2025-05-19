@@ -6,6 +6,9 @@
 //
 
 import UIKit
+import KakaoSDKAuth
+import NaverThirdPartyLogin
+import GoogleSignIn
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -18,9 +21,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         window = UIWindow(windowScene: windowScene)
-        let tabbar = MainTabBarViewController(viewModel: DefaultMainTabBarViewModel())
-        let navController = UINavigationController(rootViewController: tabbar)
-        window?.rootViewController = navController
+        if let token = UserDefaults.standard.authToken, !token.isEmpty {
+            window?.rootViewController = MainTabBarViewController(viewModel: DefaultMainTabBarViewModel())
+        } else {
+            window?.rootViewController = SignUpViewController(viewModel: DefaultSignUpViewModel())
+        }
         window?.makeKeyAndVisible()
     }
 
@@ -51,5 +56,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to save data, release shared resources, and store enough scene-specific state information
         // to restore the scene back to its current state.
     }
-
+    
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        if let url = URLContexts.first?.url {
+            if (AuthApi.isKakaoTalkLoginUrl(url)) {
+                _ = AuthController.handleOpenUrl(url: url)
+            } else if url.absoluteString.contains("nid.naver") {
+                NaverThirdPartyLoginConnection
+                                .getSharedInstance()
+                                .receiveAccessToken(url)
+            } else if url.absoluteString.contains("google") {
+                GIDSignIn.sharedInstance.handle(url)
+            }
+        }
+    }
+    
 }

@@ -6,23 +6,19 @@
 //
 
 import UIKit
+import SnapKit
+import Then
 import RxSwift
 import RxCocoa
 
 final class HomeViewController: BaseViewController {
+    
     // MARK: - Properties
-    var disposeBag = DisposeBag()
+    private let homeView = HomeView()
     private let viewModel: HomeViewModel
+    private let disposeBag = DisposeBag()
     
-    // MARK: - UI
-    
-    private let searchBtn = UIButton().then {
-        $0.setTitle("테스트용 검색 버튼", for: .normal)
-        $0.setTitleColor(.black, for: .normal)
-        $0.backgroundColor = .white
-    }
-    
-    // MARK: - Init
+    // MARK: - Initializer
     init(viewModel: HomeViewModel) {
         self.viewModel = viewModel
         super.init()
@@ -33,51 +29,64 @@ final class HomeViewController: BaseViewController {
     }
     
     // MARK: - LifeCycle
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        setupViews()
-        initialLayout()
-        
-        bind()
-        view.backgroundColor = .orange
+    override func loadView() {
+        self.view = homeView
     }
     
-    private func bind() {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        bindViewModel()
+        bindActions()
+    }
+    
+    // MARK: - Binding
+    private func bindViewModel() {
         let input = HomeViewModelInput(
-            fetchBooks: Observable.just(0) // userId
+            fetchBooks: Observable.just(0),
+            selectColor: homeView.topBarView.colorPickerView.colorSelected.asObservable(),
+            toggleColorPicker: homeView.topBarView.colorButton.rx.tap.asObservable()
         )
+        
         let output = viewModel.transform(input: input)
         
-        output.books
-            .bind { [weak self] _ in
-                // tableView 업데이트
-            }.disposed(by: disposeBag)
+        // 컬러 버튼 배경 변경
+        output.selectedColorType
+            .map { $0.buttonColor }
+            .bind(to: homeView.topBarView.colorButton.rx.backgroundColor)
+            .disposed(by: disposeBag)
         
-        searchBtn.rx.tap
-            .withUnretained(self)
-            .subscribe(onNext: { `self`, _ in
-                let vc = SearchViewController()
-                vc.viewModel = SearchViewModel()
-                self.navigationController?.pushViewController(vc, animated: true)
+        // 그라데이션 배경 변경
+        output.selectedColorType
+            .subscribe(onNext: { [weak self] colorType in
+                self?.homeView.updateBackgroundGradient(colors: colorType.gradientColors)
+            })
+            .disposed(by: disposeBag)
+        
+        // ColorPicker 열기/닫기 애니메이션
+        output.isColorPickerVisible
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak self] isVisible in
+                UIView.animate(withDuration: 0.2) {
+                    self?.homeView.topBarView.colorPickerView.alpha = isVisible ? 1 : 0
+                }
             })
             .disposed(by: disposeBag)
     }
-}
-
-// MARK: - Layout
-extension HomeViewController {
-    private func setupViews() {
-        view.addSubview(searchBtn)
-        searchBtn.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-100)
-            $0.width.equalTo(60)
-            $0.height.equalTo(30)
-        }
+    
+    private func bindActions() {
+        homeView.topBarView.colorButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.toggleColorPicker()
+            })
+            .disposed(by: disposeBag)
     }
     
-    private func initialLayout() {
-        
+    // MARK: - Actions
+    private func toggleColorPicker() {
+        UIView.animate(withDuration: 0.2) { [weak self] in
+            guard let self = self else { return }
+            let isHidden = self.homeView.topBarView.colorPickerView.alpha == 0
+            self.homeView.topBarView.colorPickerView.alpha = isHidden ? 1 : 0
+        }
     }
 }
