@@ -52,3 +52,15 @@ final class NetworkProvider {
             .map(T.self)
     }
 }
+
+extension NetworkProvider {
+    func requestRaw(_ target: TargetType) -> Single<Response> {
+        return provider.rx.request(MultiTarget(target))
+            .do(onSuccess: { response in
+                print("✅ [\(target.path)] \(response.statusCode)")
+            }, onError: { error in
+                print("❌ [\(target.path)] \(error)")
+            })
+            .filterSuccessfulStatusCodes()
+    }
+}

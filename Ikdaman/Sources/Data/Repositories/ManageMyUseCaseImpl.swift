@@ -6,6 +6,7 @@
 //
 
 import RxSwift
+import Moya
 
 final class ManageMyUseCaseImpl: ManageMyRepository {
     private let networkProvider = NetworkProvider.shared
@@ -22,15 +23,13 @@ final class ManageMyUseCaseImpl: ManageMyRepository {
             .asCompletable()
     }
 
-    func logout() -> Completable {
-        return networkProvider
-            .request(BookAPI.login, type: Profile.self)
-            .asCompletable()
+    func logout() -> Single<Response> {
+        return networkProvider.requestRaw(BookAPI.logout)
     }
 
     func withdraw() -> Completable {
         return networkProvider
-            .request(BookAPI.login, type: Profile.self)
+            .request(BookAPI.withDrawal, type: String.self)
             .asCompletable()
     }
 }

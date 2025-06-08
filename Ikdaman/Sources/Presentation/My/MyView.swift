@@ -35,8 +35,7 @@ class MyView: UIView {
         }
     }
     
-    private let greetingLabel = UILabel().then {
-        $0.text = "닉네임님\n안녕하세요!"
+    lazy var greetingLabel = UILabel().then {
         $0.textColor = .black
         $0.font = .systemFont(ofSize: 26, weight: .bold) // 700
         $0.numberOfLines = 2

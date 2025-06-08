@@ -6,10 +6,11 @@
 //
 
 import RxSwift
+import Moya
 
 protocol ManageMyRepository {
     func fetchCurrentUser() -> Observable<User>
     func updateUser(_ user: User) -> Completable
-    func logout() -> Completable
+    func logout() -> Single<Response>
     func withdraw() -> Completable
 }

@@ -19,6 +19,7 @@ class MyViewController: BaseViewController {
     
     private lazy var subView = MyView().then {
         $0.tableView.rx.setDelegate(self).disposed(by: disposeBag)
+        $0.greetingLabel.text = (UserDefaults.standard.nickName ?? "") + "님\n안녕하세요!"
     }
     
     // MARK: - Init
@@ -55,7 +56,6 @@ class MyViewController: BaseViewController {
         
         subView
             .setupDI(sections: output.sections)
-        
     }
 }
 
@@ -81,7 +81,8 @@ extension MyViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         let footerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 10))
-        footerView.backgroundColor = #colorLiteral(red: 0.9764705882, green: 0.9764705882, blue: 0.9764705882, alpha: 1)
+//        footerView.backgroundColor = #colorLiteral(red: 0.9764705882, green: 0.9764705882, blue: 0.9764705882, alpha: 1)
+        footerView.backgroundColor = .systemGray
         return section != 2 ? footerView : nil
     }
     
@@ -111,9 +112,8 @@ extension MyViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.section == 0 {
-            let vc = ManageMyViewController(viewModel: DefaultManageMyViewModel() as! ManageMyViewModel)
-//            vc.navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
-//            self.modalPresentationStyle = .currentContext
+            let viewModel: ManageMyViewModel = DefaultManageMyViewModel()
+            let vc = ManageMyViewController(viewModel: viewModel)
             vc.navigationItem.backButtonTitle = ""
             self.navigationController?.pushViewController(vc, animated: true)
         }

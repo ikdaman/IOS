@@ -7,6 +7,7 @@
 
 import RxSwift
 import RxCocoa
+import Foundation
 
 struct ManageMyViewModelInput {
     let viewWillAppear: Observable<Void>
@@ -19,7 +20,7 @@ struct ManageMyViewModelInput {
 }
 
 struct ManageMyViewModelOutput {
-    let user: Driver<User>
+    let user: Observable<User>
     let saveCompleted: Signal<Void>
     let logoutCompleted: Signal<Void>
     let withdrawCompleted: Signal<Void>
@@ -27,10 +28,10 @@ struct ManageMyViewModelOutput {
 }
 
 protocol ManageMyViewModel {
-    func transform(input: SignUpViewModelInput)
+    func transform(input: ManageMyViewModelInput) -> ManageMyViewModelOutput
 }
 
-final class DefaultManageMyViewModel {
+final class DefaultManageMyViewModel: ManageMyViewModel {
     private let manageMyUseCase: ManageMyUseCase
     private let disposeBag = DisposeBag()
     
@@ -51,13 +52,16 @@ final class DefaultManageMyViewModel {
             .flatMapLatest { [weak self] in
                 self?.manageMyUseCase.getUserInfo().asObservable() ?? .empty()
             }
+            .do(onNext: { user in
+                    print("👤 getUserInfo():", user)
+                })
             .bind(to: userRelay)
             .disposed(by: disposeBag)
 
         input.nicknameChanged
             .subscribe(onNext: { [weak self] nickname in
                 guard var user = self?.userRelay.value else { return }
-                user.nickName = nickname
+                user.nickname = nickname
                 self?.userRelay.accept(user)
             })
             .disposed(by: disposeBag)
@@ -65,7 +69,7 @@ final class DefaultManageMyViewModel {
         input.birthdateChanged
             .subscribe(onNext: { [weak self] birthdate in
                 guard var user = self?.userRelay.value else { return }
-                user.birthDate = birthdate
+                user.birthdate = birthdate
                 self?.userRelay.accept(user)
             })
             .disposed(by: disposeBag)
@@ -97,12 +101,24 @@ final class DefaultManageMyViewModel {
             .disposed(by: disposeBag)
 
         input.logoutTapped
-            .flatMapLatest { [weak self] in
-                self?.manageMyUseCase.logout().asObservable().materialize() ?? .empty()
+            .flatMapLatest { [weak self] _ -> Observable<Event<Void>> in
+                guard let self = self else { return .empty() }
+                return self.manageMyUseCase.logout()
+                    .flatMap { response -> Single<Void> in
+                        if response.statusCode == 205 {
+                            return .just(())
+                        } else {
+                            // 실패: 에러 반환
+                            return .error(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Logout failed with status: \(response.statusCode)"]))
+                        }
+                    }
+                    .asObservable()
+                    .materialize()
             }
             .subscribe(onNext: { [weak self] event in
                 switch event {
                 case .completed:
+                    AuthService.shared.logout()
                     self?.logoutCompleteRelay.accept(())
                 case .error(let error):
                     self?.errorRelay.accept(error.localizedDescription)
@@ -127,7 +143,7 @@ final class DefaultManageMyViewModel {
             .disposed(by: disposeBag)
 
         return ManageMyViewModelOutput(
-            user: userRelay.compactMap { $0 }.asDriver(onErrorDriveWith: .empty()),
+            user: userRelay.compactMap { $0 }.asObservable(),
             saveCompleted: saveCompleteRelay.asSignal(),
             logoutCompleted: logoutCompleteRelay.asSignal(),
             withdrawCompleted: withdrawCompleteRelay.asSignal(),

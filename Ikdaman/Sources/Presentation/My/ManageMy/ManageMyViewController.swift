@@ -20,15 +20,17 @@ class ManageMyViewController: BaseViewController {
         $0.text = "내 정보 관리"
         $0.font = .systemFont(ofSize: 26, weight: .bold)
     }
+    
     private let nicknameTitleLabel = UILabel().then {
         $0.text = "* 닉네임"
         $0.font = UIFont.boldSystemFont(ofSize: 14)
     }
+    
     private let nicknameTextField = UITextField().then {
-        $0.placeholder = "닉네임"
         $0.backgroundColor = UIColor(white: 0.95, alpha: 1)
         $0.layer.cornerRadius = 8
     }
+    
     private let checkButton = UIButton().then {
         $0.setTitle("중복 확인", for: .normal)
         $0.backgroundColor = .gray
@@ -40,8 +42,8 @@ class ManageMyViewController: BaseViewController {
         $0.text = "생년월일"
         $0.font = UIFont.boldSystemFont(ofSize: 16)
     }
+    
     private let birthdateTextField = UITextField().then {
-        $0.placeholder = "생년월일"
         $0.backgroundColor = UIColor(white: 0.95, alpha: 1)
         $0.layer.cornerRadius = 8
     }
@@ -50,17 +52,25 @@ class ManageMyViewController: BaseViewController {
         $0.text = "성별"
         $0.font = UIFont.boldSystemFont(ofSize: 16)
     }
+    
     private let maleButton = UIButton().then {
         $0.setTitle("남", for: .normal)
-        $0.setTitleColor(.gray, for: .normal)
-        $0.backgroundColor = UIColor(white: 0.95, alpha: 1)
+        $0.clipsToBounds = true
         $0.layer.cornerRadius = 8
+        $0.setTitleColor(.gray, for: .normal)
+        $0.setTitleColor(.white, for: .selected)
+        $0.setBackgroundColor(UIColor(white: 0.95, alpha: 1), for: .normal)
+        $0.setBackgroundColor(.black, for: .selected)
     }
+    
     private let femaleButton = UIButton().then {
         $0.setTitle("여", for: .normal)
-        $0.setTitleColor(.gray, for: .normal)
-        $0.backgroundColor = UIColor(white: 0.95, alpha: 1)
+        $0.clipsToBounds = true
         $0.layer.cornerRadius = 8
+        $0.setTitleColor(.gray, for: .normal)
+        $0.setTitleColor(.white, for: .selected)
+        $0.setBackgroundColor(UIColor(white: 0.95, alpha: 1), for: .normal)
+        $0.setBackgroundColor(.black, for: .selected)
     }
     
     private let saveButton = UIButton().then {
@@ -75,6 +85,7 @@ class ManageMyViewController: BaseViewController {
         $0.setTitleColor(.black, for: .normal)
         $0.titleLabel?.font = UIFont.systemFont(ofSize: 14)
     }
+    
     private let withdrawButton = UIButton().then {
         $0.setTitle("회원탈퇴", for: .normal)
         $0.setTitleColor(.black, for: .normal)
@@ -86,8 +97,8 @@ class ManageMyViewController: BaseViewController {
     
     // MARK: - Init
     init(viewModel: ManageMyViewModel) {
-        super.init()
         self.viewModel = viewModel
+        super.init()
     }
     
     required init?(coder: NSCoder) {
@@ -105,6 +116,7 @@ class ManageMyViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setupLayout()
+        bind()
     }
     
     // MARK: - Setup
@@ -204,16 +216,57 @@ class ManageMyViewController: BaseViewController {
     }
     
     private func bind() {
+        let genderSelected = Observable.merge(maleButton.rx.tap.map{ "남" }.asObservable(), femaleButton.rx.tap.map{ "여" }.asObservable())
         
+        genderSelected.subscribe(onNext :{ [weak self] gender in
+            self?.maleButton.isSelected = (gender == "남")
+            self?.femaleButton.isSelected = (gender == "여")
+        }).disposed(by: disposeBag)
         
-        viewModel.transform(input: .init(
-            viewWillAppear: rx.viewWillAppear.map { _ in },
+        let input = ManageMyViewModelInput(
+            viewWillAppear: self.rx.methodInvoked(#selector(UIViewController.viewWillAppear(_:)))
+                    .map { _ in }
+                    .asObservable(),
             nicknameChanged: nicknameTextField.rx.text.orEmpty.asObservable(),
             birthdateChanged: birthdateTextField.rx.text.orEmpty.asObservable(),
-            genderSelected: genderSelectedObservable, // 예: 버튼 탭 시 Gender 리턴
+            genderSelected: genderSelected, 
             saveTapped: saveButton.rx.tap.asObservable(),
             logoutTapped: logoutButton.rx.tap.asObservable(),
             withdrawTapped: withdrawButton.rx.tap.asObservable()
-        ))
+        )
+        
+        let output = viewModel.transform(input: input)
+        
+        output.user
+            .take(1)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] user in
+                self?.nicknameTextField.placeholder = user.nickname // <- ✅ 여기도 text에 할당
+                self?.birthdateTextField.placeholder = user.birthdate ?? ""
+
+                let genderKor = (user.gender == "male") ? "남" : "여"
+                self?.maleButton.isSelected = (genderKor == "남")
+                self?.femaleButton.isSelected = (genderKor == "여")
+            })
+            .disposed(by: disposeBag)
+        
+        Observable.merge(output.logoutCompleted.asObservable(),
+                         output.withdrawCompleted.asObservable())
+            .bind(onNext: { [weak self] in
+                self?.navigateToSignup()
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func navigateToSignup() {
+        let signupViewModel = DefaultSignUpViewModel()
+        let signupVC = SignUpViewController(viewModel: signupViewModel)
+        let nav = UINavigationController(rootViewController: signupVC)
+
+        guard let sceneDelegate = UIApplication.shared.connectedScenes
+                .first?.delegate as? SceneDelegate else { return }
+
+        sceneDelegate.window?.rootViewController = nav
+        sceneDelegate.window?.makeKeyAndVisible()
     }
 }

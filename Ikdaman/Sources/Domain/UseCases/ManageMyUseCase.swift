@@ -6,11 +6,12 @@
 //
 
 import RxSwift
+import Moya
 
 protocol ManageMyUseCase {
     func getUserInfo() -> Observable<User>
     func saveUser(user: User) -> Completable
-    func logout() -> Completable
+    func logout() -> Single<Response>
     func withdraw() -> Completable
 }
 
@@ -29,7 +30,7 @@ final class DefaultManageMyUseCase: ManageMyUseCase {
         manageMyRepository.updateUser(user)
     }
     
-    func logout() -> RxSwift.Completable {
+    func logout() -> Single<Response> {
         manageMyRepository.logout()
     }
     

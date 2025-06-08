@@ -26,6 +26,7 @@ class AuthService: NSObject {
     // 로그아웃 메서드
     func logout() {
         token.accept(nil)
+        UserDefaults.standard.authToken = nil
         UserDefaults.standard.nickName = nil
     }
     
