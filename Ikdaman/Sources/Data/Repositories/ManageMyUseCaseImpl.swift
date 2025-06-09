@@ -32,4 +32,10 @@ final class ManageMyUseCaseImpl: ManageMyRepository {
             .request(BookAPI.withDrawal, type: String.self)
             .asCompletable()
     }
+    
+    func checkNicknameDuplication(nickname: String) -> RxSwift.Single<Bool> {
+        return networkProvider
+            .request(BookAPI.checkNickname(nickName: nickname), type: Available.self)
+            .map { $0.available }
+    }
 }

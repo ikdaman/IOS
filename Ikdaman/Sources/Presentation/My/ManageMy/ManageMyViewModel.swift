@@ -17,6 +17,7 @@ struct ManageMyViewModelInput {
     let saveTapped: Observable<Void>
     let logoutTapped: Observable<Void>
     let withdrawTapped: Observable<Void>
+    let checkNicknameTapped: Observable<Void>
 }
 
 struct ManageMyViewModelOutput {
@@ -25,6 +26,7 @@ struct ManageMyViewModelOutput {
     let logoutCompleted: Signal<Void>
     let withdrawCompleted: Signal<Void>
     let error: Signal<String>
+    let nicknameCheckResult: Signal<Bool>
 }
 
 protocol ManageMyViewModel {
@@ -40,6 +42,7 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
     private let saveCompleteRelay = PublishRelay<Void>()
     private let logoutCompleteRelay = PublishRelay<Void>()
     private let withdrawCompleteRelay = PublishRelay<Void>()
+    private let nicknameCheckRelay = PublishRelay<Bool>()
     
     // MARK: - Init
     init(manageMyUseCase: ManageMyUseCase = DefaultManageMyUseCase(manageMyRepository: ManageMyUseCaseImpl())) {
@@ -101,6 +104,11 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
             .disposed(by: disposeBag)
 
         input.logoutTapped
+            .subscribe(onNext: { [weak self] _ in
+                
+            }).disposed(by: disposeBag)
+        
+        input.logoutTapped
             .flatMapLatest { [weak self] _ -> Observable<Event<Void>> in
                 guard let self = self else { return .empty() }
                 return self.manageMyUseCase.logout()
@@ -141,13 +149,33 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
                 }
             })
             .disposed(by: disposeBag)
+        
+        input.checkNicknameTapped
+            .withLatestFrom(userRelay.compactMap { $0 })
+            .flatMapLatest { [weak self] user in
+                self?.manageMyUseCase.checkNicknameDuplication(nickname: user.nickname ?? "")
+                    .asObservable()
+                    .materialize() ?? .empty()
+            }
+            .subscribe(onNext: { [weak self] event in
+                switch event {
+                case .next(let isDuplicated):
+                    // 중복이면 false, 중복이 아니면 true
+                    self?.nicknameCheckRelay.accept(isDuplicated == false)
+                case .error(let error):
+                    self?.errorRelay.accept(error.localizedDescription)
+                default: break
+                }
+            })
+            .disposed(by: disposeBag)
 
         return ManageMyViewModelOutput(
             user: userRelay.compactMap { $0 }.asObservable(),
             saveCompleted: saveCompleteRelay.asSignal(),
             logoutCompleted: logoutCompleteRelay.asSignal(),
             withdrawCompleted: withdrawCompleteRelay.asSignal(),
-            error: errorRelay.asSignal()
+            error: errorRelay.asSignal(),
+            nicknameCheckResult: nicknameCheckRelay.asSignal()
         )
     }
 }

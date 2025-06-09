@@ -13,4 +13,5 @@ protocol ManageMyRepository {
     func updateUser(_ user: User) -> Completable
     func logout() -> Single<Response>
     func withdraw() -> Completable
+    func checkNicknameDuplication(nickname: String) -> Single<Bool>
 }

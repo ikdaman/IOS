@@ -116,6 +116,11 @@ extension MyViewController: UITableViewDelegate {
             let vc = ManageMyViewController(viewModel: viewModel)
             vc.navigationItem.backButtonTitle = ""
             self.navigationController?.pushViewController(vc, animated: true)
+        } else if indexPath.section == 2, indexPath.row == 0 {
+            let viewModel: NoticeViewModel = NoticeViewModel()
+            let vc = NoticeViewController(viewModel: viewModel)
+            vc.navigationItem.backButtonTitle = ""
+            self.navigationController?.pushViewController(vc, animated: true)
         }
     }
 }

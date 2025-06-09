@@ -232,7 +232,8 @@ class ManageMyViewController: BaseViewController {
             genderSelected: genderSelected, 
             saveTapped: saveButton.rx.tap.asObservable(),
             logoutTapped: logoutButton.rx.tap.asObservable(),
-            withdrawTapped: withdrawButton.rx.tap.asObservable()
+            withdrawTapped: withdrawButton.rx.tap.asObservable(),
+            checkNicknameTapped: checkButton.rx.tap.asObservable()
         )
         
         let output = viewModel.transform(input: input)
@@ -241,7 +242,7 @@ class ManageMyViewController: BaseViewController {
             .take(1)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] user in
-                self?.nicknameTextField.placeholder = user.nickname // <- ✅ 여기도 text에 할당
+                self?.nicknameTextField.placeholder = user.nickname
                 self?.birthdateTextField.placeholder = user.birthdate ?? ""
 
                 let genderKor = (user.gender == "male") ? "남" : "여"
@@ -249,6 +250,16 @@ class ManageMyViewController: BaseViewController {
                 self?.femaleButton.isSelected = (genderKor == "여")
             })
             .disposed(by: disposeBag)
+        
+        output.nicknameCheckResult
+            .emit(onNext: { [weak self] isAvailable in
+                let message = isAvailable ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다."
+                let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                self?.present(alert, animated: true)
+            })
+            .disposed(by: disposeBag)
+
         
         Observable.merge(output.logoutCompleted.asObservable(),
                          output.withdrawCompleted.asObservable())

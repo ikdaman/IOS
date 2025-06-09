@@ -13,6 +13,7 @@ protocol ManageMyUseCase {
     func saveUser(user: User) -> Completable
     func logout() -> Single<Response>
     func withdraw() -> Completable
+    func checkNicknameDuplication(nickname: String) -> Single<Bool>
 }
 
 final class DefaultManageMyUseCase: ManageMyUseCase {
@@ -38,4 +39,7 @@ final class DefaultManageMyUseCase: ManageMyUseCase {
         manageMyRepository.withdraw()
     }
 
+    func checkNicknameDuplication(nickname: String) -> Single<Bool> {
+        return manageMyRepository.checkNicknameDuplication(nickname: nickname)
+    }
 }
