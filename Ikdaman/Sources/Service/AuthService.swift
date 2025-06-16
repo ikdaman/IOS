@@ -21,18 +21,20 @@ class AuthService: NSObject {
     let disposeBag = DisposeBag()
     
     // 현재 로그인된 사용자 정보 (옵셔널)
-    private(set) var token = BehaviorRelay<String?>(value: nil)
+    private(set) var loginType = BehaviorRelay<LoginType?>(value: nil)
         
     // 로그아웃 메서드
     func logout() {
-        token.accept(nil)
-        UserDefaults.standard.authToken = nil
+        loginType.accept(nil)
         UserDefaults.standard.nickName = nil
+        
+        KeychainService.shared.delete(forKey: .accessToken)
+        KeychainService.shared.delete(forKey: .refreshToken)
     }
     
     // 로그인 여부 확인
     func isLoggedIn() -> Bool {
-        return token.value != nil
+        return loginType.value?.token != nil
     }
 }
 
@@ -76,7 +78,7 @@ extension AuthService {
             } else {
                 if let uid = userInfo?.id {
                     let token = TokenManager().getToken()?.accessToken
-                    self.token.accept(token)
+                    self.loginType.accept(LoginType(token: token, provider: "KAKAO", providerId: String(uid)))
                     print("UserApi.shared.me success")
                 }
             }
@@ -112,7 +114,7 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
         guard let accessToken = instance.accessToken else { return }
 
         let token = "\(tokenType) \(accessToken)"
-        self.token.accept(accessToken)
+        self.loginType.accept(LoginType(token: accessToken, provider: "NAVER", providerId: instance.consumerKey))
         
     }
 
@@ -161,7 +163,7 @@ extension AuthService: ASAuthorizationControllerDelegate {
                 if let identityToken = appleIDCredential.identityToken,
                    let tokenString = String(data: identityToken, encoding: .utf8) {
                     print("Apple ID Token: \(tokenString)")
-                    self.token.accept(tokenString)
+                    self.loginType.accept(LoginType(token: tokenString, provider: "APPLE", providerId: appleIDCredential.user))
                     // 👉 서버에 토큰 보내거나 저장하거나 등등
                 } else {
                     print("Unable to fetch identity token")
@@ -186,18 +188,18 @@ extension AuthService {
             }
             
             guard let user = result?.user,
-                  let idToken = user.idToken?.tokenString
+                  let idToken = user.idToken?.tokenString,
+                  let userId = user.userID
             else {
                 print("❌ 토큰 가져오기 실패")
                 completion(nil, nil)
                 return
             }
-            let accessToken = user.accessToken.tokenString
-            self.token.accept(accessToken)
+            self.loginType.accept(LoginType(token: idToken, provider: "GOOGLE", providerId: userId))
 
             print("✅ idToken: \(idToken)")
-            print("✅ accessToken: \(accessToken)")
-            completion(idToken, accessToken)
+            print("✅ userId: \(userId)")
+            completion(idToken, userId)
         }
     }
 }

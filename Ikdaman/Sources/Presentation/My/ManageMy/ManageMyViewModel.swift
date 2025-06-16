@@ -53,13 +53,19 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
     func transform(input: ManageMyViewModelInput) -> ManageMyViewModelOutput {
         input.viewWillAppear
             .flatMapLatest { [weak self] in
-                self?.manageMyUseCase.getUserInfo().asObservable() ?? .empty()
+                self?.manageMyUseCase.getUserInfo()
+                    .asObservable()
+                    .catchError { error in
+                        print("❌ getUserInfo() 에러:", error.localizedDescription)
+                        return .empty() // 또는 .just(User.default)
+                    } ?? .empty()
             }
             .do(onNext: { user in
-                    print("👤 getUserInfo():", user)
-                })
+                print("👤 getUserInfo():", user)
+            })
             .bind(to: userRelay)
             .disposed(by: disposeBag)
+
 
         input.nicknameChanged
             .subscribe(onNext: { [weak self] nickname in

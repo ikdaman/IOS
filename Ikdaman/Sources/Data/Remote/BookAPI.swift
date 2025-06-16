@@ -7,6 +7,7 @@
 
 import Foundation
 import Moya
+import RxSwift
 
 protocol BaseTargetType: TargetType {}
 
@@ -14,7 +15,7 @@ enum BookAPI {
     /// access token 재발급
     case reissueToken
     /// 로그인
-    case login
+    case login(type: LoginType)
     /// 로그아웃
     case logout
     /// 내 정보 수정
@@ -60,14 +61,14 @@ enum BookAPI {
 }
 
 extension BookAPI: TargetType {
-    var baseURL: URL { URL(string: "https://403f085d-bd13-42ee-a481-11de8752476f.mock.pstmn.io")! }
+    var baseURL: URL { URL(string: "https://ikdaman.shop")! }
 
     var path: String {
         switch self {
         case .reissueToken:
             "/auth/reissue"
         case .login:
-            "/auth/login"
+            "/auth/login/idToken"
         case .logout:
             "/auth/logout"
         case .modifyProfile:
@@ -130,6 +131,8 @@ extension BookAPI: TargetType {
     var task: Task {
         var param: [String: Any] = [:]
         switch self {
+        case .login(let type):
+            param = ["provider": type.provider, "providerId": type.providerId]
         case .checkNickname(let nickname):
             param = ["nickname": nickname]
         case .bookList(let status, let keyword, let page, let limit):
@@ -144,19 +147,24 @@ extension BookAPI: TargetType {
     }
 
     var headers: [String: String]? {
-            var defaultHeaders = ["Content-Type": "application/json"]
-            
-            // 로그인 케이스에서 Authorization 및 refresh-token 추가
-            switch self {
-            case .login:
-                defaultHeaders["Authorization"] = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0Mzg1ODcxMiwiaWF0IjoxNzQzODU4NzEyfQ.W0voYJiMYw7-CmHVMUpnz9fcNnTKoPLNcQjRPpwHk3A"
-                defaultHeaders["refresh-token"] = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0Mzg1ODcxMiwiaWF0IjoxNzQzODU4NzEyfQ.W0voYJiMYw7-CmHVMUpnz9fcNnTKoPLNcQjRPpwHk3A"
-            default:
-                break
-            }
-            
-            return defaultHeaders
+        var defaultHeaders = ["Content-Type": "application/json"]
+        let accessToken = "Bearer" + (KeychainService.shared.load(forKey: .accessToken) ?? "")
+        
+        switch self {
+        case .reissueToken:
+            let refreshToken = KeychainService.shared.load(forKey: .refreshToken)
+            defaultHeaders["Authorization"] = accessToken
+            defaultHeaders["refresh-token"] = refreshToken
+        case .login(_):
+            defaultHeaders["social-id-token"] = AuthService.shared.loginType.value?.token
+        case .logout, .getProfile:
+            defaultHeaders["Authorization"] = accessToken
+        default:
+            break
         }
+        
+        return defaultHeaders
+    }
 }
 
 extension BookAPI: BaseTargetType {}

@@ -14,9 +14,9 @@ class TimeTableViewCell: UITableViewCell {
         $0.font = .systemFont(ofSize: 18, weight: .medium)
     }
     
-    private let timeLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 18, weight: .regular)
-        $0.textColor = .black
+    private let timeLabel = UIDatePicker().then {
+        $0.datePickerMode = .time
+        $0.preferredDatePickerStyle = .wheels
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -52,6 +52,6 @@ class TimeTableViewCell: UITableViewCell {
     
     func configure(with title: String, time: String) {
         titleLabel.text = title
-        timeLabel.text = time
+//        timeLabel.text = time
     }
 }

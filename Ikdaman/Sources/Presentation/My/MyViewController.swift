@@ -51,12 +51,23 @@ class MyViewController: BaseViewController {
     }
     
     private func bind() {
-        let input = MyViewModelInput(viewDidLoad: requestTrigger.asObservable())
+        let input = MyViewModelInput(
+            viewDidLoad: Observable.just(()),
+            alarmToggleChanged: subView.toggleRelay.asObservable(),
+            alarmTimeTapped: subView.timeTapRelay.asObservable()
+        )
+
         let output = viewModel.transform(input: input)
+
+        subView.setupDI(sections: output.sections)
         
-        subView
-            .setupDI(sections: output.sections)
+        output.showTimePicker
+            .subscribe(onNext: { [weak self] in
+//                self?.showTimePickerModal()
+            })
+            .disposed(by: disposeBag)
     }
+
 }
 
 extension MyViewController: UITableViewDelegate {
@@ -95,14 +106,7 @@ extension MyViewController: UITableViewDelegate {
         case 0:
             return 80
         case 1:
-            switch indexPath.row {
-            case 0:
-                return 46
-            case 1:
-                return 77
-            default:
-                return 0
-            }
+            return 140
         case 2:
             return 38
         default:

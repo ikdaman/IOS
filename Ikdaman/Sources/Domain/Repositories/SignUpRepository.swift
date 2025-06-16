@@ -8,5 +8,5 @@
 import RxSwift
 
 protocol SignUpRepository {
-    func login() -> Observable<Profile>
+    func login(type: LoginType) -> Observable<Profile>
 }
