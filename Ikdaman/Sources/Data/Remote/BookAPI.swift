@@ -68,7 +68,8 @@ extension BookAPI: TargetType {
         case .reissueToken:
             "/auth/reissue"
         case .login:
-            "/auth/login/idToken"
+            "/auth/login"
+//            "/auth/login/idToken"
         case .logout:
             "/auth/logout"
         case .modifyProfile:
@@ -127,7 +128,7 @@ extension BookAPI: TargetType {
             return .get
         }
     }
-
+    
     var task: Task {
         var param: [String: Any] = [:]
         switch self {
@@ -142,13 +143,13 @@ extension BookAPI: TargetType {
         default:
             return .requestPlain
         }
-        return .requestParameters(parameters: param, encoding: URLEncoding.default)
+        return .requestParameters(parameters: param, encoding: JSONEncoding.default)
         
     }
 
     var headers: [String: String]? {
         var defaultHeaders = ["Content-Type": "application/json"]
-        let accessToken = "Bearer" + (KeychainService.shared.load(forKey: .accessToken) ?? "")
+        let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
         
         switch self {
         case .reissueToken:
@@ -156,7 +157,8 @@ extension BookAPI: TargetType {
             defaultHeaders["Authorization"] = accessToken
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
-            defaultHeaders["social-id-token"] = AuthService.shared.loginType.value?.token
+            defaultHeaders["social-token"] = AuthService.shared.loginType.value?.token
+//            defaultHeaders["social-token"] = AuthService.shared.loginType.value?.token
         case .logout, .getProfile:
             defaultHeaders["Authorization"] = accessToken
         default:
