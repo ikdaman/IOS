@@ -6,7 +6,7 @@
 //
 
 struct Notices: Codable {
-    let notices: [Notice]
+    var notices: [Notice]
     let nowPage: Int
     let totalPage: Int
 }
@@ -14,5 +14,6 @@ struct Notices: Codable {
 struct Notice: Codable {
     let noticeId: Int
     let title: String
-//    let content: String?
+    let content: String
+    var isExpanded: Bool = false
 }

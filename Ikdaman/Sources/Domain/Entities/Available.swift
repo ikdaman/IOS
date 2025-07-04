@@ -5,6 +5,6 @@
 //  Created by Soo on 6/9/25.
 //
 
-struct Available: Codable {
+struct Available: Decodable {
     let available: Bool
 }

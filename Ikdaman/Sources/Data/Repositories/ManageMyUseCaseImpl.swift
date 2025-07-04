@@ -17,20 +17,18 @@ final class ManageMyUseCaseImpl: ManageMyRepository {
             .asObservable()
     }
     
-    func updateUser(_ user: User) -> RxSwift.Completable {
+    func updateUser(_ user: User) -> RxSwift.Observable<User> {
         return networkProvider
-            .request(BookAPI.modifyProfile, type: Profile.self)
-            .asCompletable()
+            .request(BookAPI.modifyProfile(user: user), type: User.self)
+            .asObservable()
     }
 
     func logout() -> Single<Response> {
         return networkProvider.requestRaw(BookAPI.logout)
     }
 
-    func withdraw() -> Completable {
-        return networkProvider
-            .request(BookAPI.withDrawal, type: String.self)
-            .asCompletable()
+    func withdraw() -> Single<Response> {
+        return networkProvider.requestRaw(BookAPI.withDrawal)
     }
     
     func checkNicknameDuplication(nickname: String) -> RxSwift.Single<Bool> {

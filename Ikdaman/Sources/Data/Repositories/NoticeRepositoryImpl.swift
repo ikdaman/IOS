@@ -11,9 +11,10 @@ final class NoticeRepositoryImpl: NoticeRepository {
     private let networkProvider = NetworkProvider.shared
     
     func fetchNotices(page: Int) -> Observable<Notices> {
-        return networkProvider
-            .request(BookAPI.noticeList(page: page, limit: 10), type: Notices.self)
-            .asObservable()
+//        return networkProvider
+//            .request(BookAPI.noticeList(page: page, limit: 10), type: Notices.self)
+//            .asObservable()
+        return Observable.just(Notices(notices: [Notice(noticeId: 1, title: "개인정보 처리 방침 안내", content: "안녕하세요\n\n개인정보보호")], nowPage: 1, totalPage: 10))
     }
     
     func fetchNotice(id: Int) -> Observable<Notice> {

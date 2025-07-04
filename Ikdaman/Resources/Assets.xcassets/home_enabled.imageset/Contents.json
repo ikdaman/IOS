@@ -1,17 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "Book_selected.png",
+      "filename" : "home_enabled.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "Book_selected@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "Book_selected@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

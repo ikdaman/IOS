@@ -26,16 +26,20 @@ class ManageMyViewController: BaseViewController {
         $0.font = UIFont.boldSystemFont(ofSize: 14)
     }
     
-    private let nicknameTextField = UITextField().then {
+    private var nicknameTextField = UITextField().then {
         $0.backgroundColor = UIColor(white: 0.95, alpha: 1)
         $0.layer.cornerRadius = 8
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 15, height: $0.frame.height))
+        $0.leftView = paddingView
+        $0.leftViewMode = .always
     }
     
-    private let checkButton = UIButton().then {
+    private var checkButton = UIButton().then {
         $0.setTitle("중복 확인", for: .normal)
         $0.backgroundColor = .gray
         $0.layer.cornerRadius = 8
         $0.titleLabel?.font = UIFont.systemFont(ofSize: 14)
+        $0.isEnabled = false
     }
     
     private let birthdateTitleLabel = UILabel().then {
@@ -46,6 +50,9 @@ class ManageMyViewController: BaseViewController {
     private let birthdateTextField = UITextField().then {
         $0.backgroundColor = UIColor(white: 0.95, alpha: 1)
         $0.layer.cornerRadius = 8
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 15, height: $0.frame.height))
+        $0.leftView = paddingView
+        $0.leftViewMode = .always
     }
     
     private let genderTitleLabel = UILabel().then {
@@ -99,21 +106,17 @@ class ManageMyViewController: BaseViewController {
     init(viewModel: ManageMyViewModel) {
         self.viewModel = viewModel
         super.init()
+//        navigateToSignup()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.navigationBar.tintColor = .black
-        navigationController?.navigationBar.topItem?.title = ""
-    }
-    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setCustomBackButton()
         setupUI()
         setupLayout()
         bind()
@@ -216,11 +219,11 @@ class ManageMyViewController: BaseViewController {
     }
     
     private func bind() {
-        let genderSelected = Observable.merge(maleButton.rx.tap.map{ "남" }.asObservable(), femaleButton.rx.tap.map{ "여" }.asObservable())
+        let genderSelected = Observable.merge(maleButton.rx.tap.map{ "male" }.asObservable(), femaleButton.rx.tap.map{ "female" }.asObservable())
         
         genderSelected.subscribe(onNext :{ [weak self] gender in
-            self?.maleButton.isSelected = (gender == "남")
-            self?.femaleButton.isSelected = (gender == "여")
+            self?.maleButton.isSelected = (gender == "male")
+            self?.femaleButton.isSelected = (gender == "female")
         }).disposed(by: disposeBag)
         
         let input = ManageMyViewModelInput(
@@ -244,10 +247,9 @@ class ManageMyViewController: BaseViewController {
             .subscribe(onNext: { [weak self] user in
                 self?.nicknameTextField.placeholder = user.nickname
                 self?.birthdateTextField.placeholder = user.birthdate ?? ""
-
-                let genderKor = (user.gender == "male") ? "남" : "여"
-                self?.maleButton.isSelected = (genderKor == "남")
-                self?.femaleButton.isSelected = (genderKor == "여")
+            
+                self?.maleButton.isSelected = user.gender == "male"
+                self?.femaleButton.isSelected = user.gender == "female"
             })
             .disposed(by: disposeBag)
         
@@ -260,6 +262,10 @@ class ManageMyViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
 
+        output.saveCompleted
+            .emit(onNext: { [weak self] _ in
+                self?.navigationController?.popViewController(animated: true)
+            }).disposed(by: disposeBag)
         
         Observable.merge(output.logoutCompleted.asObservable(),
                          output.withdrawCompleted.asObservable())
@@ -267,6 +273,13 @@ class ManageMyViewController: BaseViewController {
                 self?.navigateToSignup()
             })
             .disposed(by: disposeBag)
+        
+        nicknameTextField.rx.text
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak self] text in
+                self?.checkButton.isEnabled = text?.count ?? 0 > 0 ? true : false
+                self?.checkButton.backgroundColor = self?.checkButton.isEnabled ?? false ? .black : .gray
+            }).disposed(by: disposeBag)
     }
     
     private func navigateToSignup() {

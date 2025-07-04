@@ -66,7 +66,6 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
             .bind(to: userRelay)
             .disposed(by: disposeBag)
 
-
         input.nicknameChanged
             .subscribe(onNext: { [weak self] nickname in
                 guard var user = self?.userRelay.value else { return }
@@ -108,11 +107,6 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
                 }
             })
             .disposed(by: disposeBag)
-
-        input.logoutTapped
-            .subscribe(onNext: { [weak self] _ in
-                
-            }).disposed(by: disposeBag)
         
         input.logoutTapped
             .flatMapLatest { [weak self] _ -> Observable<Event<Void>> in
@@ -143,18 +137,34 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
 
         input.withdrawTapped
             .flatMapLatest { [weak self] in
-                self?.manageMyUseCase.withdraw().asObservable().materialize() ?? .empty()
+                guard let self = self else {
+                    return Observable<Event<Void>>.empty()
+                }
+                
+                return self.manageMyUseCase.withdraw()
+                    .flatMap { response -> Single<Void> in
+                        if response.statusCode == 205 {
+                            return .just(())
+                        } else {
+                            return .error(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Logout failed with status: \(response.statusCode)"]))
+                        }
+                    }
+                    .asObservable()
+                    .materialize()
             }
             .subscribe(onNext: { [weak self] event in
                 switch event {
                 case .completed:
+                    AuthService.shared.logout()
                     self?.withdrawCompleteRelay.accept(())
                 case .error(let error):
                     self?.errorRelay.accept(error.localizedDescription)
-                default: break
+                default:
+                    break
                 }
             })
             .disposed(by: disposeBag)
+
         
         input.checkNicknameTapped
             .withLatestFrom(userRelay.compactMap { $0 })
@@ -166,8 +176,7 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
             .subscribe(onNext: { [weak self] event in
                 switch event {
                 case .next(let isDuplicated):
-                    // 중복이면 false, 중복이 아니면 true
-                    self?.nicknameCheckRelay.accept(isDuplicated == false)
+                    self?.nicknameCheckRelay.accept(isDuplicated)
                 case .error(let error):
                     self?.errorRelay.accept(error.localizedDescription)
                 default: break

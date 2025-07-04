@@ -9,8 +9,9 @@ import UIKit
 import RxSwift
 
 struct MainTabBarViewModelInput {
-    var bookcaseSelected: Observable<Void>
     var homeSelected: Observable<Void>
+    var searchSelected: Observable<Void>
+    var bookcaseSelected: Observable<Void>
     var mySelected: Observable<Void>
 }
 
@@ -45,18 +46,23 @@ final class DefaultMainTabBarViewModel: MainTabBarViewModel {
     
     // MARK: - Methods
     func transform(input: MainTabBarViewModelInput) -> MainTabBarViewModelOutput {
-        input.bookcaseSelected
+        input.homeSelected
             .map { _ in 0 }
             .bind(to: selectedScene)
             .disposed(by: disposeBag)
         
-        input.homeSelected
+        input.searchSelected
             .map { _ in 1 }
             .bind(to: selectedScene)
             .disposed(by: disposeBag)
         
-        input.mySelected
+        input.bookcaseSelected
             .map { _ in 2 }
+            .bind(to: selectedScene)
+            .disposed(by: disposeBag)
+        
+        input.mySelected
+            .map { _ in 3 }
             .bind(to: selectedScene)
             .disposed(by: disposeBag)
         

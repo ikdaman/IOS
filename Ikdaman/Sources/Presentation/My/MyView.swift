@@ -50,8 +50,6 @@ class MyView: UIView {
         $0.sectionHeaderTopPadding = 0
         $0.register(SettingsTableViewCell.self, forCellReuseIdentifier: SettingsTableViewCell.identifier)
         $0.register(AlarmSettingTableViewCell.self, forCellReuseIdentifier: AlarmSettingTableViewCell.identifier)
-//        $0.register(SwitchTableViewCell.self, forCellReuseIdentifier: SwitchTableViewCell.identifier)
-//        $0.register(TimeTableViewCell.self, forCellReuseIdentifier: TimeTableViewCell.identifier)
     }
     
     // MARK: - Lifecycle
@@ -80,16 +78,7 @@ class MyView: UIView {
     }
     
     private func bind() {
-//        tableView.rx.itemSelected
-//            .subscribe(onNext: { indexPath in
-//                switch indexPath.section {
-//                case 0:
-//                    
-//                default:
-//                    break
-//                }
-//            })
-//            .disposed(by: disposeBag)
+
     }
     
     @discardableResult

@@ -30,5 +30,6 @@ final class NoticeViewModel {
                 print("Load notices error: \(error)")
             })
             .disposed(by: disposeBag)
+//        notices = Notices(notices: [Notice(noticeId: 1, title: "공지사항1", content: "공지사항입니다.")], nowPage: 1, totalPage: 1)
     }
 }

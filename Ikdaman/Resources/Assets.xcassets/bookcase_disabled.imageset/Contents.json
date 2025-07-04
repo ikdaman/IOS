@@ -1,17 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "selected_Home.png",
+      "filename" : "bookcase_disabled.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "selected_Home@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "selected_Home@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

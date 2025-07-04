@@ -13,9 +13,15 @@ final class NoticeDetailViewController: UIViewController {
 
     private let viewModel: NoticeDetailViewModel
 
-    private let titleLabel = UILabel()
-    private let dateLabel = UILabel()
-    private let contentLabel = UILabel()
+    private let titleLabel = UILabel().then {
+        $0.textColor = .black
+    }
+    private let dateLabel = UILabel().then {
+        $0.textColor = .black
+    }
+    private let contentLabel = UILabel().then {
+        $0.textColor = .black
+    }
     private let backButton = UIButton(type: .system)
     
     private let disposeBag = DisposeBag()
@@ -31,6 +37,7 @@ final class NoticeDetailViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         bind()
+        viewModel.loadNotices(id: 1)
     }
 
     private func setupUI() {
@@ -72,12 +79,12 @@ final class NoticeDetailViewController: UIViewController {
     }
 
     private func bind() {
-        viewModel.notice?
+        viewModel.notice
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] notice in
                 self?.titleLabel.text = notice.title
                 self?.dateLabel.text = "25.05.31"
-//                self?.contentLabel.text = notice.content
+                self?.contentLabel.text = notice.content
             })
             .disposed(by: disposeBag)
     }

@@ -10,8 +10,8 @@ import Moya
 
 protocol ManageMyRepository {
     func fetchCurrentUser() -> Observable<User>
-    func updateUser(_ user: User) -> Completable
+    func updateUser(_ user: User) -> Observable<User>
     func logout() -> Single<Response>
-    func withdraw() -> Completable
+    func withdraw() -> Single<Response>
     func checkNicknameDuplication(nickname: String) -> Single<Bool>
 }

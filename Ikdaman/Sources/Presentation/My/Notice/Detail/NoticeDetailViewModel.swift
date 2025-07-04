@@ -6,11 +6,13 @@
 //
 
 import RxSwift
+import RxCocoa
 
 final class NoticeDetailViewModel {
     private let fetchUseCase: FetchNoticesUseCase
     var id: Int
-    var notice: Observable<Notice>?
+    var notice = PublishRelay<Notice>()
+    var disposeBag = DisposeBag()
 
     init(fetchUseCase: FetchNoticesUseCase, id: Int) {
         self.fetchUseCase = fetchUseCase
@@ -18,6 +20,11 @@ final class NoticeDetailViewModel {
     }
 
     func loadNotices(id: Int) {
-        notice = fetchUseCase.getNotice(id: id)
+        fetchUseCase.getNotice(id: id)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notice in
+                self?.notice.accept(notice)
+            })
+            .disposed(by: disposeBag)
     }
 }

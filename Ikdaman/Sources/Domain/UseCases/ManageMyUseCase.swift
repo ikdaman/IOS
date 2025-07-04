@@ -10,9 +10,9 @@ import Moya
 
 protocol ManageMyUseCase {
     func getUserInfo() -> Observable<User>
-    func saveUser(user: User) -> Completable
+    func saveUser(user: User) -> Observable<User>
     func logout() -> Single<Response>
-    func withdraw() -> Completable
+    func withdraw() -> Single<Response>
     func checkNicknameDuplication(nickname: String) -> Single<Bool>
 }
 
@@ -27,7 +27,7 @@ final class DefaultManageMyUseCase: ManageMyUseCase {
         manageMyRepository.fetchCurrentUser()
     }
     
-    func saveUser(user: User) -> RxSwift.Completable {
+    func saveUser(user: User) -> RxSwift.Observable<User> {
         manageMyRepository.updateUser(user)
     }
     
@@ -35,7 +35,7 @@ final class DefaultManageMyUseCase: ManageMyUseCase {
         manageMyRepository.logout()
     }
     
-    func withdraw() -> RxSwift.Completable {
+    func withdraw() -> Single<Response> {
         manageMyRepository.withdraw()
     }
 

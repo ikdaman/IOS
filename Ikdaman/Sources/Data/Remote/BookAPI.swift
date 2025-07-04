@@ -19,7 +19,7 @@ enum BookAPI {
     /// 로그아웃
     case logout
     /// 내 정보 수정
-    case modifyProfile
+    case modifyProfile(user: User)
     /// 내 정보 조회
     case getProfile
     /// 닉네임 중복 확인
@@ -76,7 +76,7 @@ extension BookAPI: TargetType {
             "/members/me"
         case .getProfile:
             "/members/me"
-        case .checkNickname(_):
+        case .checkNickname:
             "/members/check"
         case .withDrawal:
             "/members/me"
@@ -106,8 +106,8 @@ extension BookAPI: TargetType {
             "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
         case .firstImpression(let bookId):
             "/mybooks/\(bookId)/impression"
-        case .noticeList(_, _):
-            "/notices"
+        case .noticeList(let page, let limit):
+            "/notices/page=\(page)/limit=\(limit)"
         case .noticeDetail(let noticeId):
             "/notices/\(noticeId)"
         case .addNotice:
@@ -136,10 +136,13 @@ extension BookAPI: TargetType {
             param = ["provider": type.provider, "providerId": type.providerId]
         case .checkNickname(let nickname):
             param = ["nickname": nickname]
+            return .requestParameters(parameters: param, encoding: URLEncoding.default)
+        case .modifyProfile(let user):
+            param = ["nickname": user.nickname, "birthdate": user.birthdate, "gender": user.gender]
         case .bookList(let status, let keyword, let page, let limit):
             param = ["status": status, "keyword": keyword, "page": page, "limit": limit]
-        case .noticeList(let page, let limit):
-            param = ["page": page, "limit": limit]
+//        case .noticeList(let page, let limit):
+//            param = ["page": page, "limit": limit]
         default:
             return .requestPlain
         }
@@ -150,6 +153,7 @@ extension BookAPI: TargetType {
     var headers: [String: String]? {
         var defaultHeaders = ["Content-Type": "application/json"]
         let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
+        let socialToken = AuthService.shared.loginType.value?.token
         
         switch self {
         case .reissueToken:
@@ -157,9 +161,8 @@ extension BookAPI: TargetType {
             defaultHeaders["Authorization"] = accessToken
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
-            defaultHeaders["social-token"] = AuthService.shared.loginType.value?.token
-//            defaultHeaders["social-token"] = AuthService.shared.loginType.value?.token
-        case .logout, .getProfile:
+            defaultHeaders["social-token"] = socialToken
+        case .logout, .getProfile, .withDrawal, .modifyProfile:
             defaultHeaders["Authorization"] = accessToken
         default:
             break

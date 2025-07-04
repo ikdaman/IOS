@@ -8,35 +8,90 @@
 import UIKit
 import SnapKit
 
-final class NoticeCell: UITableViewCell {
+class NoticeCell: UITableViewCell {
     static let id = "NoticeCell"
-
-    private let numberLabel = UILabel()
-    private let titleLabel = UILabel()
-    private let dateLabel = UILabel()
-
+    
+    private let dateLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 12, weight: .regular)
+    }
+    private let titleLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 15, weight: .regular)
+    }
+    private let arrowImageView = UIImageView(image: UIImage(systemName: "chevron.down")).then {
+        $0.tintColor = .black
+    }
+    private let expandView = UIView().then {
+        $0.backgroundColor = #colorLiteral(red: 0.9725490212, green: 0.9725490212, blue: 0.9725490212, alpha: 1)
+    }
+    private let detailLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 13, weight: .regular)
+    }
+    
+    var isExpanded: Bool = false {
+        didSet {
+            detailLabel.isHidden = !isExpanded
+            if detailLabel.isHidden {
+                expandView.snp.makeConstraints {
+                    $0.height.equalTo(0)
+                }
+            }
+            arrowImageView.transform = isExpanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+        }
+    }
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-
-        numberLabel.font = .systemFont(ofSize: 14)
-        titleLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        dateLabel.font = .systemFont(ofSize: 14)
-        dateLabel.textColor = .gray
-
-        let hStack = UIStackView(arrangedSubviews: [numberLabel, titleLabel, dateLabel])
-        hStack.axis = .horizontal
-        hStack.distribution = .fillProportionally
-        hStack.spacing = 8
-
-        contentView.addSubview(hStack)
-        hStack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        selectionStyle = .none
+        setupUI()
+    }
+    
+    private func setupUI() {
+        [dateLabel, titleLabel, arrowImageView, expandView].forEach {
+            contentView.addSubview($0)
+        }
+        
+        dateLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(15)
+            $0.leading.equalToSuperview().offset(25)
+        }
+        
+        arrowImageView.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(25)
+            $0.top.equalToSuperview().offset(21.5)
+            $0.width.height.equalTo(24)
+        }
+        
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(dateLabel.snp.bottom).offset(5)
+            $0.leading.equalTo(dateLabel)
+            $0.trailing.equalTo(arrowImageView.snp.leading).offset(-8)
+        }
+        
+        expandView.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(15)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+        
+        expandView.addSubview(detailLabel)
+        
+        detailLabel.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview().inset(15)
+            $0.leading.trailing.equalToSuperview().inset(25)
+        }
+        
+        detailLabel.numberOfLines = 0
+        detailLabel.font = .systemFont(ofSize: 14)
+        detailLabel.textColor = .darkGray
     }
 
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(index: Int, notice: Notice) {
-        numberLabel.text = "\(notice.noticeId)"
+    func configure(with notice: Notice) {
+        dateLabel.text = Date().toString()
         titleLabel.text = notice.title
-//        dateLabel.text = ""
+        detailLabel.text = notice.content
+        isExpanded = notice.isExpanded
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError()
     }
 }

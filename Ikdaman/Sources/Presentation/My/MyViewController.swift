@@ -19,7 +19,7 @@ class MyViewController: BaseViewController {
     
     private lazy var subView = MyView().then {
         $0.tableView.rx.setDelegate(self).disposed(by: disposeBag)
-        $0.greetingLabel.text = (UserDefaults.standard.nickName ?? "") + "님\n안녕하세요!"
+        $0.greetingLabel.text = (UserDefaults.standard.nickName ?? "") + "님,\n안녕하세요!"
     }
     
     // MARK: - Init
@@ -31,7 +31,6 @@ class MyViewController: BaseViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -81,8 +80,6 @@ extension MyViewController: UITableViewDelegate {
         switch section {
         case 0:
             return 7
-        case 1:
-            return 17
         case 2:
             return 21
         default:
@@ -92,8 +89,7 @@ extension MyViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         let footerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 10))
-//        footerView.backgroundColor = #colorLiteral(red: 0.9764705882, green: 0.9764705882, blue: 0.9764705882, alpha: 1)
-        footerView.backgroundColor = .systemGray
+        footerView.backgroundColor = #colorLiteral(red: 0.9764705882, green: 0.9764705882, blue: 0.9764705882, alpha: 1)
         return section != 2 ? footerView : nil
     }
     
@@ -118,12 +114,10 @@ extension MyViewController: UITableViewDelegate {
         if indexPath.section == 0 {
             let viewModel: ManageMyViewModel = DefaultManageMyViewModel()
             let vc = ManageMyViewController(viewModel: viewModel)
-            vc.navigationItem.backButtonTitle = ""
             self.navigationController?.pushViewController(vc, animated: true)
         } else if indexPath.section == 2, indexPath.row == 0 {
             let viewModel: NoticeViewModel = NoticeViewModel()
             let vc = NoticeViewController(viewModel: viewModel)
-            vc.navigationItem.backButtonTitle = ""
             self.navigationController?.pushViewController(vc, animated: true)
         }
     }
