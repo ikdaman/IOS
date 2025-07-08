@@ -226,13 +226,36 @@ class ManageMyViewController: BaseViewController {
             self?.femaleButton.isSelected = (gender == "female")
         }).disposed(by: disposeBag)
         
+        nicknameTextField.rx.text
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak self] text in
+                self?.checkButton.isEnabled = text?.count ?? 0 > 0 ? true : false
+                self?.checkButton.backgroundColor = self?.checkButton.isEnabled ?? false ? .black : .gray
+            }).disposed(by: disposeBag)
+        
+        birthdateTextField.rx.text.orEmpty
+            .map { input -> String in
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyyMMdd"
+                formatter.locale = Locale(identifier: "ko_KR")
+                
+                guard input.count == 8, let date = formatter.date(from: input) else {
+                    return input // 8자리가 아닐 경우 그냥 원래 문자열 반환
+                }
+
+                formatter.dateFormat = "yyyy-MM-dd"
+                return formatter.string(from: date)
+            }
+            .bind(to: birthdateTextField.rx.text)
+            .disposed(by: disposeBag)
+        
         let input = ManageMyViewModelInput(
             viewWillAppear: self.rx.methodInvoked(#selector(UIViewController.viewWillAppear(_:)))
                     .map { _ in }
                     .asObservable(),
             nicknameChanged: nicknameTextField.rx.text.orEmpty.asObservable(),
             birthdateChanged: birthdateTextField.rx.text.orEmpty.asObservable(),
-            genderSelected: genderSelected, 
+            genderSelected: genderSelected,
             saveTapped: saveButton.rx.tap.asObservable(),
             logoutTapped: logoutButton.rx.tap.asObservable(),
             withdrawTapped: withdrawButton.rx.tap.asObservable(),
@@ -273,19 +296,28 @@ class ManageMyViewController: BaseViewController {
                 self?.navigateToSignup()
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func formatDate(from string: String) -> String? {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyyMMdd"
+        inputFormatter.locale = Locale(identifier: "ko_KR")
         
-        nicknameTextField.rx.text
-            .distinctUntilChanged()
-            .subscribe(onNext: { [weak self] text in
-                self?.checkButton.isEnabled = text?.count ?? 0 > 0 ? true : false
-                self?.checkButton.backgroundColor = self?.checkButton.isEnabled ?? false ? .black : .gray
-            }).disposed(by: disposeBag)
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "yyyy-MM-dd"
+        outputFormatter.locale = Locale(identifier: "ko_KR")
+        
+        if let date = inputFormatter.date(from: string) {
+            return outputFormatter.string(from: date)
+        } else {
+            return nil // 유효하지 않은 입력일 경우
+        }
     }
     
     private func navigateToSignup() {
         let signupViewModel = DefaultSignUpViewModel()
         let signupVC = SignUpViewController(viewModel: signupViewModel)
-        let nav = UINavigationController(rootViewController: signupVC)
+        let nav = SignUpViewController(viewModel: DefaultSignUpViewModel())
 
         guard let sceneDelegate = UIApplication.shared.connectedScenes
                 .first?.delegate as? SceneDelegate else { return }

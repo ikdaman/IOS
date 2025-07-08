@@ -1,5 +1,5 @@
 //
-//  ManageMyUseCaseImpl.swift
+//  ManageMyRepositoryImpl.swift
 //  Ikdaman
 //
 //  Created by Soo on 5/19/25.
@@ -8,7 +8,7 @@
 import RxSwift
 import Moya
 
-final class ManageMyUseCaseImpl: ManageMyRepository {
+final class ManageMyRepositoryImpl: ManageMyRepository {
     private let networkProvider = NetworkProvider.shared
 
     func fetchCurrentUser() -> RxSwift.Observable<User> {

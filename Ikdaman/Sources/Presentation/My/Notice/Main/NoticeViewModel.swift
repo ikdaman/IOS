@@ -9,19 +9,19 @@ import UIKit
 import RxSwift
 
 final class NoticeViewModel {
-    let fetchUseCase: FetchNoticesUseCase
+    let fetchUseCase: NoticesUseCase
     var disposeBag = DisposeBag()
     var notices: Notices?
     let reloadTrigger = PublishSubject<Void>()
     
-    init(fetchUseCase: FetchNoticesUseCase = DefaultFetchNoticesUseCase(
+    init(fetchUseCase: NoticesUseCase = DefaultNoticesUseCase(
         repository: NoticeRepositoryImpl()
     )) {
         self.fetchUseCase = fetchUseCase
     }
     
-    func loadNotices(page: Int) {
-        fetchUseCase.getNotices(page: page)
+    func loadNotices(page: Int?, limit: Int?) {
+        fetchUseCase.getNotices(page: page, limit: limit)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] notices in
                 self?.notices = notices
@@ -30,6 +30,5 @@ final class NoticeViewModel {
                 print("Load notices error: \(error)")
             })
             .disposed(by: disposeBag)
-//        notices = Notices(notices: [Notice(noticeId: 1, title: "공지사항1", content: "공지사항입니다.")], nowPage: 1, totalPage: 1)
     }
 }

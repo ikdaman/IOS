@@ -101,7 +101,7 @@ final class DefaultSignUpViewModel: SignUpViewModel {
             guard let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
                   let window = sceneDelegate.window else { return }
 
-            window.rootViewController = UINavigationController(rootViewController: MainTabBarViewController(viewModel: DefaultMainTabBarViewModel()))
+            window.rootViewController = MainTabBarViewController(viewModel: DefaultMainTabBarViewModel())
 
             // 전환 애니메이션 추가 (optional)
             UIView.transition(with: window,

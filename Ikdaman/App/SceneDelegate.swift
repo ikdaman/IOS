@@ -22,7 +22,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         window = UIWindow(windowScene: windowScene)
         if let token = KeychainService.shared.load(forKey: .accessToken) {
-            window?.rootViewController = UINavigationController(rootViewController: MainTabBarViewController(viewModel: DefaultMainTabBarViewModel()))
+            window?.rootViewController = MainTabBarViewController(viewModel: DefaultMainTabBarViewModel())
         } else {
             window?.rootViewController = SignUpViewController(viewModel: DefaultSignUpViewModel())
         }

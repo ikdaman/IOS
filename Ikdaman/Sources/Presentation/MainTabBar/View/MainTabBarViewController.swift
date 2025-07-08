@@ -168,7 +168,7 @@ extension MainTabBarViewController {
         
         tabbarView.snp.makeConstraints {
             $0.bottom.equalToSuperview()
-            $0.height.equalTo(56 + safeAreaBottomInterval())
+            $0.height.equalTo(MainTabBarSize.height)
             $0.width.equalToSuperview()
         }
         
@@ -199,8 +199,8 @@ extension MainTabBarViewController {
         // ViewControllers 초기화
         let homeVC = HomeViewController(viewModel: DefaultHomeViewModel())
         let searchVC = UIViewController().then { $0.view.backgroundColor = .green }
-        let bookcaseVC = UIViewController().then { $0.view.backgroundColor = .red }
-        let myVC =  MyViewController(viewModel: DefaultMyViewModel())
+        let bookcaseVC = BookCaseViewController(viewModel: DefaultBookCaseViewModel())
+        let myVC = UINavigationController(rootViewController: MyViewController(viewModel: DefaultMyViewModel())) 
         viewControllers = [homeVC, searchVC, bookcaseVC, myVC]
     }
 }
@@ -216,15 +216,19 @@ extension MainTabBarViewController {
         }
         return width
     }
-    
-    private func safeAreaBottomInterval() -> CGFloat {
-        var interval = 0.0
-        if let window = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first?.windows.first(where: { $0.isKeyWindow }) {
-            
-            interval = window.safeAreaInsets.bottom
-        }
-        return interval
+}
+
+struct MainTabBarSize {
+    static var height: CGFloat {
+        return 56 + (UIApplication.shared.visibleWindow?.safeAreaInsets.bottom ?? 0)
+    }
+}
+
+extension UIApplication {
+    var visibleWindow: UIWindow? {
+        return connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: { !$0.isHidden && $0.windowLevel == .normal })
     }
 }

@@ -58,6 +58,7 @@ final class HomeViewController: BaseViewController {
         // 그라데이션 배경 변경
         output.selectedColorType
             .subscribe(onNext: { [weak self] colorType in
+                UserDefaults.standard.set(colorType.rawValue, forKey: "backgroundColor")
                 self?.homeView.updateBackgroundGradient(colors: colorType.gradientColors)
             })
             .disposed(by: disposeBag)

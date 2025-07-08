@@ -1,5 +1,5 @@
 //
-//  FetchNoticeUseCase.swift
+//  NoticesUseCase.swift
 //  Ikdaman
 //
 //  Created by Soo on 6/9/25.
@@ -7,20 +7,20 @@
 
 import RxSwift
 
-protocol FetchNoticesUseCase {
-    func getNotices(page: Int) -> Observable<Notices>
+protocol NoticesUseCase {
+    func getNotices(page: Int?, limit: Int?) -> Observable<Notices>
     func getNotice(id: Int) -> Observable<Notice>
 }
 
-final class DefaultFetchNoticesUseCase: FetchNoticesUseCase {
+final class DefaultNoticesUseCase: NoticesUseCase {
     private let repository: NoticeRepository
 
     init(repository: NoticeRepository) {
         self.repository = repository
     }
 
-    func getNotices(page: Int) -> Observable<Notices> {
-        return repository.fetchNotices(page: page)
+    func getNotices(page: Int?, limit: Int?) -> Observable<Notices> {
+        return repository.fetchNotices(page: page, limit: limit)
     }
 
     func getNotice(id: Int) -> Observable<Notice> {

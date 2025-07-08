@@ -19,13 +19,18 @@ class MyViewController: BaseViewController {
     
     private lazy var subView = MyView().then {
         $0.tableView.rx.setDelegate(self).disposed(by: disposeBag)
-        $0.greetingLabel.text = (UserDefaults.standard.nickName ?? "") + "님,\n안녕하세요!"
+        $0.tableView.isScrollEnabled = false
     }
     
     // MARK: - Init
     init(viewModel: MyViewModel) {
         self.viewModel = viewModel
         super.init()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        subView.greetingLabel.text = (UserDefaults.standard.nickName ?? "") + "님,\n안녕하세요!"
     }
     
     required init?(coder: NSCoder) {

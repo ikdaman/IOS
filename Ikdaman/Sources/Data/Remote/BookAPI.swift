@@ -29,7 +29,7 @@ enum BookAPI {
     /// 나의 책 기록 조회
     case bookHistory(bookId: Int, page: Int, limit: Int)
     /// 나의 책 목록 조회
-    case bookList(status: String, keyword: String, page: Int, limit: Int)
+    case bookList(status: String?, keyword: String?, page: Int?, limit: Int?)
     /// 나의 책 삭제
     case deleteBook(bookId: Int)
     /// 나의 책 정보 조회
@@ -53,7 +53,7 @@ enum BookAPI {
     /// 첫 인상 추가
     case firstImpression(bookId: Int)
     /// 공지사항 목록 조회
-    case noticeList(page: Int, limit: Int)
+    case noticeList(page: Int?, limit: Int?)
     /// 공지사항 상세 조회
     case noticeDetail(noticeId: Int)
     /// 공지사항 생성
@@ -82,8 +82,8 @@ extension BookAPI: TargetType {
             "/members/me"
         case .bookHistory(let bookId, _, _):
             "/mybooks/\(bookId)"
-        case .bookList:
-            "/mybooks?status=in-progress&keyword=책이름이나저자이름&page=1&limit=9"
+        case .bookList(_, _, _, _):
+            "/mybooks"
         case .deleteBook(let bookId):
             "/mybooks/\(bookId)"
         case .book(let bookId):
@@ -106,8 +106,8 @@ extension BookAPI: TargetType {
             "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
         case .firstImpression(let bookId):
             "/mybooks/\(bookId)/impression"
-        case .noticeList(let page, let limit):
-            "/notices/page=\(page)/limit=\(limit)"
+        case .noticeList(_, _):
+            "/notices"
         case .noticeDetail(let noticeId):
             "/notices/\(noticeId)"
         case .addNotice:
@@ -141,8 +141,12 @@ extension BookAPI: TargetType {
             param = ["nickname": user.nickname, "birthdate": user.birthdate, "gender": user.gender]
         case .bookList(let status, let keyword, let page, let limit):
             param = ["status": status, "keyword": keyword, "page": page, "limit": limit]
-//        case .noticeList(let page, let limit):
-//            param = ["page": page, "limit": limit]
+            return .requestParameters(parameters: param, encoding: URLEncoding.default)
+        case .noticeList(let page, let limit):
+            if let page = page, let limit = limit {
+                param = ["page": page, "limit": limit]
+            }
+            return .requestParameters(parameters: param, encoding: URLEncoding.default)
         default:
             return .requestPlain
         }

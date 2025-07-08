@@ -45,7 +45,7 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
     private let nicknameCheckRelay = PublishRelay<Bool>()
     
     // MARK: - Init
-    init(manageMyUseCase: ManageMyUseCase = DefaultManageMyUseCase(manageMyRepository: ManageMyUseCaseImpl())) {
+    init(manageMyUseCase: ManageMyUseCase = DefaultManageMyUseCase(manageMyRepository: ManageMyRepositoryImpl())) {
         self.manageMyUseCase = manageMyUseCase
     }
 
@@ -99,8 +99,11 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
             }
             .subscribe(onNext: { [weak self] event in
                 switch event {
-                case .completed:
-                    self?.saveCompleteRelay.accept(())
+                case .next:
+                    if let nickname = self?.userRelay.value?.nickname {
+                        UserDefaults.standard.nickName = nickname
+                        self?.saveCompleteRelay.accept(())
+                    }
                 case .error(let error):
                     self?.errorRelay.accept(error.localizedDescription)
                 default: break

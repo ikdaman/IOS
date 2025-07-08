@@ -101,15 +101,6 @@ class MyView: UIView {
                         .bind(to: self?.timeTapRelay ?? .init())
                         .disposed(by: cell.disposeBag)
                     return cell
-                    //                    case .toggle(let title, let isOn):
-                    //                        let cell = tableView.dequeueReusableCell(withIdentifier: SwitchTableViewCell.identifier, for: indexPath) as! SwitchTableViewCell
-                    //                        cell.configure(with: title, isOn: isOn)
-                    //                        return cell
-                    //
-                    //                    case .time(let title, let time):
-                    //                        let cell = tableView.dequeueReusableCell(withIdentifier: TimeTableViewCell.identifier, for: indexPath) as! TimeTableViewCell
-                    //                        cell.configure(with: title, time: time)
-                    //                        return cell
                 }
             }
         )

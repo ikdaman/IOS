@@ -2,20 +2,23 @@
 //  Book.swift
 //  Ikdaman
 //
-//  Created by 김창규 on 2/11/25.
+//  Created by Soo on 7/8/25.
 //
 
-import Foundation
-
-struct Book: Equatable, Decodable {
-    let id: Int
-    let title: String
-    let author: String
+struct MyBook: Codable {
+    let books: [Book]
     let totalPage: Int
-    let currentPage: Int
+    let nowPage: Int
 }
 
-struct BookList: Equatable, Decodable {
-    let pages: Int
-    let books: [Book]
+struct Book: Codable {
+    let mybookId: Int
+    let title: String
+    let author: String
+    let coverImage: String
+}
+
+// TODO: 삭제 필요
+struct BookList: Codable {
+    
 }

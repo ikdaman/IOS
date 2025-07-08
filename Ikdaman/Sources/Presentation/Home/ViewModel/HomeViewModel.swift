@@ -69,11 +69,11 @@ final class DefaultHomeViewModel: HomeViewModel {
     }
     
     private func fetch(userId: Int) {
-        fetchBooksUseCase.execute(requestValue: .init(userId: userId))
-            .compactMap { $0 }
-            .subscribe(onNext: { [weak self] bookList in
-                self?.books.onNext(bookList.books)
-            })
-            .disposed(by: disposeBag)
+//        fetchBooksUseCase.execute(requestValue: .init(userId: userId))
+//            .compactMap { $0 }
+//            .subscribe(onNext: { [weak self] bookList in
+//                self?.books.onNext(bookList.books)
+//            })
+//            .disposed(by: disposeBag)
     }
 }

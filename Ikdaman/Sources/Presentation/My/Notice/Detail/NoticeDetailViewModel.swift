@@ -9,12 +9,12 @@ import RxSwift
 import RxCocoa
 
 final class NoticeDetailViewModel {
-    private let fetchUseCase: FetchNoticesUseCase
+    private let fetchUseCase: NoticesUseCase
     var id: Int
     var notice = PublishRelay<Notice>()
     var disposeBag = DisposeBag()
 
-    init(fetchUseCase: FetchNoticesUseCase, id: Int) {
+    init(fetchUseCase: NoticesUseCase, id: Int) {
         self.fetchUseCase = fetchUseCase
         self.id = id
     }

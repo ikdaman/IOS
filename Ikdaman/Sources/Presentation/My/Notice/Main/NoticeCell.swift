@@ -29,11 +29,20 @@ class NoticeCell: UITableViewCell {
     
     var isExpanded: Bool = false {
         didSet {
-            detailLabel.isHidden = !isExpanded
-            if detailLabel.isHidden {
+            expandView.isHidden = !isExpanded
+            if expandView.isHidden {
                 expandView.snp.makeConstraints {
                     $0.height.equalTo(0)
                 }
+            } else {
+                detailLabel.snp.makeConstraints {
+                    $0.top.bottom.equalToSuperview().inset(15)
+                    $0.leading.trailing.equalToSuperview().inset(25)
+                }
+                
+                detailLabel.numberOfLines = 0
+                detailLabel.font = .systemFont(ofSize: 14)
+                detailLabel.textColor = .darkGray
             }
             arrowImageView.transform = isExpanded ? CGAffineTransform(rotationAngle: .pi) : .identity
         }
@@ -73,15 +82,6 @@ class NoticeCell: UITableViewCell {
         }
         
         expandView.addSubview(detailLabel)
-        
-        detailLabel.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview().inset(15)
-            $0.leading.trailing.equalToSuperview().inset(25)
-        }
-        
-        detailLabel.numberOfLines = 0
-        detailLabel.font = .systemFont(ofSize: 14)
-        detailLabel.textColor = .darkGray
     }
 
     func configure(with notice: Notice) {

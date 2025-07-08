@@ -35,7 +35,7 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
         setCustomBackButton()
         setupUI()
         bindViewModel()
-        viewModel.loadNotices(page: 1)
+        viewModel.loadNotices(page: nil, limit: nil)
     }
     
     private func setupUI() {
@@ -67,7 +67,14 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
         paginationView.spacing = 15
         paginationView.alignment = .center
         paginationView.distribution = .equalSpacing
-        ["<", "1", "2", "3", ">"].forEach { title in
+        var pagination = ["<", "1", ">"]
+        if let totalPage = viewModel.notices?.totalPage, totalPage > 1 {
+            for page in 2...totalPage {
+                pagination.insert("\(page)", at: page)
+            }
+        }
+        
+        pagination.forEach { title in
             let button = UIButton()
             button.setTitle(title, for: .normal)
             button.setTitleColor(.black, for: .normal)
@@ -77,6 +84,11 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
                 button.snp.makeConstraints {
                     $0.width.equalTo(7)
                 }
+                
+                button.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        self?.viewModel.loadNotices(page: Int(title), limit: 10)
+                    }).disposed(by: disposeBag)
             }
             paginationView.addArrangedSubview(button)
         }
