@@ -199,8 +199,9 @@ extension MainTabBarViewController {
         // ViewControllers 초기화
         let homeVC = HomeViewController(viewModel: DefaultHomeViewModel())
         let searchVC = UIViewController().then { $0.view.backgroundColor = .green }
-        let bookcaseVC = BookCaseViewController(viewModel: DefaultBookCaseViewModel())
-        let myVC = UINavigationController(rootViewController: MyViewController(viewModel: DefaultMyViewModel())) 
+//        let bookcaseVC = BookCaseViewController(viewModel: DefaultBookCaseViewModel())
+        let bookcaseVC = BookDetailViewController()
+        let myVC = UINavigationController(rootViewController: MyViewController(viewModel: DefaultMyViewModel()))
         viewControllers = [homeVC, searchVC, bookcaseVC, myVC]
     }
 }

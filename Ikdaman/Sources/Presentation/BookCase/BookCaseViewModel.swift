@@ -15,7 +15,7 @@ protocol BookCaseViewModel {
 
 struct BookCaseViewModelInput {
     let fetchBooks: Observable<Void>
-    let searchTapped: Observable<String>
+//    let searchTapped: Observable<String>
     let filterTapped: Observable<FilterType>
 }
 
