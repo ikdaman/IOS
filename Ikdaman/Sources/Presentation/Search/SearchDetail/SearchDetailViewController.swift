@@ -45,6 +45,7 @@ class SearchDetailViewController: UIViewController {
         setupLayout()
         attribute()
         bind()
+        bindingViewModel()
     }
     
     override func viewWillAppear(_ animated: Bool) {

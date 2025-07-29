@@ -39,6 +39,7 @@ extension AladinBook {
 
 enum AladinAPI {
     case searchBooks(query: String, page: Int, maxResults: Int)
+    case getBook(isbn: String)
 }
 
 extension AladinAPI: TargetType {
@@ -48,8 +49,8 @@ extension AladinAPI: TargetType {
     
     var path: String {
         switch self {
-        case .searchBooks:
-            return "ItemSearch.aspx"
+        case .searchBooks: return "ItemSearch.aspx"
+        case .getBook: return "ItemLookUp.aspx"
         }
     }
     
@@ -69,6 +70,16 @@ extension AladinAPI: TargetType {
                 "SearchTarget": "Book",
                 "output": "js",
                 "Version": "20131101"
+            ]
+            return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
+        case .getBook(let isbn):
+            let parameters: [String: Any] = [
+                "ttbkey": "ttbgju060611831003",
+                "itemIdType": "ISBN",
+                "ItemId": isbn,
+                "output": "js",
+                "Version": "20131101",
+                "OptResult": "ebookList,usedList,reviewList"
             ]
             return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
         }

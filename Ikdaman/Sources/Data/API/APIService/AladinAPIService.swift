@@ -32,4 +32,22 @@ class AladinAPIService {
             }
         }
     }
+    
+    func searchBook(isbn: String, completion: @escaping (Result<BookSearchResponse, Error>) -> Void) {
+        provider.request(.getBook(isbn: isbn)) { result in
+            switch result {
+            case .success(let response):
+                do {
+                    let searchResponse = try JSONDecoder().decode(BookSearchResponse.self, from: response.data)
+                    completion(.success(searchResponse))
+                } catch let error {
+                    print("[searchBook] 디코딩 오류: \(error)")
+                    completion(.failure(error))
+                }
+            case .failure(let error):
+                print("[searchBook] 요청 오류: \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
 }

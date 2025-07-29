@@ -16,13 +16,13 @@ class SearchView: UIView {
     // MARK: - Properties
     private lazy var searchContainerView = UIView().then {
         $0.backgroundColor = .white
-        $0.layer.cornerRadius = 30
+        $0.layer.cornerRadius = 5
         $0.clipsToBounds = true
         
         $0.addSubviews([searchTextField, searchButton])
         
         searchTextField.snp.makeConstraints {
-            $0.left.equalToSuperview().inset(22)
+            $0.left.equalToSuperview().inset(15)
             $0.right.equalTo(searchButton.snp.left).offset(-10)
             $0.verticalEdges.equalToSuperview()
         }
@@ -42,8 +42,6 @@ class SearchView: UIView {
     
     private let searchButton = UIButton().then {
         $0.setImage(UIImage(named: "ic_magnifier"), for: .normal)
-        $0.backgroundColor = UIColor(hex: "36271D")
-        $0.layer.cornerRadius = 45 / 2
     }
     
     private lazy var noResultBookView = UIView().then {

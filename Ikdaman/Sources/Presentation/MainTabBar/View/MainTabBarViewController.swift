@@ -50,6 +50,12 @@ final class MainTabBarViewController: BaseViewController {
         $0.isSelected = true
     }
     
+    private let searchButton = UIButton().then {
+        $0.layer.cornerRadius = 25
+        $0.setImage(UIImage(named: "ic_search_deselected"), for: .normal)
+        $0.setImage(UIImage(named: "ic_search_selected"), for: .selected)
+    }
+    
     private let myButton = UIButton().then {
         $0.layer.cornerRadius = 25
         $0.setImage(UIImage(named: "User"), for: .normal)
@@ -95,6 +101,7 @@ final class MainTabBarViewController: BaseViewController {
         let input = MainTabBarViewModelInput(
             bookcaseSelected: bookcaseButton.rx.tap.asObservable(),
             homeSelected: homeButton.rx.tap.asObservable(),
+            searchSelected: searchButton.rx.tap.asObservable(),
             mySelected: myButton.rx.tap.asObservable()
         )
         
@@ -111,9 +118,9 @@ final class MainTabBarViewController: BaseViewController {
     // MARK: - Method
     // Private
     private func tabSelected(at index: Int) {
-        guard index < 3 else { return }
+        guard index < 4 else { return }
         
-        let buttons = [bookcaseButton, homeButton, myButton]
+        let buttons = [bookcaseButton, homeButton, searchButton, myButton]
 
         // 모든 버튼 초기화
         buttons.forEach { button in
@@ -177,6 +184,7 @@ extension MainTabBarViewController {
             buttonBackground,
             bookcaseButton,
             homeButton,
+            searchButton,
             myButton
         ])
     }
@@ -190,7 +198,7 @@ extension MainTabBarViewController {
             $0.bottom.equalToSuperview().inset(40)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(60)
-            $0.width.equalTo(176)
+            $0.width.equalTo(230)
         }
         
         bookcaseButton.snp.makeConstraints {
@@ -200,12 +208,19 @@ extension MainTabBarViewController {
         
         homeButton.snp.makeConstraints {
             $0.top.bottom.equalToSuperview().inset(5)
-            $0.centerX.equalToSuperview()
+            $0.left.equalTo(bookcaseButton.snp.right).offset(10)
+            $0.size.equalTo(50)
+        }
+        
+        searchButton.snp.makeConstraints {
+            $0.verticalEdges.equalToSuperview().inset(5)
+            $0.left.equalTo(homeButton.snp.right).offset(10)
             $0.size.equalTo(50)
         }
         
         myButton.snp.makeConstraints {
-            $0.top.bottom.right.equalToSuperview().inset(5)
+            $0.top.bottom.equalToSuperview().inset(5)
+            $0.right.equalToSuperview()
             $0.size.equalTo(50)
         }
         
@@ -217,7 +232,8 @@ extension MainTabBarViewController {
         // ViewControllers 초기화
         let bookcaseVC = UIViewController().then { $0.view.backgroundColor = .red }
         let homeVC = HomeViewController(viewModel: DefaultHomeViewModel())
+        let searchVC = SearchViewController()
         let myVC =  MyViewController(viewModel: DefaultMyViewModel())
-        viewControllers = [bookcaseVC, homeVC, myVC]
+        viewControllers = [bookcaseVC, homeVC, searchVC, myVC]
     }
 }
