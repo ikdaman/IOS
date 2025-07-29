@@ -1,49 +1,40 @@
 //
-//  SearchViewController.swift
+//  BarcodeScannerViewController.swift
 //  Ikdaman
 //
-//  Created by 이재혁 on 4/20/25.
+//  Created by 이재혁 on 5/25/25.
 //
 
 import UIKit
 import RxSwift
 import RxCocoa
 
-class SearchViewController: UIViewController {
+class BarcodeScannerViewController: UIViewController {
     // MARK: - Properties
     private let disposeBag = DisposeBag()
-    
-    private let subView = SearchView()
+    private let subView = BarcodeScannerView()
     
     // MARK: - ViewModelProtocol
-    typealias ViewModel = SearchViewModel
-    var viewModel = SearchViewModel()
+    typealias ViewModel = BarcodeScannerViewModel
+    private let viewModel = BarcodeScannerViewModel()
     
     /// viewDidLoad 트리거
     private var requestTrigger: PublishRelay<Void> = PublishRelay<Void>()
     /// 사용자 액션 트리거
-    private let actionTriggers = PublishRelay<SearchTriggerType>()
+    private let actionTriggers = PublishRelay<BarcodeScannerriggerType>()
     
     private func bindingViewModel() {
         let response = viewModel.transform(req: ViewModel.Input(viewDidLoad: requestTrigger.asObservable(),
                                                                 action: actionTriggers))
         
         subView
-            .setupDI(searchBookResults: response.searchBooks, searchQuery: response.searchQuery)
+            .setupDI(setupScanner: response.setupBarcodeScanner)
             .setupDI(action: actionTriggers)
         
         response.outputRequest
             .withUnretained(self)
             .subscribe(onNext: { `self`, output in
-                switch output {
-                case .detailBook(let book):
-                    let vc = SearchDetailViewController()
-                    vc.viewModel = SearchDetailViewModel(book: book)
-                    let navi = UINavigationController(rootViewController: vc)
-                    navi.isNavigationBarHidden = true
-                    navi.modalPresentationStyle = .fullScreen
-                    self.present(navi, animated: true)
-                }
+                
             })
             .disposed(by: disposeBag)
     }
@@ -52,10 +43,21 @@ class SearchViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupLayout()
+        attribute()
+        bind()
         bindingViewModel()
-        navigationItem.title = "책 제목으로 검색하기"
         
         requestTrigger.accept(())
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
     // MARK: - Methods
@@ -63,11 +65,20 @@ class SearchViewController: UIViewController {
         view.addSubview(subView)
         
         subView.snp.makeConstraints {
-            $0.directionalEdges.equalToSuperview()
+            $0.edges.equalToSuperview()
         }
     }
     
-    private func bind() {
+    private func attribute() {
         
+    }
+    
+    private func bind() {
+        subView.closeButton.rx.tap
+            .withUnretained(self)
+            .subscribe(onNext: { `self`, _ in
+                self.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
     }
 }

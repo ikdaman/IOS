@@ -16,7 +16,7 @@ final class HomeView: UIView {
     let topBarView = TopBarView()
     
     private let emptyLibraryView = EmptyLibraryView()
-    private let addButton = UIButton().then {
+    let addButton = UIButton().then {
         $0.backgroundColor = .black
         $0.layer.cornerRadius = 22.5
         $0.setImage(UIImage(systemName: "plus"), for: .normal)

@@ -87,7 +87,7 @@ class BookDetailView: UIView {
         $0.backgroundColor = .clear
     }
     
-    let bookInfoView = BookInfoView()
+    let bookInfoView = MyBookInfoView()
     
     let progressLabel = UILabel().then {
         $0.text = "📖\n7일째, 155p, 42%\n독서중인 책이에요."
@@ -305,7 +305,7 @@ class CustomTopBarView: UIView {
     }
 }
 
-class BookInfoView: UIView {
+class MyBookInfoView: UIView {
     var myBookInfo: MyBookInfo?
     
     let containerView = UIView().then {
