@@ -19,11 +19,14 @@ struct MyViewModelActions {
 struct MyViewModelInput {
     let viewDidLoad: Observable<Void>
 //    let fetchUserInfo: Observable<Int>
+    let alarmToggleChanged: Observable<Bool>
+    let alarmTimeTapped: Observable<Void>
 }
 
 struct MyViewModelOutput {
 //    var user: PublishSubject<[User]>
     var sections: Observable<[Section]>
+    var showTimePicker: Observable<Void>
 }
 
 protocol MyViewModel {
@@ -39,14 +42,29 @@ final class DefaultMyViewModel: MyViewModel {
     private var disposeBag = DisposeBag()
     
     private var sections = BehaviorRelay<[Section]>(value: [])
+    private let showTimePickerRelay = PublishRelay<Void>()
     
     func transform(input: MyViewModelInput) -> MyViewModelOutput {
-        input.viewDidLoad
-            .subscribe(onNext: setupTableView)
-            .disposed(by: disposeBag)
-        
-        return MyViewModelOutput(sections: sections.asObservable())
-    }
+            input.viewDidLoad
+                .subscribe(onNext: setupTableView)
+                .disposed(by: disposeBag)
+
+            input.alarmToggleChanged
+                .subscribe(onNext: { isOn in
+                    print("🛎️ 알람 설정 변경: \(isOn)")
+                    // 알람 설정 저장 로직
+                })
+                .disposed(by: disposeBag)
+
+            input.alarmTimeTapped
+                .bind(to: showTimePickerRelay)
+                .disposed(by: disposeBag)
+
+            return MyViewModelOutput(
+                sections: sections.asObservable(),
+                showTimePicker: showTimePickerRelay.asObservable()
+            )
+        }
     
 }
 
@@ -55,8 +73,7 @@ extension DefaultMyViewModel {
         let sectionData = [
             Section(items: [.arrow(title: "내 정보 관리")]),
             Section(items: [
-                .toggle(title: "푸시 메시지 설정", isOn: true),
-                .time(title: "시간", time: "21:00")
+                .alarm
             ]),
             Section(items: [
                 .arrow(title: "공지사항"),
@@ -105,8 +122,9 @@ extension DefaultMyViewModel {
 
 enum CellType {
     case arrow(title: String)
-    case toggle(title: String, isOn: Bool)
-    case time(title: String, time: String)
+    case alarm
+//    case toggle(title: String, isOn: Bool)
+//    case time(title: String, time: String)
 }
 
 struct Section {

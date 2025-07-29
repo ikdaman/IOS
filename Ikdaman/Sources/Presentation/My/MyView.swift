@@ -21,6 +21,8 @@ extension Section: SectionModelType {
 
 class MyView: UIView {
     // MARK: - Properties
+    let toggleRelay = PublishRelay<Bool>()
+    let timeTapRelay = PublishRelay<Void>()
     private var disposeBag = DisposeBag()
     
     private lazy var headerView = UIView().then {
@@ -35,8 +37,7 @@ class MyView: UIView {
         }
     }
     
-    private let greetingLabel = UILabel().then {
-        $0.text = "닉네임님\n안녕하세요!"
+    lazy var greetingLabel = UILabel().then {
         $0.textColor = .black
         $0.font = .systemFont(ofSize: 26, weight: .bold) // 700
         $0.numberOfLines = 2
@@ -48,8 +49,7 @@ class MyView: UIView {
         $0.contentInset = .zero
         $0.sectionHeaderTopPadding = 0
         $0.register(SettingsTableViewCell.self, forCellReuseIdentifier: SettingsTableViewCell.identifier)
-        $0.register(SwitchTableViewCell.self, forCellReuseIdentifier: SwitchTableViewCell.identifier)
-        $0.register(TimeTableViewCell.self, forCellReuseIdentifier: TimeTableViewCell.identifier)
+        $0.register(AlarmSettingTableViewCell.self, forCellReuseIdentifier: AlarmSettingTableViewCell.identifier)
     }
     
     // MARK: - Lifecycle
@@ -78,40 +78,32 @@ class MyView: UIView {
     }
     
     private func bind() {
-//        tableView.rx.itemSelected
-//            .subscribe(onNext: { indexPath in
-//                switch indexPath.section {
-//                case 0:
-//                    
-//                default:
-//                    break
-//                }
-//            })
-//            .disposed(by: disposeBag)
+
     }
     
     @discardableResult
     func setupDI(sections: Observable<[Section]>) -> Self {
         let dataSource = RxTableViewSectionedReloadDataSource<Section>(
-                configureCell: { dataSource, tableView, indexPath, item in
-                    switch item {
-                    case .arrow(let title):
-                        let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.identifier, for: indexPath) as! SettingsTableViewCell
-                        cell.configure(with: title, showArrow: title == "내 정보 관리" )
-                        return cell
-                        
-                    case .toggle(let title, let isOn):
-                        let cell = tableView.dequeueReusableCell(withIdentifier: SwitchTableViewCell.identifier, for: indexPath) as! SwitchTableViewCell
-                        cell.configure(with: title, isOn: isOn)
-                        return cell
-                        
-                    case .time(let title, let time):
-                        let cell = tableView.dequeueReusableCell(withIdentifier: TimeTableViewCell.identifier, for: indexPath) as! TimeTableViewCell
-                        cell.configure(with: title, time: time)
-                        return cell
-                    }
+            configureCell: { [weak self] dataSource, tableView, indexPath, item in
+                switch item {
+                case .arrow(let title):
+                    let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.identifier, for: indexPath) as! SettingsTableViewCell
+                    cell.configure(with: title, showArrow: title == "내 정보 관리" )
+                    return cell
+                case .alarm:
+                    let cell = tableView.dequeueReusableCell(withIdentifier: AlarmSettingTableViewCell.identifier, for: indexPath) as! AlarmSettingTableViewCell
+                    cell.configureBindings()
+                    cell.toggleRelay
+                        .bind(to: self?.toggleRelay ?? .init())
+                        .disposed(by: cell.disposeBag)
+                    
+                    cell.timeTapRelay
+                        .bind(to: self?.timeTapRelay ?? .init())
+                        .disposed(by: cell.disposeBag)
+                    return cell
                 }
-            )
+            }
+        )
             
             // 바인딩
             sections

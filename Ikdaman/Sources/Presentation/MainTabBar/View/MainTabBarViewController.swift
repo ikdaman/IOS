@@ -35,45 +35,36 @@ final class MainTabBarViewController: BaseViewController {
     
     // MARK: - UI
     private let containterView = UIView()
-    
-    private let bookcaseButton = UIButton().then {
-        $0.layer.cornerRadius = 25
-        $0.setImage(UIImage(named: "Book"), for: .normal)
-        $0.setImage(UIImage(named: "Book_selected"), for: .selected)
-    }
-    
+        
     private let homeButton = UIButton().then {
         $0.layer.cornerRadius = 25
-        $0.setImage(UIImage(named: "Home"), for: .normal)
-        $0.setImage(UIImage(named: "Home_selected"), for: .selected)
+        $0.setImage(UIImage(named: "home_disabled"), for: .normal)
+        $0.setImage(UIImage(named: "home_enabled"), for: .selected)
         
         $0.isSelected = true
     }
     
     private let searchButton = UIButton().then {
         $0.layer.cornerRadius = 25
-        $0.setImage(UIImage(named: "ic_search_deselected"), for: .normal)
-        $0.setImage(UIImage(named: "ic_search_selected"), for: .selected)
+        $0.setImage(UIImage(named: "search_disabled"), for: .normal)
+        $0.setImage(UIImage(named: "search_enabled"), for: .selected)
+    }
+
+    
+    private let bookcaseButton = UIButton().then {
+        $0.layer.cornerRadius = 25
+        $0.setImage(UIImage(named: "bookcase_disabled"), for: .normal)
+        $0.setImage(UIImage(named: "bookcase_enabled"), for: .selected)
     }
     
     private let myButton = UIButton().then {
         $0.layer.cornerRadius = 25
-        $0.setImage(UIImage(named: "User"), for: .normal)
-        $0.setImage(UIImage(named: "User"), for: .selected)
-    }
-    
-    private let buttonBackground = UIView().then {
-        $0.layer.cornerRadius = 25
-        /// #36271D
-        $0.backgroundColor = UIColor(red: 54/255, green: 39/255, blue: 29/255, alpha: 1)
+        $0.setImage(UIImage(named: "my_disabled"), for: .normal)
+        $0.setImage(UIImage(named: "my_enabled"), for: .selected)
     }
     
     private let tabbarView = UIView().then {
-        $0.layer.cornerRadius = 30
         $0.backgroundColor = .white
-        $0.layer.shadowOpacity = 0.15
-        $0.layer.shadowRadius = 10
-        $0.layer.shadowOffset = .zero
     }
     
     // MARK: - Init
@@ -92,16 +83,16 @@ final class MainTabBarViewController: BaseViewController {
         bind()
         
         // 앱 실행 시 homeButton을 선택된 상태로 설정
-        tabSelected(at: 1)  // homeButton이 두 번째 버튼이므로 index 1로 설정
-        showViewController(at: 1)  // homeViewController를 첫 화면으로 설정
+        tabSelected(at: 0)  // homeButton이 두 번째 버튼이므로 index 1로 설정
+        showViewController(at: 0)  // homeViewController를 첫 화면으로 설정
     }
 
     // MARK: - Binding
     func bind() {
         let input = MainTabBarViewModelInput(
-            bookcaseSelected: bookcaseButton.rx.tap.asObservable(),
             homeSelected: homeButton.rx.tap.asObservable(),
             searchSelected: searchButton.rx.tap.asObservable(),
+            bookcaseSelected: bookcaseButton.rx.tap.asObservable(),
             mySelected: myButton.rx.tap.asObservable()
         )
         
@@ -120,7 +111,7 @@ final class MainTabBarViewController: BaseViewController {
     private func tabSelected(at index: Int) {
         guard index < 4 else { return }
         
-        let buttons = [bookcaseButton, homeButton, searchButton, myButton]
+        let buttons = [homeButton, searchButton, bookcaseButton, myButton]
 
         // 모든 버튼 초기화
         buttons.forEach { button in
@@ -128,25 +119,7 @@ final class MainTabBarViewController: BaseViewController {
             button.backgroundColor = .clear
         }
         
-        // 선택된 버튼 업데이트
-        let selectedButton = buttons[index]
-        
-        animator?.stopAnimation(true) // 이전 애니메이션을 중지합니다.
-        
-        animator = UIViewPropertyAnimator(duration: 0.3, curve: .easeInOut) {
-            self.buttonBackground.snp.remakeConstraints {
-                $0.center.equalTo(selectedButton)
-                $0.size.equalTo(50)
-            }
-            
-            self.tabbarView.layoutIfNeeded()
-        }
-        
-        animator?.addCompletion { _ in
-            selectedButton.isSelected = true
-        }
-        
-        animator?.startAnimation()
+        buttons[index].isSelected = true
     }
     
     private func showViewController(at index: Int) {
@@ -181,10 +154,9 @@ extension MainTabBarViewController {
         ])
         
         tabbarView.addSubviews([
-            buttonBackground,
-            bookcaseButton,
             homeButton,
             searchButton,
+            bookcaseButton,
             myButton
         ])
     }
@@ -195,45 +167,68 @@ extension MainTabBarViewController {
         }
         
         tabbarView.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(40)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(60)
-            $0.width.equalTo(230)
-        }
-        
-        bookcaseButton.snp.makeConstraints {
-            $0.top.left.bottom.equalToSuperview().inset(5)
-            $0.size.equalTo(50)
+            $0.bottom.equalToSuperview()
+            $0.height.equalTo(MainTabBarSize.height)
+            $0.width.equalToSuperview()
         }
         
         homeButton.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview().inset(5)
-            $0.left.equalTo(bookcaseButton.snp.right).offset(10)
-            $0.size.equalTo(50)
+            $0.leading.equalToSuperview().offset(tabInterval()*2)
+            $0.top.equalToSuperview().offset(15)
+            $0.size.equalTo(32)
         }
         
         searchButton.snp.makeConstraints {
-            $0.verticalEdges.equalToSuperview().inset(5)
-            $0.left.equalTo(homeButton.snp.right).offset(10)
-            $0.size.equalTo(50)
+            $0.leading.equalTo(homeButton.snp.trailing).offset(tabInterval()*3)
+            $0.centerY.equalTo(homeButton)
+            $0.size.equalTo(32)
+        }
+        
+        bookcaseButton.snp.makeConstraints {
+            $0.leading.equalTo(searchButton.snp.trailing).offset(tabInterval()*3)
+            $0.centerY.equalTo(homeButton)
+            $0.size.equalTo(36)
         }
         
         myButton.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview().inset(5)
-            $0.right.equalToSuperview()
-            $0.size.equalTo(50)
-        }
-        
-        buttonBackground.snp.makeConstraints {
-            $0.center.equalTo(homeButton)
-            $0.size.equalTo(50)
+            $0.trailing.equalToSuperview().inset(tabInterval()*2)
+            $0.centerY.equalTo(homeButton)
+            $0.size.equalTo(32)
         }
         
         // ViewControllers 초기화
-        let bookcaseVC = UIViewController().then { $0.view.backgroundColor = .red }
         let homeVC = HomeViewController(viewModel: DefaultHomeViewModel())
-        let searchVC = SearchViewController()
-        let myVC =  MyViewController(viewModel: DefaultMyViewModel())
-        viewControllers = [bookcaseVC, homeVC, searchVC, myVC]
+        let searchVC = UIViewController().then { $0.view.backgroundColor = .green }
+        let bookcaseVC = BookCaseViewController(viewModel: DefaultBookCaseViewModel())
+        let myVC = UINavigationController(rootViewController: MyViewController(viewModel: DefaultMyViewModel()))
+        viewControllers = [homeVC, searchVC, bookcaseVC, myVC]
+    }
+}
+
+extension MainTabBarViewController {
+    // 양 옆으로 2x, 탭 간격은 3x
+    private func tabInterval() -> Int {
+        var width = 0
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            let screenWidth = windowScene.screen.bounds.width
+            let interval = (screenWidth - 132) / 13
+            width = Int(interval)
+        }
+        return width
+    }
+}
+
+struct MainTabBarSize {
+    static var height: CGFloat {
+        return 56 + (UIApplication.shared.visibleWindow?.safeAreaInsets.bottom ?? 0)
+    }
+}
+
+extension UIApplication {
+    var visibleWindow: UIWindow? {
+        return connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: { !$0.isHidden && $0.windowLevel == .normal })
     }
 }

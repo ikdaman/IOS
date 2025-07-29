@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         window = UIWindow(windowScene: windowScene)
-        if let token = UserDefaults.standard.authToken, !token.isEmpty {
+        if let token = KeychainService.shared.load(forKey: .accessToken) {
             window?.rootViewController = MainTabBarViewController(viewModel: DefaultMainTabBarViewModel())
         } else {
             window?.rootViewController = SignUpViewController(viewModel: DefaultSignUpViewModel())

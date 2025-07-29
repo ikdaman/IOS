@@ -7,7 +7,7 @@
 
 import UIKit
 
-enum ColorType: CaseIterable {
+enum ColorType: String, CaseIterable {
     case purple, blue, green, brown, darkGray
     
     var color: UIColor {

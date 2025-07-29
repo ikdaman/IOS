@@ -6,10 +6,16 @@
 //
 
 import Foundation
+import CoreGraphics
 
 extension UserDefaults {
-    var authToken: String? {
-        get { string(forKey: "authToken") }
-        set { set(newValue, forKey: "authToken") }
+    var nickName: String? {
+        get { string(forKey: "nickName") }
+        set { set(newValue, forKey: "nickName") }
+    }
+    
+    var backgroundColor: String? {
+        get { string(forKey: "backgroundColor") }
+        set { set(newValue, forKey: "backgroundColor") }
     }
 }

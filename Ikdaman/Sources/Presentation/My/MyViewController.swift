@@ -19,6 +19,7 @@ class MyViewController: BaseViewController {
     
     private lazy var subView = MyView().then {
         $0.tableView.rx.setDelegate(self).disposed(by: disposeBag)
+        $0.tableView.isScrollEnabled = false
     }
     
     // MARK: - Init
@@ -27,10 +28,14 @@ class MyViewController: BaseViewController {
         super.init()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        subView.greetingLabel.text = (UserDefaults.standard.nickName ?? "") + "님,\n안녕하세요!"
+    }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,13 +55,23 @@ class MyViewController: BaseViewController {
     }
     
     private func bind() {
-        let input = MyViewModelInput(viewDidLoad: requestTrigger.asObservable())
+        let input = MyViewModelInput(
+            viewDidLoad: Observable.just(()),
+            alarmToggleChanged: subView.toggleRelay.asObservable(),
+            alarmTimeTapped: subView.timeTapRelay.asObservable()
+        )
+
         let output = viewModel.transform(input: input)
+
+        subView.setupDI(sections: output.sections)
         
-        subView
-            .setupDI(sections: output.sections)
-        
+        output.showTimePicker
+            .subscribe(onNext: { [weak self] in
+//                self?.showTimePickerModal()
+            })
+            .disposed(by: disposeBag)
     }
+
 }
 
 extension MyViewController: UITableViewDelegate {
@@ -70,8 +85,6 @@ extension MyViewController: UITableViewDelegate {
         switch section {
         case 0:
             return 7
-        case 1:
-            return 17
         case 2:
             return 21
         default:
@@ -94,14 +107,7 @@ extension MyViewController: UITableViewDelegate {
         case 0:
             return 80
         case 1:
-            switch indexPath.row {
-            case 0:
-                return 46
-            case 1:
-                return 77
-            default:
-                return 0
-            }
+            return 140
         case 2:
             return 38
         default:
@@ -111,10 +117,12 @@ extension MyViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.section == 0 {
-            let vc = ManageMyViewController()
-//            vc.navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
-//            self.modalPresentationStyle = .currentContext
-            vc.navigationItem.backButtonTitle = ""
+            let viewModel: ManageMyViewModel = DefaultManageMyViewModel()
+            let vc = ManageMyViewController(viewModel: viewModel)
+            self.navigationController?.pushViewController(vc, animated: true)
+        } else if indexPath.section == 2, indexPath.row == 0 {
+            let viewModel: NoticeViewModel = NoticeViewModel()
+            let vc = NoticeViewController(viewModel: viewModel)
             self.navigationController?.pushViewController(vc, animated: true)
         }
     }

@@ -21,30 +21,20 @@ class AuthService: NSObject {
     let disposeBag = DisposeBag()
     
     // 현재 로그인된 사용자 정보 (옵셔널)
-    private(set) var token = BehaviorRelay<String?>(value: nil)
-    
-    // 로그인 메서드
-    func login(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-        // 예제: 네트워크 요청 또는 로컬 인증 처리 (실제 구현 필요)
-//        DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
-//            if email == "test@example.com" && password == "password123" {
-//                self.currentUser = User(id: UUID().uuidString, email: email)
-//                completion(true, nil)
-//            } else {
-//                completion(false, "Invalid email or password")
-//            }
-//        }
-    }
-    
+    private(set) var loginType = BehaviorRelay<LoginType?>(value: nil)
+        
     // 로그아웃 메서드
     func logout() {
-        token.accept(nil)
+        loginType.accept(nil)
+        UserDefaults.standard.nickName = nil
+        
+        KeychainService.shared.delete(forKey: .accessToken)
+        KeychainService.shared.delete(forKey: .refreshToken)
     }
     
     // 로그인 여부 확인
     func isLoggedIn() -> Bool {
-//        return token.
-        return false
+        return loginType.value?.token != nil
     }
 }
 
@@ -88,7 +78,7 @@ extension AuthService {
             } else {
                 if let uid = userInfo?.id {
                     let token = TokenManager().getToken()?.accessToken
-                    self.token.accept(token)
+                    self.loginType.accept(LoginType(token: token, provider: "KAKAO", providerId: String(uid)))
                     print("UserApi.shared.me success")
                 }
             }
@@ -124,7 +114,7 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
         guard let accessToken = instance.accessToken else { return }
 
         let token = "\(tokenType) \(accessToken)"
-        self.token.accept(accessToken)
+        self.loginType.accept(LoginType(token: accessToken, provider: "NAVER", providerId: instance.consumerKey))
         
     }
 
@@ -173,29 +163,13 @@ extension AuthService: ASAuthorizationControllerDelegate {
                 if let identityToken = appleIDCredential.identityToken,
                    let tokenString = String(data: identityToken, encoding: .utf8) {
                     print("Apple ID Token: \(tokenString)")
-                    self.token.accept(tokenString)
+                    self.loginType.accept(LoginType(token: tokenString, provider: "APPLE", providerId: appleIDCredential.user))
                     // 👉 서버에 토큰 보내거나 저장하거나 등등
                 } else {
                     print("Unable to fetch identity token")
                 }
             }
         }
-
-//    /// 요청에 성공했을때 데이터 처리
-//    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-//        switch authorization.credential {
-//        case let appleIDCredential as ASAuthorizationAppleIDCredential:
-//            // 처음 로그인할때는 이름,이메일,아이덴티 모두 제공
-//            // 첫 로그인아닐때는 아이덴티만 제공
-//            let uid = appleIDCredential.user
-////            let fcmToken = Defaults.shared.get(for: .fcmToken)
-////            let pushId = fcmToken == nil ? nil : fcmToken
-////            let loginData = LoginSnsReqData(snsType: "A", encSnsUid: uid, snsEmail: nil, userName: nil, pushId: pushId)
-////            self.loginSnsData.accept(loginData)
-//        default:
-//            break
-//        }
-//    }
 
     /// 요청에 실패했을때 에러처리
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
@@ -214,56 +188,18 @@ extension AuthService {
             }
             
             guard let user = result?.user,
-                  let idToken = user.idToken?.tokenString
+                  let idToken = user.idToken?.tokenString,
+                  let userId = user.userID
             else {
                 print("❌ 토큰 가져오기 실패")
                 completion(nil, nil)
                 return
             }
-            let accessToken = user.accessToken.tokenString
-            self.token.accept(accessToken)
+            self.loginType.accept(LoginType(token: idToken, provider: "GOOGLE", providerId: userId))
 
             print("✅ idToken: \(idToken)")
-            print("✅ accessToken: \(accessToken)")
-            completion(idToken, accessToken)
+            print("✅ userId: \(userId)")
+            completion(idToken, userId)
         }
     }
-
-
 }
-
-struct NaverUserModel: Codable {
-    let resultCode: String
-    let message: String
-    let value: NaverUserInfo
-    
-    enum CodingKeys: String, CodingKey {
-        case resultCode = "resultcode"
-        case value = "response"
-        case message
-    }
-}
-
-struct NaverUserInfo: Codable {
-    let email: String
-    let nickname: String
-    let profileImage: String
-    let age: String
-    let gender: String
-    let id: String
-    let name: String
-    let birthday: String
-    let birthyear: String
-    let mobile: String
-    
-    enum CodingKeys: String, CodingKey {
-        case email, nickname, age, gender, id, name, birthday, birthyear, mobile
-        case profileImage = "profile_image"
-    }
-}
-
-//struct UserInfo: Codable {
-//    let name: String
-//    let nickname: String
-//    let id: String
-//}

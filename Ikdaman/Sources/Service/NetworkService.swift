@@ -8,6 +8,7 @@
 import Moya
 import RxMoya
 import RxSwift
+import Foundation
 
 final class NetworkService {
     private let provider: MoyaProvider<MultiTarget>
@@ -32,6 +33,7 @@ final class NetworkProvider {
     static let shared = NetworkProvider()
 
     let provider: MoyaProvider<MultiTarget>
+    let disposeBag = DisposeBag()
 
     private init() {
         self.provider = MoyaProvider<MultiTarget>(plugins: [
@@ -42,13 +44,47 @@ final class NetworkProvider {
     func request<T: Decodable>(_ target: TargetType, type: T.Type) -> Single<T> {
         return provider.rx.request(MultiTarget(target))
             .do(onSuccess: { response in
-                // 요청이 성공했을 때 응답 상태 코드와 정보를 출력합니다.
                 print("✅ [\(target.path)] \(response.statusCode)")
+
+                // ✅ 헤더에서 토큰 추출
+                if let token = response.response?.allHeaderFields.first(where: {
+                    "\($0.key)".lowercased() == "Authorization" ||
+                    "\($0.key)".lowercased() == "refresh-token"
+                })?.value as? String {
+                    KeychainService.shared.save(token, forKey: .accessToken)
+                    KeychainService.shared.save(token, forKey: .refreshToken)
+                    print("🔐 토큰 저장됨: \(token)")
+                }
+                
             }, onError: { error in
-                // 오류가 발생했을 때 오류를 출력합니다.
                 print("❌ [\(target.path)] \(error)")
             })
             .filterSuccessfulStatusCodes()
-            .map(T.self)
+            .flatMap { response in
+                guard !response.data.isEmpty else {
+                    return .error(NSError(domain: "EmptyData", code: -1000, userInfo: [NSLocalizedDescriptionKey: "응답 데이터가 비어 있습니다."]))
+                }
+                
+                do {
+                    let result = try response.map(T.self)
+                    return .just(result)
+                } catch {
+                    print("❌ 디코딩 실패: \(error)")
+                    return .error(error)
+                }
+            }
+    }
+    
+}
+
+extension NetworkProvider {
+    func requestRaw(_ target: TargetType) -> Single<Response> {
+        return provider.rx.request(MultiTarget(target))
+            .do(onSuccess: { response in
+                print("✅ [\(target.path)] \(response.statusCode)")
+            }, onError: { error in
+                print("❌ [\(target.path)] \(error)")
+            })
+            .filterSuccessfulStatusCodes()
     }
 }

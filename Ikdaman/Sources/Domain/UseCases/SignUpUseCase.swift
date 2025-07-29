@@ -9,7 +9,7 @@ import RxSwift
 import UIKit
 
 protocol SignUpUseCase {
-    func login() -> Observable<LoginInfo>
+    func login(type: LoginType) -> Observable<Profile>
 }
 
 final class DefaultSignUpUseCase :SignUpUseCase {
@@ -19,8 +19,15 @@ final class DefaultSignUpUseCase :SignUpUseCase {
         self.signUpRepository = signUpRepository
     }
     
-    func login() -> Observable<LoginInfo> {
-        signUpRepository.login()
+    func login(type: LoginType) -> Observable<Profile> {
+        signUpRepository.login(type: type)
+            .catch { error in
+                // 에러 로그 출력
+                print("Login error: \(error.localizedDescription)")
+                // 에러 발생 시, 빈 Observable 리턴 (또는 다른 처리)
+                return Observable.empty()
+                // 또는 기본값 반환하고 싶으면: return Observable.just(defaultProfile)
+            }
     }
     
 }

@@ -26,9 +26,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // 로그인 설정
         instance?.serviceUrlScheme = "com.Ikdaman" // 콜백을 받을 URL Scheme
-        instance?.consumerKey = "f6Xqz2hzL03dVZtEADRs"  // 애플리케이션에서 사용하는 클라이언트 아이디
-        instance?.consumerSecret = "s8v7FHuJc7"  // 애플리케이션에서 사용하는 클라이언트 시크릿
-        instance?.appName = "Ikdaman"  // 애플리케이션 이름
+        instance?.consumerKey = "HHcc6QmC3xAJOcNxFyFt"  // 애플리케이션에서 사용하는 클라이언트 아이디
+        instance?.consumerSecret = "zW0NHMQk7g"  // 애플리케이션에서 사용하는 클라이언트 시크릿
+        instance?.appName = "읽다만"  // 애플리케이션 이름
         
         let clientID = "957982912983-ft1n53ruu3ekbq5hepedt7b9ulga8mgb.apps.googleusercontent.com"
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)

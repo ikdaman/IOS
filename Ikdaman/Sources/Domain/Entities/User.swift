@@ -8,7 +8,7 @@
 import Foundation
 
 struct User: Equatable, Decodable {
-    let id: Int
-    let birthDate: String
-    let gender: String
+    var nickname: String?
+    var birthdate: String?
+    var gender: String?
 }
