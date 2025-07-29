@@ -93,9 +93,7 @@ class BookCaseView: UIView {
     
     // MARK: - UI Components
     let backgroundView = GradientBackgroundView()
-    let searchBar = UIView().then {
-        $0.backgroundColor = .black
-    }
+    let searchBar = CustomSearchBar()
     let filterView = FilterView()
     let bookListView = UICollectionView(frame: .zero, collectionViewLayout: {
         let layout = UICollectionViewFlowLayout()
@@ -313,3 +311,75 @@ class BookCaseCell: UICollectionViewCell {
     }
 }
 
+class CustomSearchBar: UIView {
+
+    // MARK: - UI Components
+    private let textField: UITextField = {
+        let tf = UITextField()
+        tf.placeholder = "책 제목을 검색해주세요."
+        tf.font = UIFont.systemFont(ofSize: 16)
+        tf.textColor = .black
+        tf.clearButtonMode = .whileEditing
+        tf.returnKeyType = .search
+        return tf
+    }()
+
+    private let searchButton: UIButton = {
+        let button = UIButton(type: .system)
+        let image = UIImage(systemName: "magnifyingglass")
+        button.setImage(image, for: .normal)
+        button.tintColor = .darkGray
+        return button
+    }()
+
+    // MARK: - Init
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupView()
+    }
+
+    // MARK: - Setup View
+    private func setupView() {
+        backgroundColor = .white
+        layer.cornerRadius = 12
+        layer.masksToBounds = true
+
+        addSubview(textField)
+        addSubview(searchButton)
+
+        // Layout with SnapKit
+        searchButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(12)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(24)
+        }
+
+        textField.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalTo(searchButton.snp.leading).offset(-8)
+            make.top.bottom.equalToSuperview()
+        }
+
+        snp.makeConstraints { make in
+            make.height.equalTo(48)
+        }
+    }
+
+    // MARK: - Public Methods
+    func onSearchTapped(_ target: Any?, action: Selector) {
+        searchButton.addTarget(target, action: action, for: .touchUpInside)
+    }
+
+    func getSearchText() -> String {
+        return textField.text ?? ""
+    }
+
+    func setDelegate(_ delegate: UITextFieldDelegate) {
+        textField.delegate = delegate
+    }
+}

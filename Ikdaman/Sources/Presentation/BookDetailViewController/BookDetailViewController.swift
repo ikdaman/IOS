@@ -38,6 +38,7 @@ final class BookDetailViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setCustomBackButton()
         bindViewModel()
         bindActions()
     }
@@ -68,14 +69,84 @@ final class BookDetailViewController: BaseViewController {
 
 class BookDetailView: UIView {
     let backgroundView = GradientBackgroundView()
+    
     let topBarView = CustomTopBarView(
         centerTitle: "상세 정보",
         customButton: UIButton().then {
             $0.setImage(UIImage(named: "bin"), for: .normal)
         }
     )
+    
+    let scrollView = UIScrollView().then {
+        $0.showsVerticalScrollIndicator = false
+        $0.showsHorizontalScrollIndicator = false
+        $0.bouncesZoom = true
+        $0.bounces = true
+        $0.isScrollEnabled = true
+        $0.alwaysBounceVertical = true
+        $0.backgroundColor = .clear
+    }
+    
     let bookInfoView = BookInfoView()
-    let progressView = BookProgressView()
+    
+    let progressLabel = UILabel().then {
+        $0.text = "📖\n7일째, 155p, 42%\n독서중인 책이에요."
+        $0.font = .systemFont(ofSize: 31, weight: .bold)
+        $0.numberOfLines = 0
+        $0.textAlignment = .center
+    }
+    
+    let readCompleteButton = UIButton().then {
+        $0.setTitle("다 읽었어요!", for: .normal)
+        $0.setTitleColor(.black, for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .regular)
+        $0.backgroundColor = .white
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 14
+    }
+    
+    let progressView = ProgressIndicatorView().then {
+        $0.backgroundColor = .clear
+    }
+    
+    let firstImpressionLabel = UILabel().then {
+        $0.text = "책의 첫인상"
+        $0.font = .systemFont(ofSize: 14, weight: .semibold)
+    }
+    
+    let firstImpressionView = UIView().then {
+        $0.backgroundColor = .white
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 10
+    }
+    
+    var firstImpressionText = UILabel().then {
+        $0.text = "처음 책을 보고 들었던 생각을 짧게 적어보세요.\n독서가 마음처럼 잘되지 않을 때, 나에게 힘을 줄 거에요!"
+        $0.font = .systemFont(ofSize: 13, weight: .regular)
+        $0.numberOfLines = 0
+    }
+    
+    let writeButton = UIButton().then {
+        $0.setImage(UIImage(named: "pencil"), for: .normal)
+    }
+    
+    let bookRecordLabel = UILabel().then {
+        $0.text = "이 책의 기록"
+        $0.font = .systemFont(ofSize: 14, weight: .semibold)
+    }
+    
+    let addBookButton = UIButton().then {
+        $0.setTitle("책 기록 추가하기", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = .black
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 10
+    }
+    
+    let bookRecordView = UIView().then {
+        $0.backgroundColor = .blue
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -89,7 +160,9 @@ class BookDetailView: UIView {
     }
     
     private func setupViews() {
-        addSubviews([backgroundView, topBarView, bookInfoView, progressView])
+        addSubviews([backgroundView, topBarView, scrollView])
+        scrollView.addSubviews([bookInfoView, progressLabel, readCompleteButton, progressView, firstImpressionLabel, firstImpressionView, bookRecordLabel, addBookButton, bookRecordView])
+        firstImpressionView.addSubviews([firstImpressionText, writeButton])
     }
     
     private func setupLayout() {
@@ -102,14 +175,72 @@ class BookDetailView: UIView {
             $0.leading.trailing.equalToSuperview()
         }
         
+        scrollView.snp.makeConstraints {
+            $0.top.equalTo(topBarView.snp.bottom)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview()
+        }
+        
         bookInfoView.snp.makeConstraints {
-            $0.top.equalTo(topBarView.snp.bottom).offset(10)
-            $0.leading.trailing.equalToSuperview()
+            $0.top.equalToSuperview().offset(10)
+            $0.width.equalToSuperview()
+        }
+        
+        progressLabel.snp.makeConstraints {
+            $0.top.equalTo(bookInfoView.snp.bottom).offset(35)
+            $0.centerX.equalToSuperview()
+        }
+        
+        readCompleteButton.snp.makeConstraints {
+            $0.top.equalTo(progressLabel.snp.bottom).offset(15)
+            $0.centerX.equalToSuperview()
+            $0.width.equalTo(87)
+            $0.height.equalTo(28)
         }
         
         progressView.snp.makeConstraints {
-            $0.top.equalTo(bookInfoView.snp.bottom)
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.top.equalTo(readCompleteButton.snp.bottom).offset(52)
+            $0.width.equalToSuperview()
+        }
+        
+        firstImpressionLabel.snp.makeConstraints {
+            $0.top.equalTo(progressView.snp.bottom).offset(42)
+            $0.leading.equalToSuperview()
+        }
+        
+        firstImpressionView.snp.makeConstraints {
+            $0.top.equalTo(firstImpressionLabel.snp.bottom).offset(15)
+            $0.width.equalToSuperview()
+        }
+        
+        firstImpressionText.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(17)
+            $0.leading.trailing.equalToSuperview().inset(20)
+        }
+        
+        writeButton.snp.makeConstraints {
+            $0.top.equalTo(firstImpressionText.snp.bottom).offset(15)
+            $0.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(17)
+            $0.size.equalTo(24)
+        }
+        
+        bookRecordLabel.snp.makeConstraints {
+            $0.top.equalTo(firstImpressionView.snp.bottom).offset(35)
+            $0.leading.equalToSuperview()
+        }
+        
+        addBookButton.snp.makeConstraints {
+            $0.top.equalTo(bookRecordLabel.snp.bottom).offset(20)
+            $0.width.equalToSuperview()
+            $0.height.equalTo(50)
+        }
+        
+        bookRecordView.snp.makeConstraints {
+            $0.top.equalTo(addBookButton.snp.bottom).offset(15)
+            $0.width.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(58)
+            $0.height.equalTo(300)
         }
     }
     
@@ -230,8 +361,7 @@ class BookInfoView: UIView {
         addSubview(containerView)
         containerView.snp.makeConstraints {
             $0.top.bottom.equalToSuperview()
-            $0.leading.equalToSuperview().offset(21)
-            $0.trailing.equalToSuperview().inset(21)
+            $0.leading.trailing.equalToSuperview()
         }
         
         let authorLabel = UILabel().then {
@@ -323,8 +453,102 @@ class BookInfoView: UIView {
     }
 }
 
-class BookProgressView: UIView {
-    
+class ProgressIndicatorView: UIView {
+
+    private let trackView = UIView()
+    private let fillView = UIView()
+    private let centerLabelContainer = UIView()
+    private let iconImageView = UIImageView()
+    private let percentageLabel = UILabel()
+
+    var progress: CGFloat = 0.42 {
+        didSet {
+            updateProgress()
+        }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+        layoutViews()
+        updateProgress()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupViews() {
+        trackView.backgroundColor = UIColor.purple.withAlphaComponent(0.3)
+        trackView.layer.cornerRadius = 2
+        addSubview(trackView)
+
+        fillView.backgroundColor = .black
+        fillView.layer.cornerRadius = 2
+        addSubview(fillView)
+
+        centerLabelContainer.backgroundColor = .black
+        centerLabelContainer.layer.cornerRadius = 14
+        centerLabelContainer.clipsToBounds = true
+        addSubview(centerLabelContainer)
+
+        iconImageView.image = UIImage(systemName: "book.fill")
+        iconImageView.tintColor = .white
+        centerLabelContainer.addSubview(iconImageView)
+
+        percentageLabel.textColor = .white
+        percentageLabel.font = .boldSystemFont(ofSize: 14)
+        centerLabelContainer.addSubview(percentageLabel)
+    }
+
+    private func layoutViews() {
+        trackView.snp.makeConstraints {
+            $0.height.equalTo(3)
+            $0.centerY.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+        }
+
+        fillView.snp.makeConstraints {
+            $0.left.top.bottom.equalTo(trackView)
+            $0.width.equalTo(0) // Will update
+        }
+
+        centerLabelContainer.snp.makeConstraints {
+            $0.centerY.equalTo(trackView)
+            $0.centerX.equalTo(fillView.snp.right)
+            $0.height.equalTo(28)
+        }
+
+        iconImageView.snp.makeConstraints {
+            $0.left.equalToSuperview().offset(8)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(16)
+        }
+
+        percentageLabel.snp.makeConstraints {
+            $0.left.equalTo(iconImageView.snp.right).offset(4)
+            $0.right.equalToSuperview().inset(8)
+            $0.centerY.equalToSuperview()
+        }
+    }
+
+    private func updateProgress() {
+        percentageLabel.text = "\(Int(progress * 100))%"
+
+        let totalWidth = self.bounds.width
+        let fillWidth = totalWidth * progress
+
+        fillView.snp.updateConstraints {
+            $0.width.equalTo(fillWidth)
+        }
+
+        layoutIfNeeded()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateProgress()
+    }
 }
 
 struct MyBookInfo: Codable {
