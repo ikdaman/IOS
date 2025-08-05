@@ -80,14 +80,6 @@ final class HomeViewController: BaseViewController {
                 self?.toggleColorPicker()
             })
             .disposed(by: disposeBag)
-        
-        homeView.addButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                let vc = BarcodeScannerViewController()
-                vc.modalPresentationStyle = .fullScreen
-                self?.present(vc, animated: true)
-            })
-            .disposed(by: disposeBag)
     }
     
     // MARK: - Actions

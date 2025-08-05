@@ -33,7 +33,7 @@ class BarcodeScannerViewModel {
     
     struct Output {
         let setupBarcodeScanner: Observable<Void>
-        
+        let scannedBook: Observable<AladinBook>
         let outputRequest: Observable<RequestDestinationVC>
     }
     
@@ -52,6 +52,7 @@ class BarcodeScannerViewModel {
         
         return Output(
             setupBarcodeScanner: hasPermissionRelay.asObservable(),
+            scannedBook: searchedBookRelay.asObservable(),
             outputRequest: outputRequest.asObservable())
     }
     
@@ -92,21 +93,6 @@ class BarcodeScannerViewModel {
     
     private func fetchAladinBook() {
         
-    }
-    
-    func showBookInfo(title: String, author: String) {
-        let bookInfoView = BookInfoView().then {
-            $0.delegate = self
-        }
-        bookInfoView.configure(title: "소년이 온다", author: "한강")
-
-        // 2. 바텀시트에 삽입
-        let bottomSheet = BottomSheetViewController(contentView: bookInfoView, height: 205).then {
-            $0.delegate = self
-        }
-
-        // 3. 표시
-        bottomSheet.show()
     }
 }
 
@@ -151,22 +137,6 @@ extension BarcodeScannerViewModel {
 
 extension BarcodeScannerViewModel {
     enum RequestDestinationVC {
-        
+        case close
     }
-}
-
-extension BarcodeScannerViewModel: BottomSheetDelegate, BookInfoViewDelegate {
-    func bookInfoViewDidTapClose(_ view: BookInfoView) {
-        <#code#>
-    }
-    
-    func bookInfoViewDidTapAdd(_ view: BookInfoView) {
-        <#code#>
-    }
-    
-    func bottomSheetDidRequestClose(_ controller: BottomSheetViewController) {
-        <#code#>
-    }
-    
-    
 }

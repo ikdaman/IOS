@@ -14,33 +14,44 @@ class SearchView: UIView {
     private let actionTriggers = PublishRelay<SearchTriggerType>()
     
     // MARK: - Properties
+    let topBarView = CustomTopBarView(centerTitle: "책 제목으로 검색하기", isHiddenBackBtn: true)
+    
     private lazy var searchContainerView = UIView().then {
         $0.backgroundColor = .white
         $0.layer.cornerRadius = 5
         $0.clipsToBounds = true
         
-        $0.addSubviews([searchTextField, searchButton])
+        $0.addSubviews([searchTextField, cameraBtn, searchBtn])
         
         searchTextField.snp.makeConstraints {
-            $0.left.equalToSuperview().inset(15)
-            $0.right.equalTo(searchButton.snp.left).offset(-10)
-            $0.verticalEdges.equalToSuperview()
+            $0.verticalEdges.left.equalToSuperview().inset(15)
+            $0.right.equalTo(cameraBtn.snp.left).offset(-10)
         }
         
-        searchButton.snp.makeConstraints {
-            $0.verticalEdges.right.equalToSuperview().inset(5)
-            $0.size.equalTo(45)
+        cameraBtn.snp.makeConstraints {
+            $0.right.equalTo(searchBtn.snp.left).offset(-9)
+            $0.centerY.equalTo(searchBtn)
+            $0.size.equalTo(24)
+        }
+        
+        searchBtn.snp.makeConstraints {
+            $0.verticalEdges.equalToSuperview().inset(12)
+            $0.right.equalToSuperview().inset(15)
+            $0.size.equalTo(24)
         }
     }
     
     private let searchTextField = UITextField().then {
         $0.placeholder = "책 제목을 검색해주세요."
-        $0.backgroundColor = .clear
         $0.font = UIFont.systemFont(ofSize: 16)
         $0.borderStyle = .none
     }
     
-    private let searchButton = UIButton().then {
+    private let cameraBtn = UIButton().then {
+        $0.setImage(UIImage(named: "ic_camera"), for: .normal)
+    }
+    
+    private let searchBtn = UIButton().then {
         $0.setImage(UIImage(named: "ic_magnifier"), for: .normal)
     }
     
@@ -89,8 +100,8 @@ class SearchView: UIView {
     private lazy var tableView = UITableView().then {
         $0.backgroundColor = .clear
         $0.estimatedRowHeight = 144
+        $0.separatorStyle = .none
         $0.delegate = self
-//        $0.dataSource = self
         $0.register(SearchResultsCell.self, forCellReuseIdentifier: SearchResultsCell.identifier)
     }
 
@@ -114,13 +125,16 @@ class SearchView: UIView {
     
     // MARK: - Methods
     private func setupLayout() {
-        addSubviews([searchContainerView, noResultBookView, tableView])
+        addSubviews([topBarView, searchContainerView, noResultBookView, tableView])
         
-        // SnapKit을 사용한 레이아웃 설정
+        topBarView.snp.makeConstraints {
+            $0.top.equalTo(safeAreaLayoutGuide).offset(10)
+            $0.horizontalEdges.equalToSuperview()
+        }
+        
         searchContainerView.snp.makeConstraints {
-            $0.top.equalTo(safeAreaLayoutGuide.snp.top).offset(20)
+            $0.top.equalTo(topBarView.snp.bottom).offset(24)
             $0.horizontalEdges.equalToSuperview().inset(20)
-            $0.height.equalTo(55)
         }
         
         noResultBookView.snp.makeConstraints {
@@ -129,8 +143,8 @@ class SearchView: UIView {
         
         tableView.snp.makeConstraints {
             $0.top.equalTo(searchContainerView.snp.bottom).offset(20)
-            $0.horizontalEdges.equalToSuperview().inset(20)
-            $0.bottom.equalToSuperview().inset(safeAreaInsets.bottom + 60)
+            $0.horizontalEdges.equalToSuperview()
+            $0.bottom.equalTo(safeAreaLayoutGuide.snp.bottom).offset(-MainTabBarSize.height)
         }
     }
     
@@ -146,7 +160,12 @@ class SearchView: UIView {
             .bind(to: actionTriggers)
             .disposed(by: disposeBag)
         
-        searchButton.rx.tap
+        cameraBtn.rx.tap
+            .map { .cameraBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
+        searchBtn.rx.tap
             .map { .searchBtnTapped }
             .bind(to: actionTriggers)
             .disposed(by: disposeBag)
@@ -186,10 +205,38 @@ class SearchView: UIView {
             })
             .disposed(by: disposeBag)
         
-        searchBookResults.bind(to: tableView.rx.items(cellIdentifier: SearchResultsCell.identifier, cellType: SearchResultsCell.self)) { row, book, cell in
-            cell.backgroundColor = .clear
-            cell.configure(image: book.cover, title: book.title, subtitle: book.author)
-        }.disposed(by: disposeBag)
+        var searchResultsCount = 0
+        
+        searchBookResults
+            .do(onNext: { results in
+                searchResultsCount = results.count
+            })
+            .bind(to: tableView.rx.items(cellIdentifier: SearchResultsCell.identifier, cellType: SearchResultsCell.self)) { row, book, cell in
+                let isLast = row == searchResultsCount - 1
+                cell.backgroundColor = .clear
+                cell.configure(image: book.cover, title: book.title, subtitle: book.author, isLast: isLast)
+                
+                cell.addBookContainerView.rx.tap
+                    .subscribe(onNext: { [weak self] in
+                        print("추가한 책 > \(book.title)")
+                    })
+                    .disposed(by: cell.disposeBag)
+            }.disposed(by: disposeBag)
+        
+        tableView.rx.contentOffset
+            .throttle(.milliseconds(300), scheduler: MainScheduler.instance)
+            .withUnretained(self)
+            .subscribe(onNext: { `self`, offset in
+                let contentHeight = self.tableView.contentSize.height
+                let tableHeight = self.tableView.frame.height
+                let scrollOffset = offset.y
+                
+                // 스크롤이 끝에서 100pt 정도 남았을 때 추가 로딩
+                if scrollOffset + tableHeight >= contentHeight - 100 {
+                    self.actionTriggers.accept(.loadMoreBooks)
+                }
+            })
+            .disposed(by: disposeBag)
         
         return self
     }
@@ -219,8 +266,4 @@ extension SearchView: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 144
     }
-}
-
-extension UIColor {
-    
 }

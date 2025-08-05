@@ -29,6 +29,7 @@ class BarcodeScannerViewController: UIViewController {
         
         subView
             .setupDI(setupScanner: response.setupBarcodeScanner)
+            .setupDI(scannedBook: response.scannedBook)
             .setupDI(action: actionTriggers)
         
         response.outputRequest
