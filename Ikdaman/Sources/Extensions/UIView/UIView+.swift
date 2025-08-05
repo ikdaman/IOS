@@ -6,6 +6,8 @@
 //
 
 import UIKit
+import RxSwift
+import RxCocoa
 
 extension UIView {
     func addSubviews(_ views: [UIView]) {
@@ -26,5 +28,17 @@ extension UIView {
         
         layer.sublayers?.filter { $0 is CAGradientLayer }.forEach { $0.removeFromSuperlayer() }
         layer.insertSublayer(gradientLayer, at: 0)
+    }
+}
+
+/// 버튼이 아닌 일반 View에서도 터치 이벤트를 받고 싶을 때 사용해요.
+extension Reactive where Base: UIView {
+    public var tap: ControlEvent<Void> {
+        let tapGesture = UITapGestureRecognizer()
+        base.addGestureRecognizer(tapGesture)
+        base.isUserInteractionEnabled = true
+        
+        let source = tapGesture.rx.event.map { _ in () }
+        return ControlEvent(events: source)
     }
 }

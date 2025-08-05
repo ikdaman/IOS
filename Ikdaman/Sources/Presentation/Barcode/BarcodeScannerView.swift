@@ -10,43 +10,15 @@ import RxSwift
 import RxCocoa
 import AVFoundation
 
-protocol BarcodeScannerViewDelegate: AnyObject {
-    func barcodeScannerView(_ view: BarcodeScannerView, didScan code: String, type: AVMetadataObject.ObjectType)
-    func barcodeScannerViewDidRequestClose(_ view: BarcodeScannerView)
-    func barcodeScannerView(_ view: BarcodeScannerView, didFailWithError error: BarcodeScannerError)
-}
-
-// MARK: - Error Types
-enum BarcodeScannerError: Error {
-    case cameraNotAvailable
-    case cameraInputFailed
-    case metadataOutputFailed
-    case permissionDenied
-    
-    var localizedDescription: String {
-        switch self {
-        case .cameraNotAvailable:
-            return "카메라를 찾을 수 없습니다."
-        case .cameraInputFailed:
-            return "카메라 입력을 설정할 수 없습니다."
-        case .metadataOutputFailed:
-            return "메타데이터 출력을 설정할 수 없습니다."
-        case .permissionDenied:
-            return "카메라 권한이 거부되었습니다."
-        }
-    }
-}
-
 class BarcodeScannerView: UIView {
     
     // MARK: - Properties
     private let disposeBag = DisposeBag()
     private let actionTriggers = PublishRelay<BarcodeScannerriggerType>()
     
-    weak var delegate: BarcodeScannerViewDelegate?
-    
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    private let sessionQueue = DispatchQueue(label: "camera.session.queue")
     
     // MARK: - UI Elements
     private lazy var naviBarView = UIView().then {
@@ -84,7 +56,6 @@ class BarcodeScannerView: UIView {
     lazy var closeButton = UIButton(type: .system).then {
         $0.setImage(UIImage(named: "ic_close")?.withRenderingMode(.alwaysTemplate), for: .normal)
         $0.tintColor = .white
-        $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
     }
     
     
@@ -169,17 +140,19 @@ class BarcodeScannerView: UIView {
     
     func startScanning() {
         guard let captureSession = captureSession else { return }
-        if !captureSession.isRunning {
-            DispatchQueue.global(qos: .background).async {
+        
+        sessionQueue.async {
+            if !captureSession.isRunning {
                 captureSession.startRunning()
             }
         }
     }
-    
+
     func stopScanning() {
         guard let captureSession = captureSession else { return }
-        if captureSession.isRunning {
-            DispatchQueue.global(qos: .background).async {
+        
+        sessionQueue.async {
+            if captureSession.isRunning {
                 captureSession.stopRunning()
             }
         }
@@ -216,7 +189,6 @@ class BarcodeScannerView: UIView {
         
         // 카메라 디바이스 설정
         guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
-            delegate?.barcodeScannerView(self, didFailWithError: .cameraNotAvailable)
             return
         }
         
@@ -225,14 +197,12 @@ class BarcodeScannerView: UIView {
         do {
             videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
         } catch {
-            delegate?.barcodeScannerView(self, didFailWithError: .cameraInputFailed)
             return
         }
         
         if captureSession.canAddInput(videoInput) {
             captureSession.addInput(videoInput)
         } else {
-            delegate?.barcodeScannerView(self, didFailWithError: .cameraInputFailed)
             return
         }
         
@@ -264,7 +234,6 @@ class BarcodeScannerView: UIView {
             }
             
         } else {
-            delegate?.barcodeScannerView(self, didFailWithError: .metadataOutputFailed)
             return
         }
         
@@ -290,11 +259,6 @@ class BarcodeScannerView: UIView {
         output.rectOfInterest = normalizedRect
     }
     
-    // MARK: - Actions
-    @objc private func closeButtonTapped() {
-        delegate?.barcodeScannerViewDidRequestClose(self)
-    }
-    
     private func handleBarcodeDetection(_ code: String, type: AVMetadataObject.ObjectType) {
         // 진동 피드백
 //        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
@@ -302,9 +266,6 @@ class BarcodeScannerView: UIView {
         
         // 스캔 일시 정지 (중복 스캔 방지)
         stopScanning()
-        
-        // 델리게이트로 결과 전달
-        delegate?.barcodeScannerView(self, didScan: code, type: type)
     }
     
     // MARK: - Data Binding
@@ -322,6 +283,26 @@ class BarcodeScannerView: UIView {
         return self
     }
     
+    @discardableResult
+    func setupDI(scannedBook: Observable<AladinBook>) -> Self {
+        scannedBook
+            .skip(1)
+            .withUnretained(self)
+            .subscribe(onNext: { `self`, book in
+                let bookInfoView = BookInfoView()
+                bookInfoView.configure(imageUrl: book.cover, title: book.title, author: book.author)
+                // ✅ 체이닝 방식
+                BottomSheetViewController.present(customContentView: bookInfoView)
+                    .didDismiss
+                    .subscribe(onNext: { _ in
+                        self.startScanning()
+                    })
+                    .disposed(by: self.disposeBag)
+            })
+            .disposed(by: disposeBag)
+        
+        return self
+    }
     
     /// 유저 액션
     @discardableResult
