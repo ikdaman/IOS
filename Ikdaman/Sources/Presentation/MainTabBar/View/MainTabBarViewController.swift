@@ -146,6 +146,10 @@ final class MainTabBarViewController: BaseViewController {
         // 현재 뷰 컨트롤러 업데이트
         currentViewController = selectedVC
     }
+    
+    func searchTabSelected() {
+        tabSelected(at: 1)
+    }
 }
 
 // MARK: - Layout
@@ -200,12 +204,18 @@ extension MainTabBarViewController {
         }
         
         // ViewControllers 초기화
-        let homeVC = HomeViewController(viewModel: DefaultHomeViewModel())
-        let searchVC = UIViewController().then { $0.view.backgroundColor = .green }
-        let bookcaseVC = UINavigationController(rootViewController: BookCaseViewController(viewModel: DefaultBookCaseViewModel())) 
-        let myVC = UINavigationController(rootViewController: MyViewController(viewModel: DefaultMyViewModel()))
-        UINavigationBar.appearance().isHidden = true
+        let homeVC = createNavController(for: HomeViewController(viewModel: DefaultHomeViewModel()))
+        let searchVC = createNavController(for: SearchViewController())
+        let bookcaseVC = createNavController(for: BookCaseViewController(viewModel: DefaultBookCaseViewModel()))
+        let myVC = createNavController(for: MyViewController(viewModel: DefaultMyViewModel()))
         viewControllers = [homeVC, searchVC, bookcaseVC, myVC]
+    }
+    
+    fileprivate func createNavController(for rootViewController: UIViewController) -> UIViewController {
+        let navController = UINavigationController(rootViewController:  rootViewController)
+        navController.isNavigationBarHidden = true
+        navController.interactivePopGestureRecognizer?.delegate = nil
+        return navController
     }
 }
 

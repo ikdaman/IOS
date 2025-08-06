@@ -263,9 +263,10 @@ class CustomTopBarView: UIView {
     var centerTitle: String? = nil
     var customButton: UIButton? = nil
     
-    init(centerTitle: String? = nil, customButton: UIButton? = nil) {
+    init(centerTitle: String? = nil, customButton: UIButton? = nil, isHiddenBackBtn: Bool = false) {
         self.centerTitle = centerTitle
         self.customButton = customButton
+        backButton.isHidden = isHiddenBackBtn
         super.init(frame: .zero)
         setupLayout()
         setupActions()

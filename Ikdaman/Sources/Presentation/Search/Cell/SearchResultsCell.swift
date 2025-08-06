@@ -6,9 +6,12 @@
 //
 
 import UIKit
+import RxSwift
 
 class SearchResultsCell: UITableViewCell {
     static let identifier = "SearchResultsCell"
+    
+    var disposeBag = DisposeBag()
     
     // MARK: - Properties
     private let bookImageView = UIImageView().then {
@@ -27,7 +30,7 @@ class SearchResultsCell: UITableViewCell {
         $0.font = .systemFont(ofSize: 12, weight: .regular)
     }
     
-    private lazy var addBookContainerView = UIView().then {
+    lazy var addBookContainerView = UIView().then {
         $0.backgroundColor = .black
         $0.layer.cornerRadius = 5
         $0.addSubviews([addBookLabel, addImageView])
@@ -65,7 +68,7 @@ class SearchResultsCell: UITableViewCell {
     }
     
     private let separatorLine = UIView().then {
-        $0.backgroundColor = UIColor(hex: "C8C8C8")
+        $0.backgroundColor = .white
     }
     
     // MARK: - Init
@@ -81,6 +84,7 @@ class SearchResultsCell: UITableViewCell {
     }
     
     override func prepareForReuse() {
+        disposeBag = DisposeBag()
         bookImageView.image = nil
     }
     
@@ -90,28 +94,28 @@ class SearchResultsCell: UITableViewCell {
         
         bookImageView.snp.makeConstraints {
             $0.verticalEdges.equalToSuperview().inset(15)
-            $0.left.equalToSuperview()
+            $0.left.equalToSuperview().inset(20)
             $0.width.equalTo(80)
         }
         
         titleLabel.snp.makeConstraints {
             $0.top.equalTo(bookImageView).offset(15)
             $0.left.equalTo(bookImageView.snp.right).offset(15)
-            $0.right.equalToSuperview().inset(15)
+            $0.right.equalToSuperview().inset(20)
         }
         
         subtitleLabel.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(3)
             $0.left.equalTo(titleLabel)
+            $0.right.equalToSuperview().inset(20)
         }
         
         addBookContainerView.snp.makeConstraints {
-            $0.right.equalToSuperview()
-            $0.bottom.equalToSuperview().inset(20)
+            $0.right.bottom.equalToSuperview().inset(20)
         }
         
         separatorLine.snp.makeConstraints {
-            $0.horizontalEdges.equalToSuperview()
+            $0.horizontalEdges.equalToSuperview().inset(20)
             $0.bottom.equalToSuperview()
             $0.height.equalTo(1)
         }
@@ -122,13 +126,17 @@ class SearchResultsCell: UITableViewCell {
     }
     
     private func bind() {
-        
+//        addBookContainerView.rx.tap
+//            .map { .addBook }
+//            .bind(to: actionTriggers)
+//            .disposed(by: disposeBag)
     }
     
-    func configure(image: String, title: String, subtitle: String) {
+    func configure(image: String, title: String, subtitle: String, isLast: Bool) {
         bookImageView.loadImage(from: image)
         titleLabel.text = title
         subtitleLabel.text = subtitle
+        separatorLine.isHidden = isLast
     }
     
     // TODO: KF 또는 다른 라이브러리 사용 필요할듯

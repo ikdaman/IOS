@@ -39,10 +39,12 @@ class SearchViewController: UIViewController {
                 case .detailBook(let book):
                     let vc = SearchDetailViewController()
                     vc.viewModel = SearchDetailViewModel(book: book)
-                    let navi = UINavigationController(rootViewController: vc)
-                    navi.isNavigationBarHidden = true
-                    navi.modalPresentationStyle = .fullScreen
-                    self.present(navi, animated: true)
+                    self.navigationController?.pushViewController(vc, animated: true)
+                    
+                case .barcodeScanner:
+                    let vc = BarcodeScannerViewController()
+                    vc.modalPresentationStyle = .fullScreen
+                    self.present(vc, animated: true)
                 }
             })
             .disposed(by: disposeBag)
@@ -51,11 +53,17 @@ class SearchViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setCustomBackButton()
         setupLayout()
         bindingViewModel()
-        navigationItem.title = "책 제목으로 검색하기"
         
         requestTrigger.accept(())
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+//        navigationController?.setNavigationBarHidden(true, animated: false)
+//        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
     }
     
     // MARK: - Methods
