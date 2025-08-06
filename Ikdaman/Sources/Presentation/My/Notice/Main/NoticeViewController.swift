@@ -11,6 +11,8 @@ import RxSwift
 
 final class NoticeViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource {
     
+    let topBarView = CustomTopBarView()
+    
     private let noticeLabel = UILabel().then {
         $0.text = "공지사항"
         $0.font = UIFont.systemFont(ofSize: 26, weight: .medium)
@@ -20,7 +22,7 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
         $0.estimatedRowHeight = 80
     }
     private let paginationView = UIStackView()
-    private let viewModel: NoticeViewModel
+    private var viewModel: NoticeViewModel
     private let disposeBag = DisposeBag()
     
     init(viewModel: NoticeViewModel) {
@@ -32,7 +34,6 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setCustomBackButton()
         setupUI()
         bindViewModel()
         viewModel.loadNotices(page: nil, limit: nil)
@@ -41,10 +42,16 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
     private func setupUI() {
         view.backgroundColor = .white
         
+        view.addSubview(topBarView)
+        topBarView.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(10)
+            $0.leading.trailing.equalToSuperview()
+        }
+        
         // Title
         view.addSubview(noticeLabel)
         noticeLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(25)
+            $0.top.equalTo(topBarView.snp.bottom)
             $0.leading.equalToSuperview().offset(23)
         }
         
@@ -68,7 +75,7 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
         paginationView.alignment = .center
         paginationView.distribution = .equalSpacing
         var pagination = ["<", "1", ">"]
-        if let totalPage = viewModel.notices?.totalPage, totalPage > 1 {
+        if let totalPage = viewModel.notices?.totalPages, totalPage > 1 {
             for page in 2...totalPage {
                 pagination.insert("\(page)", at: page)
             }
@@ -101,7 +108,10 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
     }
     
     private func bindViewModel() {
-        
+        viewModel.reloadTrigger
+            .subscribe { [weak self] _ in
+                self?.tableView.reloadData()
+            }.disposed(by: disposeBag)
     }
     
     // MARK: - UITableViewDataSource
@@ -121,7 +131,32 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
     
     // MARK: - Expand Logic
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        viewModel.notices?.notices[indexPath.row].isExpanded.toggle()
+//        guard var notices = viewModel.notices?.notices else { return }
+//
+//        for i in 0..<notices.count {
+//            if i == indexPath.row {
+//                // 선택한 셀만 toggle
+//                let isCurrentlyExpanded = notices[i].isExpanded ?? false
+//                notices[i].isExpanded = !isCurrentlyExpanded
+//            } else {
+//                // 나머지는 다 닫기
+//                notices[i].isExpanded = false
+//            }
+//        }
+//        viewModel.notices?.notices = notices
+//        tableView.reloadRows(at: [indexPath], with: .automatic)
+        guard var notices = viewModel.notices?.notices else { return }
+
+        for i in 0..<notices.count {
+            notices[i].isExpanded = (i == indexPath.row) ? !(notices[i].isExpanded ?? false) : false
+        }
+
+        // 🔥 반드시 다시 할당해야 viewModel의 데이터가 갱신됨
+        viewModel.notices?.notices = notices
+
+        // 애니메이션 reload
+        tableView.beginUpdates()
         tableView.reloadRows(at: [indexPath], with: .automatic)
+        tableView.endUpdates()
     }
 }

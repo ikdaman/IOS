@@ -84,7 +84,7 @@ final class NoticeDetailViewController: UIViewController {
             .subscribe(onNext: { [weak self] notice in
                 self?.titleLabel.text = notice.title
                 self?.dateLabel.text = "25.05.31"
-                self?.contentLabel.text = notice.content
+//                self?.contentLabel.text = notice.content
             })
             .disposed(by: disposeBag)
     }

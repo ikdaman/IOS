@@ -29,22 +29,7 @@ class NoticeCell: UITableViewCell {
     
     var isExpanded: Bool = false {
         didSet {
-            expandView.isHidden = !isExpanded
-            if expandView.isHidden {
-                expandView.snp.makeConstraints {
-                    $0.height.equalTo(0)
-                }
-            } else {
-                detailLabel.snp.makeConstraints {
-                    $0.top.bottom.equalToSuperview().inset(15)
-                    $0.leading.trailing.equalToSuperview().inset(25)
-                }
-                
-                detailLabel.numberOfLines = 0
-                detailLabel.font = .systemFont(ofSize: 14)
-                detailLabel.textColor = .darkGray
-            }
-            arrowImageView.transform = isExpanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+            exandView(isExpanded: isExpanded)
         }
     }
     
@@ -85,10 +70,40 @@ class NoticeCell: UITableViewCell {
     }
 
     func configure(with notice: Notice) {
-        dateLabel.text = Date().toString()
+        dateLabel.text = notice.uploadedAt
         titleLabel.text = notice.title
-        detailLabel.text = notice.content
-        isExpanded = notice.isExpanded
+        detailLabel.text = "1111"
+        isExpanded = notice.isExpanded ?? false
+    }
+    
+    func exandView(isExpanded: Bool) {
+        expandView.isHidden = !isExpanded
+        arrowImageView.transform = isExpanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+        
+        expandView.subviews.forEach { $0.removeFromSuperview() }
+        
+        if isExpanded {
+            expandView.addSubview(detailLabel)
+            detailLabel.text = "공지사항 내용입니다"
+            detailLabel.numberOfLines = 0
+            detailLabel.font = .systemFont(ofSize: 14)
+            detailLabel.textColor = .darkGray
+            
+            detailLabel.snp.remakeConstraints {
+                $0.edges.equalToSuperview().inset(15)
+            }
+
+            expandView.snp.remakeConstraints {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(15)
+                $0.leading.trailing.bottom.equalToSuperview()
+            }
+        } else {
+            expandView.snp.remakeConstraints {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(15)
+                $0.leading.trailing.bottom.equalToSuperview()
+                $0.height.equalTo(0)
+            }
+        }
     }
     
     required init?(coder: NSCoder) {

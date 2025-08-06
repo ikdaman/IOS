@@ -7,13 +7,14 @@
 
 struct Notices: Codable {
     var notices: [Notice]
-    let nowPage: Int
-    let totalPage: Int
+    let hasNext: Bool
+    let currentPage: Int
+    let totalPages: Int
 }
 
 struct Notice: Codable {
     let noticeId: Int
     let title: String
-    let content: String
-    var isExpanded: Bool = false
+    let uploadedAt: String
+    var isExpanded: Bool? = false
 }

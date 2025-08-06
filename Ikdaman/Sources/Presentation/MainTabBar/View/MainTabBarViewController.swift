@@ -29,12 +29,11 @@ final class MainTabBarViewController: BaseViewController {
     // MARK: - Properties
     private let viewModel: MainTabBarViewModel
     private let disposeBag = DisposeBag()
-    private var animator: UIViewPropertyAnimator?
     private var viewControllers: [UIViewController] = []
     private var currentViewController: UIViewController?
     
     // MARK: - UI
-    private let containterView = UIView()
+    private var containterView = UIView()
         
     private let homeButton = UIButton().then {
         $0.layer.cornerRadius = 25
@@ -81,6 +80,10 @@ final class MainTabBarViewController: BaseViewController {
         initialLayout()
         
         bind()
+        
+        for vc in viewControllers {
+            (vc as? UINavigationController)?.delegate = self
+        }
         
         // 앱 실행 시 homeButton을 선택된 상태로 설정
         tabSelected(at: 0)  // homeButton이 두 번째 버튼이므로 index 1로 설정
@@ -199,9 +202,22 @@ extension MainTabBarViewController {
         // ViewControllers 초기화
         let homeVC = HomeViewController(viewModel: DefaultHomeViewModel())
         let searchVC = UIViewController().then { $0.view.backgroundColor = .green }
-        let bookcaseVC = BookCaseViewController(viewModel: DefaultBookCaseViewModel())
+        let bookcaseVC = UINavigationController(rootViewController: BookCaseViewController(viewModel: DefaultBookCaseViewModel())) 
         let myVC = UINavigationController(rootViewController: MyViewController(viewModel: DefaultMyViewModel()))
+        UINavigationBar.appearance().isHidden = true
         viewControllers = [homeVC, searchVC, bookcaseVC, myVC]
+    }
+}
+
+extension MainTabBarViewController: UINavigationControllerDelegate {
+    func navigationController(_ navigationController: UINavigationController,
+                              willShow viewController: UIViewController,
+                              animated: Bool) {
+
+        let isRoot = viewController === navigationController.viewControllers.first
+
+        // 루트 뷰컨트롤러일 때만 tabbar 보이게
+        tabbarView.isHidden = !isRoot
     }
 }
 

@@ -22,6 +22,7 @@
 		EB9015C52DB7805100BE5CDE /* KakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */; };
 		EB9015C72DB7805100BE5CDE /* KakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C62DB7805100BE5CDE /* KakaoSDKUser */; };
 		EB9015CF2DB7818B00BE5CDE /* NaverThirdPartyLogin in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */; };
+		EBE10FF92E4323390071D856 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = EBE10FF82E4323390071D856 /* Kingfisher */; };
 		FB0D6E962D86B274002A5D42 /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = FB0D6E952D86B274002A5D42 /* Differentiator */; };
 		FB0D6E982D86B274002A5D42 /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = FB0D6E972D86B274002A5D42 /* RxDataSources */; };
 /* End PBXBuildFile section */
@@ -100,6 +101,7 @@
 				2B9BE5212D5B0D3D00D1F06E /* SnapKit in Frameworks */,
 				2B9BE5172D5B0A3D00D1F06E /* RxRelay in Frameworks */,
 				EB9014352DB60A8F00BE5CDE /* ReactiveMoya in Frameworks */,
+				EBE10FF92E4323390071D856 /* Kingfisher in Frameworks */,
 				EB9015CF2DB7818B00BE5CDE /* NaverThirdPartyLogin in Frameworks */,
 				FB0D6E982D86B274002A5D42 /* RxDataSources in Frameworks */,
 				FB0D6E962D86B274002A5D42 /* Differentiator in Frameworks */,
@@ -190,6 +192,7 @@
 				EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */,
 				EB9015C62DB7805100BE5CDE /* KakaoSDKUser */,
 				EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */,
+				EBE10FF82E4323390071D856 /* Kingfisher */,
 			);
 			productName = Ikdaman;
 			productReference = 2B9BE3E12D5AD8DB00D1F06E /* Ikdaman.app */;
@@ -277,6 +280,7 @@
 				EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */,
+				EBE10FF72E4323390071D856 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B9BE3E22D5AD8DB00D1F06E /* Products */;
@@ -737,6 +741,14 @@
 				kind = branch;
 			};
 		};
+		EBE10FF72E4323390071D856 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
 		FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources";
@@ -822,6 +834,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */;
 			productName = NaverThirdPartyLogin;
+		};
+		EBE10FF82E4323390071D856 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EBE10FF72E4323390071D856 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
 		};
 		FB0D6E952D86B274002A5D42 /* Differentiator */ = {
 			isa = XCSwiftPackageProductDependency;

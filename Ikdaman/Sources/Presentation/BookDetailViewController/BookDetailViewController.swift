@@ -144,7 +144,7 @@ class BookDetailView: UIView {
         $0.layer.cornerRadius = 10
     }
     
-    let bookRecordView = UIView().then {
+    let bookRecordView = UITableView().then {
         $0.backgroundColor = .blue
     }
     
@@ -239,7 +239,7 @@ class BookDetailView: UIView {
         bookRecordView.snp.makeConstraints {
             $0.top.equalTo(addBookButton.snp.bottom).offset(15)
             $0.width.equalToSuperview()
-            $0.bottom.equalToSuperview().offset(58)
+            $0.bottom.equalToSuperview().inset(58)
             $0.height.equalTo(300)
         }
     }
@@ -250,6 +250,10 @@ class BookDetailView: UIView {
             backgroundView.updateGradient(colors: colorType.gradientColors)
         }
     }
+}
+
+protocol CustomTopBarViewDelegate: AnyObject {
+    func didTapBackButton()
 }
 
 class CustomTopBarView: UIView {
@@ -264,6 +268,7 @@ class CustomTopBarView: UIView {
         self.customButton = customButton
         super.init(frame: .zero)
         setupLayout()
+        setupActions()
     }
     
     required init?(coder: NSCoder) {
@@ -301,6 +306,16 @@ class CustomTopBarView: UIView {
                 $0.trailing.equalToSuperview().inset(14)
                 $0.centerY.equalToSuperview()
             }
+        }
+    }
+    
+    private func setupActions() {
+        backButton.addTarget(self, action: #selector(handleBack), for: .touchUpInside)
+    }
+
+    @objc private func handleBack() {
+        if let vc = self.parentViewController {
+            vc.navigationController?.popViewController(animated: true)
         }
     }
 }
@@ -567,4 +582,17 @@ struct BookInfo: Codable {
     let publisher: String
     let totalPage: Int
     let category: String
+}
+
+extension UIView {
+    var parentViewController: UIViewController? {
+        var responder: UIResponder? = self
+        while let next = responder?.next {
+            if let vc = next as? UIViewController {
+                return vc
+            }
+            responder = next
+        }
+        return nil
+    }
 }
