@@ -143,9 +143,10 @@ extension BookAPI: TargetType {
             param = ["status": status, "keyword": keyword, "page": page, "limit": limit]
             return .requestParameters(parameters: param, encoding: URLEncoding.default)
         case .noticeList(let page, let limit):
-            if let page = page, let limit = limit {
-                param = ["page": page, "limit": limit]
-            }
+//            if let page = page, let limit = limit {
+//                param = ["page": page, "limit": limit]
+//            }
+            param = ["page": page ?? 1, "limit": limit ?? 10]
             return .requestParameters(parameters: param, encoding: URLEncoding.default)
         default:
             return .requestPlain
@@ -166,7 +167,7 @@ extension BookAPI: TargetType {
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
             defaultHeaders["social-token"] = socialToken
-        case .logout, .getProfile, .withDrawal, .modifyProfile:
+        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList:
             defaultHeaders["Authorization"] = accessToken
         default:
             break

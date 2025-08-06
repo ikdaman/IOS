@@ -17,6 +17,7 @@ struct BookCaseViewModelInput {
     let fetchBooks: Observable<Void>
 //    let searchTapped: Observable<String>
     let filterTapped: Observable<FilterType>
+//    let addBookTapped: Observable<Void>
 }
 
 struct BookCaseViewModelOutput {

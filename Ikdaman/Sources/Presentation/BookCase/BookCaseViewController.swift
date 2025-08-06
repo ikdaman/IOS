@@ -10,6 +10,7 @@ import SnapKit
 import Then
 import RxSwift
 import RxCocoa
+import Kingfisher
 
 final class BookCaseViewController: BaseViewController {
     
@@ -54,6 +55,9 @@ final class BookCaseViewController: BaseViewController {
         let output = viewModel.transform(input: input)
         
         output.books
+            .do(onNext: { [weak self] books in
+                self?.bookCaseView.emptyLibraryView.isHidden = books.isEmpty
+            })
             .bind(to: bookCaseView.bookListView.rx.items(
                 cellIdentifier: BookCaseCell.identifier,
                 cellType: BookCaseCell.self
@@ -65,7 +69,11 @@ final class BookCaseViewController: BaseViewController {
     }
     
     private func bindActions() {
-        
+        self.bookCaseView.addButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let vc = BookDetailViewController()
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
     }
     
 }
@@ -73,7 +81,7 @@ final class BookCaseViewController: BaseViewController {
 extension BookCaseViewController: UICollectionViewDataSource, UICollectionViewDelegate {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 0 // 임의의 아이템 개수
+        return 10 // 임의의 아이템 개수
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -97,6 +105,7 @@ class BookCaseView: UIView {
     let filterView = FilterView()
     let bookListView = UICollectionView(frame: .zero, collectionViewLayout: {
         let layout = UICollectionViewFlowLayout()
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 23, right: 21)
         layout.minimumLineSpacing = 50
         layout.minimumInteritemSpacing = 26
         layout.itemSize = CGSize(width: 100, height: 160)
@@ -107,7 +116,7 @@ class BookCaseView: UIView {
     }
     
     var emptyLibraryView = EmptyLibraryView()
-    private let addButton = UIButton().then {
+    let addButton = UIButton().then {
         $0.backgroundColor = .black
         $0.layer.cornerRadius = 22.5
         $0.setImage(UIImage(systemName: "plus"), for: .normal)
@@ -128,8 +137,8 @@ class BookCaseView: UIView {
     // MARK: - Setup
     private func setupViews() {
         addSubview(backgroundView)
-        addSubviews([searchBar, filterView, bookListView])
         addSubview(emptyLibraryView)
+        addSubviews([searchBar, filterView, bookListView])
         addSubview(addButton)
     }
     
@@ -154,8 +163,8 @@ class BookCaseView: UIView {
         
         bookListView.snp.makeConstraints {
             $0.top.equalTo(filterView.snp.bottom).offset(17)
-            $0.horizontalEdges.equalToSuperview().inset(20)
-            $0.bottom.equalTo(backgroundView.snp.bottom).inset(99)
+            $0.horizontalEdges.equalToSuperview()
+            $0.bottom.equalTo(backgroundView.snp.bottom)
         }
         
         emptyLibraryView.snp.makeConstraints {
@@ -307,7 +316,7 @@ class BookCaseCell: UICollectionViewCell {
     }
 
     func configure(book: Book) {
-//        imageView.image = uiimage
+        imageView.kf.setImage(with: URL(string: book.coverImage))
     }
 }
 
@@ -346,27 +355,26 @@ class CustomSearchBar: UIView {
     // MARK: - Setup View
     private func setupView() {
         backgroundColor = .white
-        layer.cornerRadius = 12
+        layer.cornerRadius = 5
         layer.masksToBounds = true
 
         addSubview(textField)
         addSubview(searchButton)
 
-        // Layout with SnapKit
-        searchButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(12)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(24)
+        searchButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(12)
+            $0.centerY.equalToSuperview()
+            $0.width.height.equalTo(24)
         }
 
-        textField.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.trailing.equalTo(searchButton.snp.leading).offset(-8)
-            make.top.bottom.equalToSuperview()
+        textField.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.trailing.equalTo(searchButton.snp.leading).offset(-8)
+            $0.top.bottom.equalToSuperview()
         }
 
-        snp.makeConstraints { make in
-            make.height.equalTo(48)
+        snp.makeConstraints {
+            $0.height.equalTo(48)
         }
     }
 
