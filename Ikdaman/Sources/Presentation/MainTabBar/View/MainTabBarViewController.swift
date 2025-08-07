@@ -146,10 +146,6 @@ final class MainTabBarViewController: BaseViewController {
         // 현재 뷰 컨트롤러 업데이트
         currentViewController = selectedVC
     }
-    
-    func searchTabSelected() {
-        tabSelected(at: 1)
-    }
 }
 
 // MARK: - Layout

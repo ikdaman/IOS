@@ -35,7 +35,7 @@ enum BookAPI {
     /// 나의 책 정보 조회
     case book(bookId: Int)
     /// 나의 책 추가
-    case addBook(bookId: Int)
+    case addBook(book: AddMyBook)
     /// 독서중인 책 목록 조회
     case bookListReading
     /// 생각 삭제
@@ -148,6 +148,11 @@ extension BookAPI: TargetType {
 //            }
             param = ["page": page ?? 1, "limit": limit ?? 10]
             return .requestParameters(parameters: param, encoding: URLEncoding.default)
+        case .addBook(let book):
+            param = ["title": book.title, "writer": book.writer, "publisher": book.publisher,
+                     "isbn": book.isbn, "page": book.page, "coverImage": book.coverImage,
+                     "itemId": book.itemId, "impression": book.impression, "createdAt": book.createdAt]
+            return .requestParameters(parameters: param, encoding: JSONEncoding.default)
         default:
             return .requestPlain
         }
@@ -167,7 +172,7 @@ extension BookAPI: TargetType {
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
             defaultHeaders["social-token"] = socialToken
-        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList:
+        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook:
             defaultHeaders["Authorization"] = accessToken
         default:
             break
