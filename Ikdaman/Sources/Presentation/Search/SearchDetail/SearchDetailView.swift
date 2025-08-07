@@ -209,6 +209,11 @@ class SearchDetailView: UIView {
             })
             .disposed(by: disposeBag)
         
+        moveToAladinBtn.rx.tap
+            .map { .moveToAladinBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
         textView.rx.text
             .orEmpty
             .map { .impressionText($0) }

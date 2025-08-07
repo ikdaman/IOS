@@ -5,12 +5,13 @@
 //  Created by 이재혁 on 5/11/25.
 //
 
-import Foundation
+import UIKit
 import RxSwift
 import RxCocoa
 
 enum SearchDetailTriggerType {
     case backBtnTapped
+    case moveToAladinBtnTapped
     case impressionText(String)
     case addBookBtnTapped
 }
@@ -58,8 +59,14 @@ class SearchDetailViewModel {
         switch action {
         case .backBtnTapped:
             outputRequest.accept(.back)
+            
+        case .moveToAladinBtnTapped:
+            guard let url = URL(string: bookRelay.value.link), UIApplication.shared.canOpenURL(url) else { return }
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            
         case .impressionText(let text):
             impressionText = text
+            
         case .addBookBtnTapped:
             let book = bookRelay.value
             let date = Date()

@@ -15,6 +15,7 @@ struct BookSearchResponse: Decodable {
 
 struct AladinBook: Decodable {
     let title: String
+    let link: String
     let author: String
     let publisher: String
     let pubDate: String
@@ -30,6 +31,7 @@ struct AladinBook: Decodable {
 extension AladinBook {
     static let empty = AladinBook(
         title: "",
+        link: "",
         author: "",
         publisher: "",
         pubDate: "",
