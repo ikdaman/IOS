@@ -27,7 +27,7 @@ enum BookAPI {
     /// 회원탈퇴
     case withDrawal
     /// 나의 책 기록 조회
-    case bookHistory(bookId: Int, page: Int, limit: Int)
+    case bookHistory(bookId: Int, page: Int?, limit: Int?)
     /// 나의 책 목록 조회
     case bookList(status: String?, keyword: String?, page: Int?, limit: Int?)
     /// 나의 책 삭제
@@ -41,9 +41,9 @@ enum BookAPI {
     /// 생각 삭제
     case deleteThink(bookId: Int, bookLogId: Int)
     /// 생각 수정
-    case modifyThink(bookId: Int, bookLogId: Int)
+    case modifyThink(bookId: Int, content: String, bookLogId: Int)
     /// 생각 추가
-    case addThink(bookId: Int)
+    case addThink(bookId: Int, content: String, page: Int, createdAt: Date)
     /// 완독 추가
     case addCompleteRead(bookId: Int)
     /// 완독 삭제
@@ -51,7 +51,7 @@ enum BookAPI {
     /// 완독 수정
     case modifyCompleteRead(bookId: Int, bookLogId: Int)
     /// 첫 인상 추가
-    case firstImpression(bookId: Int)
+    case firstImpression(bookId: Int, impression: String, createdAt: Date)
     /// 공지사항 목록 조회
     case noticeList(page: Int?, limit: Int?)
     /// 공지사항 상세 조회
@@ -94,9 +94,9 @@ extension BookAPI: TargetType {
             "/mybooks/in-progress"
         case .deleteThink(let bookId, let bookLodId):
             "/mybooks/\(bookId)/booklog/\(bookLodId)"
-        case .modifyThink(let bookId, let bookLodId):
+        case .modifyThink(let bookId, _, let bookLodId):
             "/mybooks/\(bookId)/booklog/\(bookLodId)"
-        case .addThink(let bookId):
+        case .addThink(let bookId, _, _, _):
             "/mybooks/\(bookId)/booklog"
         case .addCompleteRead(let bookId):
             "/mybooks/\(bookId)/completed"
@@ -104,7 +104,7 @@ extension BookAPI: TargetType {
             "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
         case .modifyCompleteRead(let bookId, let bookLogId):
             "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
-        case .firstImpression(let bookId):
+        case .firstImpression(let bookId, _, _):
             "/mybooks/\(bookId)/impression"
         case .noticeList(_, _):
             "/notices"
@@ -117,11 +117,11 @@ extension BookAPI: TargetType {
     
     var method: Moya.Method {
         switch self {
-        case .reissueToken, .login, .addBook(_), .addThink(_), .addCompleteRead(_), .firstImpression(_), .addNotice:
+        case .reissueToken, .login, .addBook(_), .addThink(_, _, _, _), .addCompleteRead(_), .firstImpression(_, _, _), .addNotice:
             return .post
         case .logout, .withDrawal, .deleteBook(_), .deleteThink(_, _), .deleteCompleteRead(_, _):
             return .delete
-        case .modifyProfile, .modifyThink(_, _), .modifyCompleteRead(_, _):
+        case .modifyProfile, .modifyThink(_, _, _), .modifyCompleteRead(_, _):
             return .put
         case .getProfile, .checkNickname, .bookHistory(_, _, _), .bookList(_, _, _, _), .book(_), .bookListReading,
                 .noticeList, .noticeDetail(_):
@@ -143,10 +143,10 @@ extension BookAPI: TargetType {
             param = ["status": status, "keyword": keyword, "page": page, "limit": limit]
             return .requestParameters(parameters: param, encoding: URLEncoding.default)
         case .noticeList(let page, let limit):
-//            if let page = page, let limit = limit {
-//                param = ["page": page, "limit": limit]
-//            }
             param = ["page": page ?? 1, "limit": limit ?? 10]
+            return .requestParameters(parameters: param, encoding: URLEncoding.default)
+        case .bookHistory(_, let page, let limit):
+            param = ["page": page ?? 1, "limit": limit ?? 9]
             return .requestParameters(parameters: param, encoding: URLEncoding.default)
         default:
             return .requestPlain
@@ -167,7 +167,7 @@ extension BookAPI: TargetType {
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
             defaultHeaders["social-token"] = socialToken
-        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList:
+        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead:
             defaultHeaders["Authorization"] = accessToken
         default:
             break

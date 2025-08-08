@@ -15,15 +15,12 @@ final class BookDetailViewController: BaseViewController {
     
     // MARK: - Properties
     private let bookDetailView = BookDetailView()
-//    private let viewModel: BookCaseViewModel
+    private let viewModel: BookDetailViewModel
     private let disposeBag = DisposeBag()
     
     // MARK: - Initializer
-//    init(viewModel: BookCaseViewModel) {
-//        self.viewModel = viewModel
-//        super.init()
-//    }
-    override init() {
+    init(viewModel: BookDetailViewModel) {
+        self.viewModel = viewModel
         super.init()
     }
     
@@ -45,20 +42,23 @@ final class BookDetailViewController: BaseViewController {
     
     // MARK: - Binding
     private func bindViewModel() {
-//        let input = BookCaseViewModelInput(fetchBooks: Observable.just(()),
-//                                           filterTapped: bookCaseView.filterView.filterTapped.asObservable())
-//        
-//        let output = viewModel.transform(input: input)
-//        
-//        output.books
-//            .bind(to: bookCaseView.bookListView.rx.items(
-//                cellIdentifier: BookCaseCell.identifier,
-//                cellType: BookCaseCell.self
-//            )) { row, book, cell in
-//                cell.configure(book: book)
-//            }
-//            .disposed(by: disposeBag)
-        
+        let input = BookDetailViewModelInput(
+            fetchBookInfo: Observable.just(()),
+            fetchBookHistory: Observable.just(())
+        )
+
+        let output = viewModel.transform(input: input)
+
+        output.bookHistory
+            .compactMap { $0?.booklogs }
+            .bind(to: bookDetailView.bookRecordView.rx.items(
+                cellIdentifier: BookLogCell.identifier,
+                cellType: BookLogCell.self
+            )) { [weak self] index, log, cell in
+                cell.configure(with: log)
+                self?.bookDetailView.bookRecordView.reloadData()
+            }
+            .disposed(by: disposeBag)
     }
     
     private func bindActions() {
@@ -145,7 +145,11 @@ class BookDetailView: UIView {
     }
     
     let bookRecordView = UITableView().then {
-        $0.backgroundColor = .blue
+        $0.register(BookLogCell.self, forCellReuseIdentifier: BookLogCell.identifier)
+        $0.separatorStyle = .none
+        $0.showsVerticalScrollIndicator = false
+        $0.isScrollEnabled = false
+        $0.estimatedRowHeight = 64
     }
     
     override init(frame: CGRect) {
@@ -240,8 +244,8 @@ class BookDetailView: UIView {
             $0.top.equalTo(addBookButton.snp.bottom).offset(15)
             $0.width.equalToSuperview()
             $0.bottom.equalToSuperview().inset(58)
-            $0.height.equalTo(300)
         }
+        
     }
     
     func setBackgroundColor() {
@@ -252,348 +256,68 @@ class BookDetailView: UIView {
     }
 }
 
-protocol CustomTopBarViewDelegate: AnyObject {
-    func didTapBackButton()
-}
-
-class CustomTopBarView: UIView {
-    let backButton = UIButton().then {
-        $0.setImage(UIImage(named: "backButton"), for: .normal)
-    }
-    var centerTitle: String? = nil
-    var customButton: UIButton? = nil
+class BookLogCell: UITableViewCell {
+    static let identifier = "BookLogCell"
     
-    init(centerTitle: String? = nil, customButton: UIButton? = nil, isHiddenBackBtn: Bool = false) {
-        self.centerTitle = centerTitle
-        self.customButton = customButton
-        backButton.isHidden = isHiddenBackBtn
-        super.init(frame: .zero)
-        setupLayout()
-        setupActions()
+    private let dateLabel = UILabel().then {
+        $0.font = .pretendard(.regular, size: 14)
+        $0.textColor = #colorLiteral(red: 0.4756370187, green: 0.4756369591, blue: 0.4756369591, alpha: 1)
     }
     
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
+    private let contentLabel = UILabel().then {
+        $0.font = .pretendard(.semiBold, size: 14)
     }
     
-    private func setupLayout() {
-        self.backgroundColor = .clear
-        self.snp.makeConstraints {
-            $0.height.equalTo(50)
-        }
-        addSubview(backButton)
-        
-        backButton.snp.makeConstraints {
-            $0.centerY.equalToSuperview()
-            $0.leading.equalToSuperview().offset(13)
-            $0.size.equalTo(26)
-        }
-        
-        if let centerTitle = centerTitle {
-            let centerTitleLabel = UILabel().then {
-                $0.text = centerTitle
-                $0.font = .systemFont(ofSize: 18, weight: .bold)
-                $0.textColor = .black
-            }
-            addSubview(centerTitleLabel)
-            centerTitleLabel.snp.makeConstraints {
-                $0.center.equalToSuperview()
-            }
-        }
-        
-        if let customButton = customButton {
-            addSubview(customButton)
-            customButton.snp.makeConstraints {
-                $0.trailing.equalToSuperview().inset(14)
-                $0.centerY.equalToSuperview()
-            }
-        }
+    private let logContainerView = UIView()
+    
+    private let pageLabel = UILabel().then {
+        $0.font = .pretendard(.bold, size: 14)
     }
     
-    private func setupActions() {
-        backButton.addTarget(self, action: #selector(handleBack), for: .touchUpInside)
+    private let logLabel = UILabel().then {
+        $0.font = .pretendard(.regular, size: 13)
     }
 
-    @objc private func handleBack() {
-        if let vc = self.parentViewController {
-            vc.navigationController?.popViewController(animated: true)
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        contentView.addSubviews([contentLabel, dateLabel, logContainerView])
+        
+        dateLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().inset(20)
         }
-    }
-}
 
-class MyBookInfoView: UIView {
-    var myBookInfo: MyBookInfo?
-    
-    let containerView = UIView().then {
-        $0.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0.7)
-        $0.clipsToBounds = true
-        $0.layer.cornerRadius = 10
-    }
-    
-    let bookImage = UIImageView()
-    
-    let bookTitle = UILabel().then {
-        $0.font = .systemFont(ofSize: 16, weight: .bold)
-        $0.textAlignment = .left
-        $0.numberOfLines = 0
-        $0.text = "테스트"
-    }
-    
-    let bookAuthor = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
-        $0.textAlignment = .left
-    }
-    
-    let bookPulbisher = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
-        $0.textAlignment = .left
-    }
-    
-    let bookTotalPage = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
-        $0.textAlignment = .left
-    }
-    
-    let showAladinButton = UIButton().then {
-        let title = "알라딘에서 보기"
-        let attributes: [NSAttributedString.Key: Any] = [
-            .underlineStyle: NSUnderlineStyle.single.rawValue,
-            .font: UIFont.systemFont(ofSize: 12, weight: .bold)
-        ]
-        let attributedTitle = NSAttributedString(string: title, attributes: attributes)
-        $0.setAttributedTitle(attributedTitle, for: .normal)
-    }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupLayout()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-    }
-    
-    private func setupLayout() {
-        addSubview(containerView)
-        containerView.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview()
-            $0.leading.trailing.equalToSuperview()
+        contentLabel.snp.makeConstraints {
+            $0.centerY.equalTo(dateLabel)
+            $0.leading.equalTo(dateLabel.snp.trailing).offset(6)
         }
         
-        let authorLabel = UILabel().then {
-            $0.text = "작가"
-            $0.font = .systemFont(ofSize: 14, weight: .bold)
-            $0.textAlignment = .left
-        }
-        
-        let publisherLabel = UILabel().then {
-            $0.text = "출판사"
-            $0.font = .systemFont(ofSize: 14, weight: .bold)
-            $0.textAlignment = .left
-        }
-        
-        let totalPageLabel = UILabel().then {
-            $0.text = "총 페이지"
-            $0.font = .systemFont(ofSize: 14, weight: .bold)
-            $0.textAlignment = .left
-        }
-        
-        let aladinInfoLabel = UILabel().then {
-            $0.text = "도서정보 알라딘 제공"
-            $0.font = .systemFont(ofSize: 12, weight: .regular)
-            $0.textAlignment = .left
-        }
-        
-        containerView.addSubviews([bookImage, bookTitle, authorLabel, bookAuthor, publisherLabel, bookPulbisher,
-                                   totalPageLabel, bookTotalPage, aladinInfoLabel, showAladinButton])
-        
-        bookImage.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(17)
-            $0.leading.equalToSuperview().offset(17)
-            $0.width.equalTo(91)
-            $0.height.equalTo(130)
-        }
-        
-        bookTitle.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(17)
-            $0.leading.equalTo(bookImage.snp.trailing).offset(15)
-            $0.trailing.equalToSuperview().inset(17)
-        }
-        
-        authorLabel.snp.makeConstraints {
-            $0.top.equalTo(bookTitle.snp.bottom).offset(22)
-            $0.leading.equalTo(bookTitle.snp.leading)
-            $0.width.equalTo(50)
-        }
-        
-        bookAuthor.snp.makeConstraints {
-            $0.top.equalTo(bookTitle.snp.bottom).offset(22)
-            $0.leading.equalTo(authorLabel.snp.trailing).offset(10)
-            $0.trailing.equalToSuperview().inset(17)
-        }
-        
-        publisherLabel.snp.makeConstraints {
-            $0.top.equalTo(authorLabel.snp.bottom).offset(22)
-            $0.leading.equalTo(bookTitle.snp.leading)
-            $0.width.equalTo(50)
-        }
-        
-        bookPulbisher.snp.makeConstraints {
-            $0.top.equalTo(authorLabel.snp.bottom).offset(22)
-            $0.leading.equalTo(publisherLabel.snp.trailing).offset(10)
-            $0.trailing.equalToSuperview().inset(17)
-        }
-        
-        totalPageLabel.snp.makeConstraints {
-            $0.top.equalTo(publisherLabel.snp.bottom).offset(22)
-            $0.leading.equalTo(bookTitle.snp.leading)
-            $0.width.equalTo(50)
-        }
-        
-        bookTotalPage.snp.makeConstraints {
-            $0.top.equalTo(publisherLabel.snp.bottom).offset(22)
-            $0.leading.equalTo(totalPageLabel.snp.trailing).offset(10)
-            $0.trailing.equalToSuperview().inset(17)
-        }
-        
-        aladinInfoLabel.snp.makeConstraints {
-            $0.top.equalTo(totalPageLabel.snp.bottom).offset(18)
-            $0.leading.equalTo(bookTitle.snp.leading)
+        logContainerView.snp.makeConstraints {
+            $0.top.equalTo(dateLabel.snp.bottom).offset(15)
+            $0.leading.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().inset(21)
             $0.bottom.equalToSuperview().inset(20)
         }
         
-        showAladinButton.snp.makeConstraints {
-            $0.centerY.equalTo(aladinInfoLabel)
-            $0.leading.equalTo(aladinInfoLabel.snp.trailing).offset(9)
+        logContainerView.addSubviews([pageLabel, logLabel])
+        pageLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview()
         }
-    }
-}
-
-class ProgressIndicatorView: UIView {
-
-    private let trackView = UIView()
-    private let fillView = UIView()
-    private let centerLabelContainer = UIView()
-    private let iconImageView = UIImageView()
-    private let percentageLabel = UILabel()
-
-    var progress: CGFloat = 0.42 {
-        didSet {
-            updateProgress()
+        
+        logLabel.snp.makeConstraints {
+            $0.top.equalTo(pageLabel.snp.bottom).offset(20)
+            $0.leading.trailing.bottom.equalToSuperview()
         }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupViews()
-        layoutViews()
-        updateProgress()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func setupViews() {
-        trackView.backgroundColor = UIColor.purple.withAlphaComponent(0.3)
-        trackView.layer.cornerRadius = 2
-        addSubview(trackView)
-
-        fillView.backgroundColor = .black
-        fillView.layer.cornerRadius = 2
-        addSubview(fillView)
-
-        centerLabelContainer.backgroundColor = .black
-        centerLabelContainer.layer.cornerRadius = 14
-        centerLabelContainer.clipsToBounds = true
-        addSubview(centerLabelContainer)
-
-        iconImageView.image = UIImage(systemName: "book.fill")
-        iconImageView.tintColor = .white
-        centerLabelContainer.addSubview(iconImageView)
-
-        percentageLabel.textColor = .white
-        percentageLabel.font = .boldSystemFont(ofSize: 14)
-        centerLabelContainer.addSubview(percentageLabel)
-    }
-
-    private func layoutViews() {
-        trackView.snp.makeConstraints {
-            $0.height.equalTo(3)
-            $0.centerY.equalToSuperview()
-            $0.leading.trailing.equalToSuperview()
-        }
-
-        fillView.snp.makeConstraints {
-            $0.left.top.bottom.equalTo(trackView)
-            $0.width.equalTo(0) // Will update
-        }
-
-        centerLabelContainer.snp.makeConstraints {
-            $0.centerY.equalTo(trackView)
-            $0.centerX.equalTo(fillView.snp.right)
-            $0.height.equalTo(28)
-        }
-
-        iconImageView.snp.makeConstraints {
-            $0.left.equalToSuperview().offset(8)
-            $0.centerY.equalToSuperview()
-            $0.size.equalTo(16)
-        }
-
-        percentageLabel.snp.makeConstraints {
-            $0.left.equalTo(iconImageView.snp.right).offset(4)
-            $0.right.equalToSuperview().inset(8)
-            $0.centerY.equalToSuperview()
-        }
-    }
-
-    private func updateProgress() {
-        percentageLabel.text = "\(Int(progress * 100))%"
-
-        let totalWidth = self.bounds.width
-        let fillWidth = totalWidth * progress
-
-        fillView.snp.updateConstraints {
-            $0.width.equalTo(fillWidth)
-        }
-
-        layoutIfNeeded()
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        updateProgress()
-    }
-}
-
-struct MyBookInfo: Codable {
-    let bookInfo: [BookInfo]
-    let mybookId: Int
-    let startDate: String
-    let nowPage: Int
-    let progress: Int
-    let impression: String?
-}
-
-struct BookInfo: Codable {
-    let title: String
-    let author: String
-    let coverImage: String
-    let publisher: String
-    let totalPage: Int
-    let category: String
-}
-
-extension UIView {
-    var parentViewController: UIViewController? {
-        var responder: UIResponder? = self
-        while let next = responder?.next {
-            if let vc = next as? UIViewController {
-                return vc
-            }
-            responder = next
-        }
-        return nil
+    func configure(with log: BookLog) {
+        contentLabel.text = log.content
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd HH:mm"
+        dateLabel.text = formatter.string(from: log.loggedDate)
     }
 }

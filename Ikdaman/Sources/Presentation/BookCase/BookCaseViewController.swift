@@ -71,7 +71,7 @@ final class BookCaseViewController: BaseViewController {
     private func bindActions() {
         self.bookCaseView.addButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let vc = BookDetailViewController()
+                let vc = BookDetailViewController(viewModel: DefaultBookDetailViewModel())
                 self?.navigationController?.pushViewController(vc, animated: true)
             }).disposed(by: disposeBag)
     }
