@@ -46,27 +46,48 @@ final class DefaultMainTabBarViewModel: MainTabBarViewModel {
     
     // MARK: - Methods
     func transform(input: MainTabBarViewModelInput) -> MainTabBarViewModelOutput {
-        input.homeSelected
-            .map { _ in 0 }
-            .bind(to: selectedScene)
-            .disposed(by: disposeBag)
+        let buttonSelections = Observable.merge(
+            input.homeSelected.map { 0 },
+            input.searchSelected.map { 1 },
+            input.bookcaseSelected.map { 2 },
+            input.mySelected.map { 3 }
+        )
         
-        input.searchSelected
-            .map { _ in 1 }
-            .bind(to: selectedScene)
-            .disposed(by: disposeBag)
-        
-        input.bookcaseSelected
-            .map { _ in 2 }
-            .bind(to: selectedScene)
-            .disposed(by: disposeBag)
-        
-        input.mySelected
-            .map { _ in 3 }
-            .bind(to: selectedScene)
-            .disposed(by: disposeBag)
+        Observable.merge(
+            buttonSelections,
+            TabBarNavigator.shared.tabSelection
+        )
+        .bind(to: selectedScene)
+        .disposed(by: disposeBag)
         
         return MainTabBarViewModelOutput(selectedScene: selectedScene.asObserver())
     }
     
+}
+
+final class TabBarNavigator {
+    static let shared = TabBarNavigator()
+    let tabSelection = PublishSubject<Int>()
+    
+    private init() {}
+    
+    func navigateToHome() {
+        tabSelection.onNext(0)
+    }
+    
+    func navigateToSearch() {
+        tabSelection.onNext(1)
+    }
+    
+    func navigateToBookcase() {
+        tabSelection.onNext(2)
+    }
+    
+    func navigateToMy() {
+        tabSelection.onNext(3)
+    }
+    
+    func navigateTo(tab: Int) {
+        tabSelection.onNext(tab)
+    }
 }

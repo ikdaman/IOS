@@ -84,7 +84,23 @@ class SearchViewModel {
             searchWithQuery(searchQueryRelay.value)
             
         case .selectBook(let book):
-            outputRequest.accept(.detailBook(book))
+            AladinAPIService.shared.searchBook(isbn: book.isbn) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success(let response):
+                    print("ISBN 책 응답 > \(response)")
+                    guard let book = response.item.first else {
+                        print("책 정보 가져올 수 없음")
+                        return
+                    }
+                    
+                    self.outputRequest.accept(.detailBook(book))
+                case .failure(let error):
+                    print("검색 에러: \(error)")
+                }
+            }
+            
+            
         case .loadMoreBooks:
             loadMoreBooks()
         }

@@ -166,6 +166,9 @@ class SearchView: UIView {
             .disposed(by: disposeBag)
         
         searchBtn.rx.tap
+            .do(onNext: { [weak self] in
+                self?.endEditing(true)
+            })
             .map { .searchBtnTapped }
             .bind(to: actionTriggers)
             .disposed(by: disposeBag)

@@ -197,28 +197,46 @@ class SearchDetailView: UIView {
     }
     
     private func bind() {
+        backBtn.rx.tap
+            .map { .backBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
         
+        self.rx.tap
+            .withUnretained(self)
+            .subscribe(onNext: { `self`, _ in
+                self.endEditing(true)
+            })
+            .disposed(by: disposeBag)
+        
+        moveToAladinBtn.rx.tap
+            .map { .moveToAladinBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
+        textView.rx.text
+            .orEmpty
+            .map { .impressionText($0) }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
+        addBookBtn.rx.tap
+            .map { .addBookBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Data Binding
     @discardableResult
-    func setupDI(selectedBook: Observable<AladinBook>) -> Self {
-        selectedBook
+    func setupDI(book: Observable<AladinBook>) -> Self {
+        book
             .withUnretained(self)
             .subscribe(onNext: { `self`, book in
-                print("asdf > \(book)")
                 self.bookImageView.loadImage(from: book.cover)
                 self.titleInfoView.configure(title: "책 제목", content: book.title)
-                
                 self.authorInfoView.configure(title: "작가", content: book.author)
-                
                 self.publisherInfoView.configure(title: "출판사", content: book.publisher)
-                
-                let formattedPrice = NumberFormatter().then {
-                    $0.numberStyle = .decimal
-                }.string(from: NSNumber(value: book.priceStandard)) ?? "0"
-                
-                self.priceInfoView.configure(title: "가격", content: "\(formattedPrice)원")
+                self.priceInfoView.configure(title: "총 페이지", content: "\(book.subInfo?.itemPage ?? 0)")
             })
             .disposed(by: disposeBag)
         
@@ -239,12 +257,12 @@ class SearchDetailView: UIView {
 fileprivate class BookInfoLabelView: UIView {
     // MARK: - Properties
     private let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .semibold)
+        $0.font = .pretendard(.semiBold, size: 14)
         $0.textColor = .black
     }
     
     private let contentLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.font = .pretendard(.regular, size: 14)
         $0.textColor = .init(hex: "777777")
     }
     
@@ -271,7 +289,7 @@ fileprivate class BookInfoLabelView: UIView {
         titleLabel.snp.makeConstraints {
             $0.verticalEdges.equalToSuperview()
             $0.left.equalToSuperview()
-            $0.width.equalTo(50)
+            $0.width.equalTo(60)
         }
         
         contentLabel.snp.makeConstraints {

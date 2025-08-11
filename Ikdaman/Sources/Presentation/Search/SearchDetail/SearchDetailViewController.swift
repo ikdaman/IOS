@@ -28,13 +28,20 @@ class SearchDetailViewController: UIViewController {
                                                                 action: actionTriggers))
         
         subView
-            .setupDI(selectedBook: response.selectedBook)
+            .setupDI(book: response.bookRelay)
             .setupDI(action: actionTriggers)
         
         response.outputRequest
             .withUnretained(self)
             .subscribe(onNext: { `self`, output in
-                
+                switch output {
+                case .back:
+                    self.navigationController?.popViewController(animated: true)
+                case .home:
+                    self.navigationController?.popToRootViewController(animated: true) {
+                        TabBarNavigator.shared.navigateToHome()
+                    }
+                }
             })
             .disposed(by: disposeBag)
     }
@@ -57,6 +64,10 @@ class SearchDetailViewController: UIViewController {
 //        super.viewWillDisappear(animated)
 //        self.navigationController?.setNavigationBarHidden(false, animated: animated)
 //    }
+    
+    deinit {
+        print("검색 상세 deinit")
+    }
     
     // MARK: - Methods
     private func setupLayout() {

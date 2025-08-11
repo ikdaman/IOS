@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RxSwift
 import Moya
 
 class AladinAPIService {
@@ -51,3 +52,30 @@ class AladinAPIService {
         }
     }
 }
+
+//protocol AladinBookAPIService {
+//    func addBook(book: AddMyBook) -> Observable<APIResult<AddMyBook?>>
+//}
+//
+//final class DefaultAladinBookAPIService: AladinBookAPIService {
+//
+//    init() {}
+//    
+//    func addBook(book: AddMyBook) -> Observable<APIResult<AddMyBook?>> {
+//        return URLSession.shared
+//            .request(BookAPI)
+//            .handleAPIResponse(responseType: AddMyBook.self)
+//            .map { response in
+//                switch response {
+//                case .success(let data):
+//                    // API호출과 데이터를 성공적으로 받았을 때 처리합니다.
+//                    return .success(result: data)
+//                    
+//                case .failure(let error):
+//                    // API호출은 성공이지만 내부적으로 실패했을 때 처리합니다.
+//                    return .failure(error)
+//                }
+//            }
+//    }
+//    
+//}

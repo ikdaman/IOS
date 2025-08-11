@@ -15,25 +15,46 @@ struct BookSearchResponse: Decodable {
 
 struct AladinBook: Decodable {
     let title: String
+    let link: String
     let author: String
     let publisher: String
     let pubDate: String
     let cover: String
     let isbn: String
+    let itemId: Int
     let priceStandard: Int
     let description: String?
+    
+    let subInfo: AladinBookSubInfo?
 }
 
 extension AladinBook {
     static let empty = AladinBook(
         title: "",
+        link: "",
         author: "",
         publisher: "",
         pubDate: "",
         cover: "",
         isbn: "",
+        itemId: 0,
         priceStandard: 0,
-        description: nil
+        description: nil,
+        subInfo: nil
+    )
+}
+
+struct AladinBookItem: Decodable {
+    let subInfo: AladinBookSubInfo
+}
+
+struct AladinBookSubInfo: Decodable {
+    let itemPage: Int?
+}
+
+extension AladinBookSubInfo {
+    static let empty = AladinBookSubInfo(
+        itemPage: 0
     )
 }
 
