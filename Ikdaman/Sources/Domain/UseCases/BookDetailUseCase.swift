@@ -10,7 +10,7 @@ import RxSwift
 import Moya
 
 protocol BookDetailUseCase {
-    func getMyBookInfo(bookId: Int) -> Observable<BookInfo>
+    func getMyBookInfo(bookId: Int) -> Observable<MyBookInfo>
     func getMyBookHistory(bookId: Int, page: Int?, limit: Int?) -> Observable<BookLogs>
     func addImression(bookId: Int, impression: String, createdAt: Date) -> Observable<Response>
     func addBookLog(bookId: Int, content: String, page: Int, createdAt: Date) -> Observable<Response>
@@ -26,7 +26,7 @@ final class DefaultBookDetailUseCase: BookDetailUseCase {
         self.bookDetailRepository = bookDetailRepository
     }
     
-    func getMyBookInfo(bookId: Int) -> RxSwift.Observable<BookInfo> {
+    func getMyBookInfo(bookId: Int) -> RxSwift.Observable<MyBookInfo> {
         bookDetailRepository.getMyBookInfo(bookId: bookId)
     }
     

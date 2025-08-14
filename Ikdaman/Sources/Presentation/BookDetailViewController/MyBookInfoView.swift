@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class MyBookInfoView: UIView {
     var myBookInfo: MyBookInfo?
@@ -18,33 +19,35 @@ class MyBookInfoView: UIView {
     
     let bookImage = UIImageView()
     
-    let bookTitle = UILabel().then {
-        $0.font = .systemFont(ofSize: 16, weight: .bold)
+    var bookTitle = UILabel().then {
+        $0.font = .pretendard(.semiBold, size: 16)
         $0.textAlignment = .left
         $0.numberOfLines = 0
-        $0.text = "테스트"
     }
     
     let bookAuthor = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.font = .pretendard(.regular, size: 14)
         $0.textAlignment = .left
+        $0.textColor = #colorLiteral(red: 0.4756370187, green: 0.4756369591, blue: 0.4756369591, alpha: 1)
     }
     
     let bookPulbisher = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.font = .pretendard(.regular, size: 14)
         $0.textAlignment = .left
+        $0.textColor = #colorLiteral(red: 0.4756370187, green: 0.4756369591, blue: 0.4756369591, alpha: 1)
     }
     
     let bookTotalPage = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.font = .pretendard(.regular, size: 14)
         $0.textAlignment = .left
+        $0.textColor = #colorLiteral(red: 0.4756370187, green: 0.4756369591, blue: 0.4756369591, alpha: 1)
     }
     
     let showAladinButton = UIButton().then {
         let title = "알라딘에서 보기"
         let attributes: [NSAttributedString.Key: Any] = [
             .underlineStyle: NSUnderlineStyle.single.rawValue,
-            .font: UIFont.systemFont(ofSize: 12, weight: .bold)
+            .font: UIFont.pretendard(.bold, size: 12)
         ]
         let attributedTitle = NSAttributedString(string: title, attributes: attributes)
         $0.setAttributedTitle(attributedTitle, for: .normal)
@@ -67,27 +70,27 @@ class MyBookInfoView: UIView {
         }
         
         let authorLabel = UILabel().then {
-            $0.text = "작가"
-            $0.font = .systemFont(ofSize: 14, weight: .bold)
+            $0.font = .pretendard(.semiBold, size: 14)
             $0.textAlignment = .left
+            $0.setText("작가", letterSpacing: -0.4)
         }
         
         let publisherLabel = UILabel().then {
-            $0.text = "출판사"
-            $0.font = .systemFont(ofSize: 14, weight: .bold)
+            $0.font = .pretendard(.semiBold, size: 14)
             $0.textAlignment = .left
+            $0.setText("출판사", letterSpacing: -0.4)
         }
         
         let totalPageLabel = UILabel().then {
-            $0.text = "총 페이지"
-            $0.font = .systemFont(ofSize: 14, weight: .bold)
+            $0.font = .pretendard(.semiBold, size: 14)
             $0.textAlignment = .left
+            $0.setText("총 페이지", letterSpacing: -0.4)
         }
         
         let aladinInfoLabel = UILabel().then {
-            $0.text = "도서정보 알라딘 제공"
-            $0.font = .systemFont(ofSize: 12, weight: .regular)
+            $0.font = .pretendard(.regular, size: 12)
             $0.textAlignment = .left
+            $0.setText("도서정보 알라딘 제공", letterSpacing: -0.4)
         }
         
         containerView.addSubviews([bookImage, bookTitle, authorLabel, bookAuthor, publisherLabel, bookPulbisher,
@@ -119,25 +122,25 @@ class MyBookInfoView: UIView {
         }
         
         publisherLabel.snp.makeConstraints {
-            $0.top.equalTo(authorLabel.snp.bottom).offset(22)
+            $0.top.equalTo(authorLabel.snp.bottom).offset(5)
             $0.leading.equalTo(bookTitle.snp.leading)
             $0.width.equalTo(50)
         }
         
         bookPulbisher.snp.makeConstraints {
-            $0.top.equalTo(authorLabel.snp.bottom).offset(22)
+            $0.top.equalTo(authorLabel.snp.bottom).offset(5)
             $0.leading.equalTo(publisherLabel.snp.trailing).offset(10)
             $0.trailing.equalToSuperview().inset(17)
         }
         
         totalPageLabel.snp.makeConstraints {
-            $0.top.equalTo(publisherLabel.snp.bottom).offset(22)
+            $0.top.equalTo(publisherLabel.snp.bottom).offset(5)
             $0.leading.equalTo(bookTitle.snp.leading)
             $0.width.equalTo(50)
         }
         
         bookTotalPage.snp.makeConstraints {
-            $0.top.equalTo(publisherLabel.snp.bottom).offset(22)
+            $0.top.equalTo(publisherLabel.snp.bottom).offset(5)
             $0.leading.equalTo(totalPageLabel.snp.trailing).offset(10)
             $0.trailing.equalToSuperview().inset(17)
         }
@@ -153,5 +156,15 @@ class MyBookInfoView: UIView {
             $0.leading.equalTo(aladinInfoLabel.snp.trailing).offset(9)
         }
     }
+    
+    func configure(myBookInfo: MyBookInfo) {
+        let bookInfo = myBookInfo.bookInfo
+        bookTitle.setText(bookInfo.title, letterSpacing: -0.4)
+        bookImage.kf.setImage(with: URL(string: bookInfo.coverImage))
+        bookAuthor.setText(bookInfo.author, letterSpacing: -0.4)
+        bookPulbisher.setText(bookInfo.publisher, letterSpacing: -0.4)
+        bookTotalPage.setText("\(bookInfo.totalPage)", letterSpacing: -0.4)
+    }
 }
+
 

@@ -15,9 +15,8 @@ protocol BookCaseViewModel {
 
 struct BookCaseViewModelInput {
     let fetchBooks: Observable<Void>
-//    let searchTapped: Observable<String>
+    let searchTapped: Observable<String>
     let filterTapped: Observable<FilterType>
-//    let addBookTapped: Observable<Void>
 }
 
 struct BookCaseViewModelOutput {
@@ -31,6 +30,7 @@ final class DefaultBookCaseViewModel: BookCaseViewModel {
     private let booksUseCase: BookCaseUseCase
     
     var books = BehaviorRelay<[Book]>(value: [])
+    var currentFilter: FilterType? = .all
     
     // MARK: - Init
     init(booksUseCase: BookCaseUseCase = DefaultBookCaseUseCase(bookCaseRepository: BookCaseRepositorylmpl())) {
@@ -48,7 +48,13 @@ final class DefaultBookCaseViewModel: BookCaseViewModel {
         
         input.filterTapped
             .subscribe { [weak self] filterType in
-                self?.fetchMyBook(keyword: filterType.status)
+                self?.currentFilter = filterType
+                self?.fetchMyBook(status: filterType.status)
+            }.disposed(by: disposeBag)
+        
+        input.searchTapped
+            .subscribe { [weak self] keyword in
+                self?.fetchMyBook(status: self?.currentFilter?.status, keyword: keyword)
             }.disposed(by: disposeBag)
         
         return BookCaseViewModelOutput(

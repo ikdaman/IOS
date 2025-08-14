@@ -12,9 +12,9 @@ import Moya
 final class BookDetailRepositorylmpl: BookDetailRepository {
     private let networkProvider = NetworkProvider.shared
     
-    func getMyBookInfo(bookId: Int) -> RxSwift.Observable<BookInfo> {
+    func getMyBookInfo(bookId: Int) -> RxSwift.Observable<MyBookInfo> {
         return networkProvider
-            .request(BookAPI.book(bookId: bookId), type: BookInfo.self)
+            .request(BookAPI.book(bookId: bookId), type: MyBookInfo.self)
             .asObservable()
     }
     

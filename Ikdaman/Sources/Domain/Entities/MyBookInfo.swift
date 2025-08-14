@@ -6,8 +6,8 @@
 //
 
 struct MyBookInfo: Codable {
-    let bookInfo: [BookInfo]
-    let mybookId: Int
+    let bookInfo: BookInfo
+    let mybookId: String
     let startDate: String
     let nowPage: Int
     let progress: Int
@@ -15,10 +15,10 @@ struct MyBookInfo: Codable {
 }
 
 struct BookInfo: Codable {
+    let itemId: String
     let title: String
     let author: String
     let coverImage: String
     let publisher: String
     let totalPage: Int
-    let category: String
 }

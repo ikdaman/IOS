@@ -48,6 +48,12 @@ final class BookDetailViewController: BaseViewController {
         )
 
         let output = viewModel.transform(input: input)
+        
+        output.bookInfo
+            .subscribe(onNext: { [weak self] myBookInfo in
+                guard let myBookInfo else { return }
+                self?.bookDetailView.bookInfoView.configure(myBookInfo: myBookInfo)
+            }).disposed(by: disposeBag)
 
         output.bookHistory
             .compactMap { $0?.booklogs }

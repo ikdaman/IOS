@@ -12,7 +12,7 @@ import RxSwift
 import RxCocoa
 import Kingfisher
 
-final class BookCaseViewController: BaseViewController {
+final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
     
     // MARK: - Properties
     private let bookCaseView = BookCaseView()
@@ -43,20 +43,28 @@ final class BookCaseViewController: BaseViewController {
         super.viewDidLoad()
         bindViewModel()
         bindActions()
-        bookCaseView.bookListView.delegate = self
-        bookCaseView.bookListView.dataSource = self
+        bookCaseView.bookListView.rx.setDelegate(self)
+            .disposed(by: disposeBag)
+        
     }
     
     // MARK: - Binding
     private func bindViewModel() {
+        let searchTappedObservable = bookCaseView.searchBar.searchButton.rx.tap
+            .map { [weak self] in
+                self?.bookCaseView.searchBar.getSearchText() ?? ""
+            }
+        
         let input = BookCaseViewModelInput(fetchBooks: Observable.just(()),
-                                           filterTapped: bookCaseView.filterView.filterTapped.asObservable())
+                                           searchTapped: searchTappedObservable,
+                                           filterTapped: bookCaseView.filterView.filterTapped.asObservable()
+                                           )
         
         let output = viewModel.transform(input: input)
         
         output.books
             .do(onNext: { [weak self] books in
-                self?.bookCaseView.emptyLibraryView.isHidden = books.isEmpty
+                self?.bookCaseView.emptyLibraryView.isHidden = !books.isEmpty
             })
             .bind(to: bookCaseView.bookListView.rx.items(
                 cellIdentifier: BookCaseCell.identifier,
@@ -70,31 +78,20 @@ final class BookCaseViewController: BaseViewController {
     
     private func bindActions() {
         self.bookCaseView.addButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                let vc = BookDetailViewController(viewModel: DefaultBookDetailViewModel())
-                self?.navigationController?.pushViewController(vc, animated: true)
+            .subscribe(onNext: { _ in
+                TabBarNavigator.shared.navigateToSearch()
             }).disposed(by: disposeBag)
+        
+        bookCaseView.bookListView.rx.modelSelected(Book.self)
+            .subscribe(onNext: { [weak self] book in
+                let vc = BookDetailViewController(
+                    viewModel: DefaultBookDetailViewModel(bookId: book.mybookId)
+                )
+                self?.navigationController?.pushViewController(vc, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
-}
-
-extension BookCaseViewController: UICollectionViewDataSource, UICollectionViewDelegate {
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 10 // 임의의 아이템 개수
-    }
-
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BookCaseCell.identifier, for: indexPath) as? BookCaseCell else {
-            return UICollectionViewCell()
-        }
-        cell.backgroundColor = .blue
-        return cell
-    }
-
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("선택된 셀: \(indexPath.item + 1)")
-    }
 }
 
 class BookCaseView: UIView {
@@ -194,14 +191,14 @@ enum FilterType: String, CaseIterable {
     case completed = "완독한 책"
     case inProgress = "독서중인 책"
     
-    var status: String {
+    var status: String? {
         switch self {
         case .completed:
             return "completed"
         case .inProgress:
             return "in-progress"
         default:
-            return ""
+            return nil
         }
     }
 }
@@ -333,7 +330,7 @@ class CustomSearchBar: UIView {
         return tf
     }()
 
-    private let searchButton: UIButton = {
+    let searchButton: UIButton = {
         let button = UIButton(type: .system)
         let image = UIImage(systemName: "magnifyingglass")
         button.setImage(image, for: .normal)

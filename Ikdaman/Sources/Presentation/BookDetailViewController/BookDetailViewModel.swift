@@ -32,7 +32,7 @@ struct BookDetailViewModelInput {
 }
 
 struct BookDetailViewModelOutput {
-    var bookInfo: BehaviorRelay<BookInfo?>
+    var bookInfo: BehaviorRelay<MyBookInfo?>
     var bookHistory: BehaviorRelay<BookLogs?>
 }
 
@@ -42,12 +42,16 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
     private let disposeBag = DisposeBag()
     private let bookDetailUseCase: BookDetailUseCase
     
-    var bookInfo = BehaviorRelay<BookInfo?>(value: nil)
+    var bookId: Int
+    var page: Int? = 1
+    var limit: Int? = 9
+    var bookInfo = BehaviorRelay<MyBookInfo?>(value: nil)
     var bookHistory = BehaviorRelay<BookLogs?>(value: nil)
     
     // MARK: - Init
-    init(bookDetailUseCase: BookDetailUseCase = DefaultBookDetailUseCase(bookDetailRepository: BookDetailRepositorylmpl())) {
+    init(bookDetailUseCase: BookDetailUseCase = DefaultBookDetailUseCase(bookDetailRepository: BookDetailRepositorylmpl()), bookId: Int) {
         self.bookDetailUseCase = bookDetailUseCase
+        self.bookId = bookId
     }
     
     // MARK: - Transform
@@ -67,14 +71,14 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
     }
     
     private func fetchBookInfo() {
-        bookDetailUseCase.getMyBookInfo(bookId: 0)
+        bookDetailUseCase.getMyBookInfo(bookId: bookId)
             .subscribe(onNext: { [weak self] bookInfo in
                 self?.bookInfo.accept(bookInfo)
             }).disposed(by: disposeBag)
     }
     
     private func fetchBookHistory() {
-        bookDetailUseCase.getMyBookHistory(bookId: 0, page: 0, limit: 0)
+        bookDetailUseCase.getMyBookHistory(bookId: bookId, page: page, limit: limit)
             .subscribe(onNext: { [weak self] bookHistory in
                 self?.bookHistory.accept(bookHistory)
             }).disposed(by: disposeBag)
