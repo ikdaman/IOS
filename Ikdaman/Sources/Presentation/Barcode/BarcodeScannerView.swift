@@ -291,7 +291,9 @@ class BarcodeScannerView: UIView {
             .subscribe(onNext: { `self`, book in
                 let bookInfoView = BookInfoView()
                 bookInfoView.configure(imageUrl: book.cover, title: book.title, author: book.author)
-                // ✅ 체이닝 방식
+                
+                bookInfoView.setupDI(action: self.actionTriggers)
+                
                 BottomSheetViewController.present(customContentView: bookInfoView)
                     .didDismiss
                     .subscribe(onNext: { _ in

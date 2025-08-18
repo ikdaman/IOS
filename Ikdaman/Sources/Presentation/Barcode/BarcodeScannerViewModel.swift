@@ -13,12 +13,15 @@ import AVFoundation
 enum BarcodeScannerriggerType {
     case scannedIsbn(String)
     case closeBottomSheet
+    
+    case addBookTapped
 }
 
 class BarcodeScannerViewModel {
-    
     typealias ViewModel = BarcodeScannerViewModel
     private let disposeBag = DisposeBag()
+    
+    private let barcodeScannerUseCase: BarcodeScannerUseCase
     
     private var hasPermissionRelay = PublishRelay<Void>()
     /// isbn으로 검색한 책
@@ -26,6 +29,11 @@ class BarcodeScannerViewModel {
     
     private var outputRequest = PublishRelay<RequestDestinationVC>()
     
+    init(
+        barcodeScannerUseCase: BarcodeScannerUseCase = DefaultBarcodeScannerUseCase(barcodeScannerRepository: BarcodeScannerRepositoryImpl())
+    ) {
+        self.barcodeScannerUseCase = barcodeScannerUseCase
+    }
     struct Input {
         let viewDidLoad: Observable<Void>
         let action: PublishRelay<BarcodeScannerriggerType>
@@ -74,8 +82,41 @@ class BarcodeScannerViewModel {
                     print("검색 에러: \(error)")
                 }
             }
+            
         case .closeBottomSheet:
             outputRequest.accept(.close)
+            
+        case .addBookTapped:
+            print("바텀시트 이 책 추가 탭")
+            let dateString = Date.currentISO8601String
+            let book = searchedBookRelay.value
+            let addMyBook = AddMyBook(title: book.title, writer: book.author, publisher: book.publisher,
+                                      isbn: book.isbn, page: book.subInfo?.itemPage ?? 0, coverImage: book.cover,
+                                      itemId: book.itemId, impression: "", createdAt: dateString)
+            
+            barcodeScannerUseCase.addBook(book: addMyBook)
+                .flatMap { response -> Single<Void> in
+                    if response.statusCode == 201 {
+                        return .just(())
+                    } else {
+                        // 실패: 에러 반환
+                        return .error(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Add book failed with status: \(response.statusCode)"]))
+                    }
+                }
+                .asObservable()
+                .materialize()
+                .withUnretained(self)
+                .subscribe(onNext: { `self`, event in
+                    switch event {
+                    case .completed:
+                        print("책 추가 성공")
+                        self.outputRequest.accept(.close)
+                    case .error(let error):
+                        print("책 추가 실패 > \(error)")
+                    default: break
+                    }
+                })
+                .disposed(by: disposeBag)
         }
         
     }
@@ -138,5 +179,6 @@ extension BarcodeScannerViewModel {
 extension BarcodeScannerViewModel {
     enum RequestDestinationVC {
         case close
+        case closeAll
     }
 }

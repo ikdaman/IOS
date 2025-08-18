@@ -19,3 +19,18 @@ extension UIViewController {
         navigationController?.popViewController(animated: true)
     }
 }
+
+extension UIViewController {
+    /// 모든 presented view controller를 dismiss하고 completion 실행
+    func dismissAll(animated: Bool = true, completion: (() -> Void)? = nil) {
+        if let presentingVC = self.presentingViewController {
+            var rootVC = presentingVC
+            while let parent = rootVC.presentingViewController {
+                rootVC = parent
+            }
+            rootVC.dismiss(animated: animated, completion: completion)
+        } else {
+            self.dismiss(animated: animated, completion: completion)
+        }
+    }
+}
