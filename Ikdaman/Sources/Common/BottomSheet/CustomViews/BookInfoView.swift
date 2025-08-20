@@ -6,9 +6,17 @@
 //
 
 import UIKit
+import RxSwift
+import RxCocoa
 
 // MARK: - 책 정보를 보여주는 커스텀 뷰 예시
 class BookInfoView: UIView {
+    
+    private let disposeBag = DisposeBag()
+    
+    private let actionTriggers = PublishRelay<BarcodeScannerriggerType>()
+    
+    // MARK: - Properties
     
     private let bookImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFit
@@ -53,17 +61,10 @@ class BookInfoView: UIView {
         $0.contentMode = .scaleAspectFit
     }
     
-    private let addBtn = UIButton().then {
-        $0.backgroundColor = UIColor(hex: "FF5252")
-        $0.setTitle("이 책 추가", for: .normal)
-        $0.setTitleColor(.white, for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
-//        $0.isHidden = true
-    }
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
+        bind()
     }
     
     required init?(coder: NSCoder) {
@@ -96,10 +97,28 @@ class BookInfoView: UIView {
         }
     }
     
+    private func bind() {
+        addBookContainerView.rx.tap
+            .map { .addBookTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+    }
+    
     // MARK: - Configure
     func configure(imageUrl: String, title: String, author: String) {
         bookImageView.loadImage(from: imageUrl)
         titleLabel.text = title
         authorLabel.text = author
+    }
+    
+    // MARK: - Data Binding
+    
+    @discardableResult
+    func setupDI(action: PublishRelay<BarcodeScannerriggerType>) -> Self {
+        actionTriggers
+            .bind(to: action)
+            .disposed(by: disposeBag)
+        
+        return self
     }
 }

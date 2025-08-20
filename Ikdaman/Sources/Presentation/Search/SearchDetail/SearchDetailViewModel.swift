@@ -69,9 +69,7 @@ class SearchDetailViewModel {
             
         case .addBookBtnTapped:
             let book = bookRelay.value
-            let date = Date()
-            let formatter = ISO8601DateFormatter()
-            let dateString = formatter.string(from: date)
+            let dateString = Date.currentISO8601String
             
             let addMyBook = AddMyBook(title: book.title, writer: book.author, publisher: book.publisher,
                                       isbn: book.isbn, page: book.subInfo?.itemPage ?? 0, coverImage: book.cover,

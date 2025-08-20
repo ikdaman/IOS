@@ -35,7 +35,14 @@ class BarcodeScannerViewController: UIViewController {
         response.outputRequest
             .withUnretained(self)
             .subscribe(onNext: { `self`, output in
-                
+                switch output {
+                case .close:
+                    self.dismiss(animated: true)
+                case .closeAll:
+                    self.dismissAll(animated: true) {
+                        TabBarNavigator.shared.navigateTo(tab: 0)
+                    }
+                }
             })
             .disposed(by: disposeBag)
     }
@@ -45,7 +52,6 @@ class BarcodeScannerViewController: UIViewController {
         super.viewDidLoad()
         setupLayout()
         attribute()
-        bind()
         bindingViewModel()
         
         requestTrigger.accept(())
@@ -72,14 +78,5 @@ class BarcodeScannerViewController: UIViewController {
     
     private func attribute() {
         
-    }
-    
-    private func bind() {
-        subView.closeButton.rx.tap
-            .withUnretained(self)
-            .subscribe(onNext: { `self`, _ in
-                self.dismiss(animated: true)
-            })
-            .disposed(by: disposeBag)
     }
 }
