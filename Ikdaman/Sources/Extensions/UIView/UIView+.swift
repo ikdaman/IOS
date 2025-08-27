@@ -42,3 +42,16 @@ extension Reactive where Base: UIView {
         return ControlEvent(events: source)
     }
 }
+
+extension UIView {
+    var parentViewController: UIViewController? {
+        var responder: UIResponder? = self
+        while let next = responder?.next {
+            if let vc = next as? UIViewController {
+                return vc
+            }
+            responder = next
+        }
+        return nil
+    }
+}
