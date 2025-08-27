@@ -52,6 +52,7 @@ final class BookDetailViewController: BaseViewController {
         output.bookInfo
             .subscribe(onNext: { [weak self] myBookInfo in
                 guard let myBookInfo else { return }
+                self?.bookDetailView.configure(myBookInfo: myBookInfo)
                 self?.bookDetailView.bookInfoView.configure(myBookInfo: myBookInfo)
             }).disposed(by: disposeBag)
 
@@ -65,6 +66,11 @@ final class BookDetailViewController: BaseViewController {
                 self?.bookDetailView.bookRecordView.reloadData()
             }
             .disposed(by: disposeBag)
+
+        bookDetailView.emptyImpressionView.rx.tap
+            .subscribe(onNext: {
+                print("tatatatat")
+            }).disposed(by: disposeBag)
     }
     
     private func bindActions() {
@@ -96,7 +102,6 @@ class BookDetailView: UIView {
     let bookInfoView = MyBookInfoView()
     
     let progressLabel = UILabel().then {
-        $0.text = "📖\n7일째, 155p, 42%\n독서중인 책이에요."
         $0.font = .systemFont(ofSize: 31, weight: .bold)
         $0.numberOfLines = 0
         $0.textAlignment = .center
@@ -120,20 +125,21 @@ class BookDetailView: UIView {
         $0.font = .systemFont(ofSize: 14, weight: .semibold)
     }
     
-    let firstImpressionView = UIView().then {
+    let impressionView = UIView().then {
         $0.backgroundColor = .white
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 10
     }
     
-    var firstImpressionText = UILabel().then {
-        $0.text = "처음 책을 보고 들었던 생각을 짧게 적어보세요.\n독서가 마음처럼 잘되지 않을 때, 나에게 힘을 줄 거에요!"
+    let impressionLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 13, weight: .regular)
         $0.numberOfLines = 0
     }
     
-    let writeButton = UIButton().then {
-        $0.setImage(UIImage(named: "pencil"), for: .normal)
+    let emptyImpressionView = UIView().then {
+        $0.backgroundColor = .white
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 10
     }
     
     let bookRecordLabel = UILabel().then {
@@ -158,6 +164,8 @@ class BookDetailView: UIView {
         $0.estimatedRowHeight = 64
     }
     
+    let disposeBag = DisposeBag()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupViews()
@@ -171,8 +179,8 @@ class BookDetailView: UIView {
     
     private func setupViews() {
         addSubviews([backgroundView, topBarView, scrollView])
-        scrollView.addSubviews([bookInfoView, progressLabel, readCompleteButton, progressView, firstImpressionLabel, firstImpressionView, bookRecordLabel, addBookButton, bookRecordView])
-        firstImpressionView.addSubviews([firstImpressionText, writeButton])
+        scrollView.addSubviews([bookInfoView, progressLabel, readCompleteButton, progressView, firstImpressionLabel, impressionView, emptyImpressionView, bookRecordLabel, addBookButton, bookRecordView])
+        impressionView.addSubview(impressionLabel)
     }
     
     private func setupLayout() {
@@ -218,25 +226,48 @@ class BookDetailView: UIView {
             $0.leading.equalToSuperview()
         }
         
-        firstImpressionView.snp.makeConstraints {
+        impressionView.snp.makeConstraints {
             $0.top.equalTo(firstImpressionLabel.snp.bottom).offset(15)
             $0.width.equalToSuperview()
         }
         
-        firstImpressionText.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(17)
-            $0.leading.trailing.equalToSuperview().inset(20)
+        impressionLabel.snp.makeConstraints {
+            $0.directionalHorizontalEdges.equalToSuperview().inset(20)
+            $0.directionalVerticalEdges.equalToSuperview().inset(17)
         }
         
-        writeButton.snp.makeConstraints {
-            $0.top.equalTo(firstImpressionText.snp.bottom).offset(15)
+        emptyImpressionView.snp.makeConstraints {
+            $0.top.equalTo(firstImpressionLabel.snp.bottom).offset(15)
+            $0.width.equalToSuperview()
+            $0.height.equalTo(109)
+        }
+        
+        let emptyLabel = UILabel().then {
+            $0.text = "처음 책을 보고 들었던 생각을 짧게 적어보세요.\n독서가 마음처럼 잘되지 않을 때, 나에게 힘을 줄 거에요!"
+            $0.font = .systemFont(ofSize: 13, weight: .regular)
+            $0.numberOfLines = 0
+        }
+        
+        let writeImageView = UIImageView().then {
+            $0.image = UIImage(named: "pencil")
+        }
+        
+        emptyImpressionView.addSubviews([emptyLabel, writeImageView])
+        
+        emptyLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(17)
+            $0.leading.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().inset(20)
+        }
+        
+        writeImageView.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(20)
             $0.bottom.equalToSuperview().inset(17)
             $0.size.equalTo(24)
         }
         
         bookRecordLabel.snp.makeConstraints {
-            $0.top.equalTo(firstImpressionView.snp.bottom).offset(35)
+            $0.top.equalTo(emptyImpressionView.snp.bottom).offset(35)
             $0.leading.equalToSuperview()
         }
         
@@ -259,6 +290,32 @@ class BookDetailView: UIView {
            let colorType = ColorType(rawValue: rawValue) {
             backgroundView.updateGradient(colors: colorType.gradientColors)
         }
+    }
+    
+    func configure(myBookInfo: MyBookInfo) {
+        let day = dayToString(startDate: myBookInfo.startDate)
+        progressLabel.text = "📖\n\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%\n독서중인 책이에요."
+        progressView.progress = CGFloat(myBookInfo.progress)
+        emptyImpressionView.isHidden = myBookInfo.impression == nil
+    }
+    
+    func dayToString(startDate: String) -> Int {
+        var isoString = startDate
+        // 소수점 이하 잘라내기 (초 단위까지만)
+        if let dotRange = isoString.range(of: ".") {
+            let secPart = isoString[..<dotRange.lowerBound]
+            isoString = secPart + "Z"   // UTC 기준 (원하면 +09:00 붙여도 됨)
+        }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        guard let start = formatter.date(from: isoString) else {
+            fatalError("parse fail")
+        }
+
+        let now = Date()
+        let days = now.timeIntervalSince(start) / (60 * 60 * 24)
+        return Int(days)
     }
 }
 

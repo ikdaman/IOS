@@ -15,7 +15,7 @@ class ProgressIndicatorView: UIView {
     private let iconImageView = UIImageView()
     private let percentageLabel = UILabel()
 
-    var progress: CGFloat = 0.42 {
+    var progress: CGFloat = 0.50 {
         didSet {
             updateProgress()
         }
@@ -88,16 +88,32 @@ class ProgressIndicatorView: UIView {
 
     private func updateProgress() {
         percentageLabel.text = "\(Int(progress * 100))%"
-
+        
         let totalWidth = self.bounds.width
         let fillWidth = totalWidth * progress
-
+        
         fillView.snp.updateConstraints {
             $0.width.equalTo(fillWidth)
         }
-
+        
+        // centerLabelContainer의 반쪽 너비
+        let containerHalfWidth = centerLabelContainer.bounds.width / 2
+        let minX = containerHalfWidth
+        let maxX = totalWidth - containerHalfWidth
+        
+        // fillWidth 기준 targetX 계산
+        let targetX = min(max(fillWidth, minX), maxX)
+        
+        // centerX를 superview 기준으로 갱신
+        centerLabelContainer.snp.remakeConstraints {
+            $0.centerY.equalTo(trackView)
+            $0.centerX.equalToSuperview().offset(targetX - totalWidth / 2)
+            $0.height.equalTo(28)
+        }
+        
         layoutIfNeeded()
     }
+
 
     override func layoutSubviews() {
         super.layoutSubviews()
