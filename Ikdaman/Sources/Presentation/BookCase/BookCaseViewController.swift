@@ -303,7 +303,6 @@ class BookCaseCell: UICollectionViewCell {
     }
 
     private func setupViews() {
-        contentView.backgroundColor = .systemBlue
         contentView.layer.cornerRadius = 8
 
         contentView.addSubview(imageView)
