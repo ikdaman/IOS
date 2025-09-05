@@ -18,6 +18,9 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
     private let bookCaseView = BookCaseView()
     private let viewModel: BookCaseViewModel
     private let disposeBag = DisposeBag()
+    private var output: BookCaseViewModelOutput!
+    
+    private var scrollEventEnabled = true
     
     // MARK: - Initializer
     init(viewModel: BookCaseViewModel) {
@@ -43,25 +46,35 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
         super.viewDidLoad()
         bindViewModel()
         bindActions()
+        
         bookCaseView.bookListView.rx.setDelegate(self)
             .disposed(by: disposeBag)
-        
     }
     
     // MARK: - Binding
     private func bindViewModel() {
+        if output != nil { return } // 중복 방지
+
         let searchTappedObservable = bookCaseView.searchBar.searchButton.rx.tap
-            .map { [weak self] in
-                self?.bookCaseView.searchBar.getSearchText() ?? ""
-            }
+            .map { [weak self] in self?.bookCaseView.searchBar.getSearchText() ?? "" }
         
-        let input = BookCaseViewModelInput(fetchBooks: Observable.just(()),
-                                           searchTapped: searchTappedObservable,
-                                           filterTapped: bookCaseView.filterView.filterTapped.asObservable()
-                                           )
+        let input = BookCaseViewModelInput(
+            fetchBooks: Observable.just(()),
+            searchTapped: searchTappedObservable,
+            filterTapped: bookCaseView.filterView.filterTapped
+                .distinctUntilChanged()
+                .do(onNext: { [weak self] _ in
+                    // 필터 전환 직후 스크롤 이벤트 잠깐 막기
+                    self?.scrollEventEnabled = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self?.scrollEventEnabled = true
+                    }
+                })
+                .asObservable()
+        )
         
-        let output = viewModel.transform(input: input)
-        
+        output = viewModel.transform(input: input)
+
         output.books
             .do(onNext: { [weak self] books in
                 self?.bookCaseView.emptyLibraryView.isHidden = !books.isEmpty
@@ -73,14 +86,14 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
                 cell.configure(book: book)
             }
             .disposed(by: disposeBag)
-        
     }
     
     private func bindActions() {
-        self.bookCaseView.addButton.rx.tap
+        bookCaseView.addButton.rx.tap
             .subscribe(onNext: { _ in
                 TabBarNavigator.shared.navigateToSearch()
-            }).disposed(by: disposeBag)
+            })
+            .disposed(by: disposeBag)
         
         bookCaseView.bookListView.rx.modelSelected(Book.self)
             .subscribe(onNext: { [weak self] book in
@@ -91,7 +104,24 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
             })
             .disposed(by: disposeBag)
     }
-    
+}
+
+// MARK: - UIScrollViewDelegate
+extension BookCaseViewController {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard scrollEventEnabled else { return }
+        guard let vm = viewModel as? DefaultBookCaseViewModel else { return }
+        guard !vm.isLoading, vm.nowPage < vm.totalPage else { return }
+
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        let frameHeight = scrollView.frame.size.height
+        
+        // 끝에서 100px 남았을 때만 호출
+        if offsetY > contentHeight - frameHeight - 100 {
+            vm.fetchNextPage()
+        }
+    }
 }
 
 class BookCaseView: UIView {
@@ -101,11 +131,13 @@ class BookCaseView: UIView {
     let searchBar = CustomSearchBar()
     let filterView = FilterView()
     let bookListView = UICollectionView(frame: .zero, collectionViewLayout: {
-        let layout = UICollectionViewFlowLayout()
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 23, right: 21)
+        let layout = RowSeparatorFlowLayout()
+        layout.itemSize = CGSize(width: 100, height: 160)
         layout.minimumLineSpacing = 50
         layout.minimumInteritemSpacing = 26
-        layout.itemSize = CGSize(width: 100, height: 160)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 50, right: 20)
+
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         return layout
     }()).then {
         $0.register(BookCaseCell.self, forCellWithReuseIdentifier: BookCaseCell.identifier)
@@ -264,6 +296,7 @@ class FilterView: UIView {
 
     @objc private func buttonTapped(_ sender: UIButton) {
         let selected = FilterType.allCases[sender.tag]
+        guard selected != selectedFilter else { return }
         selectedFilter = selected
         updateButtonStates()
         filterTapped.accept(selectedFilter)
@@ -385,5 +418,75 @@ class CustomSearchBar: UIView {
 
     func setDelegate(_ delegate: UITextFieldDelegate) {
         textField.delegate = delegate
+    }
+}
+
+class RowSeparatorView: UICollectionReusableView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        let topView = UIView()
+        topView.backgroundColor = #colorLiteral(red: 1, green: 0.9999999404, blue: 1, alpha: 0.3)
+        let bottomView = UIView()
+        bottomView.backgroundColor = .clear
+
+        addSubview(topView)
+        addSubview(bottomView)
+
+        topView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(23)
+        }
+        bottomView.snp.makeConstraints {
+            $0.top.equalTo(topView.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(27)
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+class RowSeparatorFlowLayout: UICollectionViewFlowLayout {
+    override func prepare() {
+        super.prepare()
+        // Decoration View 등록
+        self.register(RowSeparatorView.self, forDecorationViewOfKind: "RowSeparator")
+    }
+
+    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        guard let attributes = super.layoutAttributesForElements(in: rect) else { return nil }
+        var allAttributes = attributes
+
+        // 셀만 뽑아서 같은 Y값(= 같은 행) 기준으로 그룹핑
+        let cellAttrs = attributes.filter { $0.representedElementCategory == .cell }
+        let grouped = Dictionary(grouping: cellAttrs) { attr in
+            Int(attr.frame.minY.rounded())
+        }
+
+        for (_, rowAttrs) in grouped {
+            guard let first = rowAttrs.first else { continue }
+
+            // 한 행 전체 width 만큼 밑줄 뷰 생성
+            let decoration = UICollectionViewLayoutAttributes(
+                forDecorationViewOfKind: "RowSeparator",
+                with: IndexPath(item: first.indexPath.item, section: first.indexPath.section)
+            )
+
+            let rowMaxY = rowAttrs.map { $0.frame.maxY }.max() ?? first.frame.maxY
+            decoration.frame = CGRect(
+                x: 0,
+                y: rowMaxY,
+                width: collectionView?.bounds.width ?? 0,
+                height: 50
+            )
+            decoration.zIndex = -1 // 셀보다 뒤로
+
+            allAttributes.append(decoration)
+        }
+
+        return allAttributes
     }
 }
