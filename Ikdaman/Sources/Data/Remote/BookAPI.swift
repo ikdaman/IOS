@@ -142,8 +142,12 @@ extension BookAPI: TargetType {
         case .bookList(let status, let keyword, let page, let limit):
             if let status {
                 param = ["status": status, "keyword": keyword ?? ""]
-            } else {
-                param = ["page": page ?? 1, "limit": limit ?? 9]
+            }
+            if let page, let limit {
+                param = ["page": page, "limit": limit]
+            }
+            if let status, let page, let limit {
+                param = ["status": status, "page": page, "limit": limit]
             }
             return .requestParameters(parameters: param, encoding: URLEncoding.default)
         case .noticeList(let page, let limit):

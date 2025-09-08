@@ -24,6 +24,11 @@ final class BookDetailRepositorylmpl: BookDetailRepository {
             .asObservable()
     }
     
+    func deleteBook(bookId: Int) -> RxSwift.Observable<Moya.Response> {
+        return networkProvider.requestRaw(BookAPI.deleteBook(bookId: bookId))
+            .asObservable()
+    }
+    
     func addImression(bookId: Int, impression: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
         return networkProvider.requestRaw(BookAPI.firstImpression(bookId: bookId, impression: impression, createdAt: createdAt))
             .asObservable()
