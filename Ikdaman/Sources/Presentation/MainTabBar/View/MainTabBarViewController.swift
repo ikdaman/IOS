@@ -200,7 +200,7 @@ extension MainTabBarViewController {
         }
         
         // ViewControllers 초기화
-        let homeVC = createNavController(for: HomeViewController(viewModel: DefaultHomeViewModel()))
+        let homeVC = createNavController(for: HomeViewController())
         let searchVC = createNavController(for: SearchViewController())
         let bookcaseVC = createNavController(for: BookCaseViewController(viewModel: DefaultBookCaseViewModel()))
         let myVC = createNavController(for: MyViewController(viewModel: DefaultMyViewModel()))

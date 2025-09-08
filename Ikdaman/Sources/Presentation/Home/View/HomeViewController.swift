@@ -15,79 +15,49 @@ final class HomeViewController: BaseViewController {
     
     // MARK: - Properties
     private let homeView = HomeView()
-    private let viewModel: HomeViewModel
+    typealias ViewModel = HomeViewModel
+    private let viewModel = HomeViewModel()
     private let disposeBag = DisposeBag()
     
-    // MARK: - Initializer
-    init(viewModel: HomeViewModel) {
-        self.viewModel = viewModel
-        super.init()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    /// viewDidLoad 트리거
+    private var requestTrigger: PublishRelay<Void> = PublishRelay<Void>()
+    /// 사용자 액션 트리거
+    private let actionTriggers = PublishRelay<HomeTriggerType>()
     
     // MARK: - LifeCycle
-    override func loadView() {
-        self.view = homeView
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupLayout()
         bindViewModel()
-        bindActions()
+        
+        requestTrigger.accept(())
+    }
+    
+    private func setupLayout() {
+        view.addSubview(homeView)
+        homeView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
     }
     
     // MARK: - Binding
     private func bindViewModel() {
-        let input = HomeViewModelInput(
-            fetchBooks: Observable.just(0),
-            selectColor: homeView.topBarView.colorPickerView.colorSelected.asObservable(),
-            toggleColorPicker: homeView.topBarView.colorButton.rx.tap.asObservable()
-        )
+        let response = viewModel.transform(req: ViewModel.Input(viewDidLoad: requestTrigger.asObservable(),
+                                                                action: actionTriggers))
         
-        let output = viewModel.transform(input: input)
+        homeView
+            .setupDI(colorType: response.selectedColorType)
+            .setupDI(readingBooks: response.readingBooks)
+            .setupDI(action: actionTriggers)
         
-        // 컬러 버튼 배경 변경
-        output.selectedColorType
-            .map { $0.buttonColor }
-            .bind(to: homeView.topBarView.colorButton.rx.backgroundColor)
-            .disposed(by: disposeBag)
-        
-        // 그라데이션 배경 변경
-        output.selectedColorType
-            .subscribe(onNext: { [weak self] colorType in
-                UserDefaults.standard.set(colorType.rawValue, forKey: "backgroundColor")
-                self?.homeView.updateBackgroundGradient(colors: colorType.gradientColors)
-            })
-            .disposed(by: disposeBag)
-        
-        // ColorPicker 열기/닫기 애니메이션
-        output.isColorPickerVisible
-            .distinctUntilChanged()
-            .subscribe(onNext: { [weak self] isVisible in
-                UIView.animate(withDuration: 0.2) {
-                    self?.homeView.topBarView.colorPickerView.alpha = isVisible ? 1 : 0
-                }
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    private func bindActions() {
-        homeView.topBarView.colorButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.toggleColorPicker()
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    // MARK: - Actions
-    private func toggleColorPicker() {
-        UIView.animate(withDuration: 0.2) { [weak self] in
-            guard let self = self else { return }
-            let isHidden = self.homeView.topBarView.colorPickerView.alpha == 0
-            self.homeView.topBarView.colorPickerView.alpha = isHidden ? 1 : 0
-        }
+//        // ColorPicker 열기/닫기 애니메이션
+//        output.isColorPickerVisible
+//            .distinctUntilChanged()
+//            .subscribe(onNext: { [weak self] isVisible in
+//                UIView.animate(withDuration: 0.2) {
+//                    self?.homeView.topBarView.colorPickerView.alpha = isVisible ? 1 : 0
+//                }
+//            })
+//            .disposed(by: disposeBag)
     }
 }
