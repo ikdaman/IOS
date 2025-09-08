@@ -116,12 +116,12 @@ extension BookCaseViewController {
         let offsetY = scrollView.contentOffset.y
         let contentHeight = scrollView.contentSize.height
         let frameHeight = scrollView.frame.size.height
-        
-        // 끝에서 100px 남았을 때만 호출
-        if offsetY > contentHeight - frameHeight - 100 {
+
+        if offsetY > contentHeight - frameHeight - MainTabBarSize.height {
             vm.fetchNextPage()
         }
     }
+
 }
 
 class BookCaseView: UIView {

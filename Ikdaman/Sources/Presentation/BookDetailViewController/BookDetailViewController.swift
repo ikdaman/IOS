@@ -80,10 +80,23 @@ final class BookDetailViewController: BaseViewController {
     }
     
     private func bindActions() {
-//        bookDetailView.topBarView.customButton?.rx.tap
-//            .subscribe(onNext: {
-//                
-//            }).disposed(by: disposeBag)
+        bookDetailView.emptyImpressionView.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let vc = AddRecordViewController(viewModel: RecordInputViewModel(type: .firstImpression))
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
+        
+        Observable.merge(bookDetailView.progressView.rx.tap.asObservable(), bookDetailView.addBookButton.rx.tap.asObservable())
+            .subscribe(onNext: { [weak self] _ in
+                let vc = AddRecordViewController(viewModel: RecordInputViewModel(type: .progress))
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
+        
+        bookDetailView.readCompleteButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let vc = AddRecordViewController(viewModel: RecordInputViewModel(type: .completion))
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
     }
     
 }
