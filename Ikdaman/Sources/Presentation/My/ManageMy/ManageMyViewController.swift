@@ -16,6 +16,8 @@ class ManageMyViewController: BaseViewController {
     private let viewModel: ManageMyViewModel
     
     // MARK: - UI Components
+    let topBarView = CustomTopBarView()
+    
     private let manageMyTitleLabel = UILabel().then {
         $0.text = "내 정보 관리"
         $0.font = .systemFont(ofSize: 26, weight: .bold)
@@ -126,7 +128,7 @@ class ManageMyViewController: BaseViewController {
     private func setupUI() {
         view.backgroundColor = .white
         
-        view.addSubview(scrollView)
+        view.addSubviews([topBarView, scrollView])
         scrollView.addSubview(contentView)
 
         [manageMyTitleLabel, nicknameTitleLabel, nicknameTextField, checkButton,
@@ -137,8 +139,14 @@ class ManageMyViewController: BaseViewController {
     }
     
     private func setupLayout() {
+        topBarView.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(10)
+            $0.leading.trailing.equalToSuperview()
+        }
+        
         scrollView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+            $0.top.equalTo(topBarView.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
         }
         
         contentView.snp.makeConstraints {

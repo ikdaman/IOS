@@ -12,6 +12,7 @@ import Moya
 protocol BookDetailUseCase {
     func getMyBookInfo(bookId: Int) -> Observable<MyBookInfo>
     func getMyBookHistory(bookId: Int, page: Int?, limit: Int?) -> Observable<BookLogs>
+    func deleteBook(bookId: Int) -> Observable<Response>
     func addImression(bookId: Int, impression: String, createdAt: Date) -> Observable<Response>
     func addBookLog(bookId: Int, content: String, page: Int, createdAt: Date) -> Observable<Response>
     func modifyBookLog(bookId: Int, content: String, bookLogId: Int) -> Observable<Response>
@@ -33,6 +34,10 @@ final class DefaultBookDetailUseCase: BookDetailUseCase {
     func getMyBookHistory(bookId: Int, page: Int?, limit: Int?) -> RxSwift.Observable<BookLogs> {
 //        bookDetailRepository.getMyBookHistory(bookId: bookId, page: page, limit: limit)
         .just(BookLogs(booklogs: [BookLog(booklogId: 1, type: "11", page: 1, content: "컨텐츠", loggedDate: Date())], hasNext: false))
+    }
+    
+    func deleteBook(bookId: Int) -> RxSwift.Observable<Moya.Response> {
+        bookDetailRepository.deleteBook(bookId: bookId)
     }
     
     func addImression(bookId: Int, impression: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {

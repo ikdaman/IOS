@@ -44,7 +44,8 @@ final class BookDetailViewController: BaseViewController {
     private func bindViewModel() {
         let input = BookDetailViewModelInput(
             fetchBookInfo: Observable.just(()),
-            fetchBookHistory: Observable.just(())
+            fetchBookHistory: Observable.just(()),
+            tapDeleteBook: bookDetailView.topBarView.customButton?.rx.tap.asObservable() ?? .empty()
         )
 
         let output = viewModel.transform(input: input)
@@ -66,6 +67,11 @@ final class BookDetailViewController: BaseViewController {
                 self?.bookDetailView.bookRecordView.reloadData()
             }
             .disposed(by: disposeBag)
+        
+        output.completeDelete
+            .subscribe(onNext: {
+                self.navigationController?.popViewController(animated: true)
+            }).disposed(by: disposeBag)
 
         bookDetailView.emptyImpressionView.rx.tap
             .subscribe(onNext: {
@@ -74,7 +80,23 @@ final class BookDetailViewController: BaseViewController {
     }
     
     private func bindActions() {
+        bookDetailView.emptyImpressionView.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .firstImpression))
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
         
+        Observable.merge(bookDetailView.progressView.rx.tap.asObservable(), bookDetailView.addBookButton.rx.tap.asObservable())
+            .subscribe(onNext: { [weak self] _ in
+                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .progress))
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
+        
+        bookDetailView.readCompleteButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .completion))
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }).disposed(by: disposeBag)
     }
     
 }
@@ -296,7 +318,7 @@ class BookDetailView: UIView {
         let day = dayToString(startDate: myBookInfo.startDate)
         progressLabel.text = "📖\n\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%\n독서중인 책이에요."
         progressView.progress = CGFloat(myBookInfo.progress)
-        emptyImpressionView.isHidden = myBookInfo.impression == nil
+        emptyImpressionView.isHidden = myBookInfo.impression != nil
     }
     
     func dayToString(startDate: String) -> Int {

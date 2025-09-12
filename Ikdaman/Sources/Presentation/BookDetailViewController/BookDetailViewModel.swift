@@ -29,11 +29,13 @@ protocol BookDetailViewModel {
 struct BookDetailViewModelInput {
     let fetchBookInfo: Observable<Void>
     let fetchBookHistory: Observable<Void>
+    let tapDeleteBook: Observable<Void>
 }
 
 struct BookDetailViewModelOutput {
     var bookInfo: BehaviorRelay<MyBookInfo?>
     var bookHistory: BehaviorRelay<BookLogs?>
+    var completeDelete: PublishRelay<Void>
 }
 
 final class DefaultBookDetailViewModel: BookDetailViewModel {
@@ -43,10 +45,12 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
     private let bookDetailUseCase: BookDetailUseCase
     
     var bookId: Int
+    var bookLogId: Int?
     var page: Int? = 1
     var limit: Int? = 9
     var bookInfo = BehaviorRelay<MyBookInfo?>(value: nil)
     var bookHistory = BehaviorRelay<BookLogs?>(value: nil)
+    var completeDelete = PublishRelay<Void>()
     
     // MARK: - Init
     init(bookDetailUseCase: BookDetailUseCase = DefaultBookDetailUseCase(bookDetailRepository: BookDetailRepositorylmpl()), bookId: Int) {
@@ -66,8 +70,13 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
             .subscribe(onNext: { [weak self] _ in
                 self?.fetchBookHistory()
             }).disposed(by: disposeBag)
+        
+        input.tapDeleteBook
+            .subscribe(onNext: { [weak self] _ in
+                self?.deleteBook()
+            }).disposed(by: disposeBag)
 
-        return BookDetailViewModelOutput(bookInfo: bookInfo, bookHistory: bookHistory)
+        return BookDetailViewModelOutput(bookInfo: bookInfo, bookHistory: bookHistory, completeDelete: completeDelete)
     }
     
     private func fetchBookInfo() {
@@ -81,6 +90,13 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
         bookDetailUseCase.getMyBookHistory(bookId: bookId, page: page, limit: limit)
             .subscribe(onNext: { [weak self] bookHistory in
                 self?.bookHistory.accept(bookHistory)
+            }).disposed(by: disposeBag)
+    }
+    
+    private func deleteBook() {
+        bookDetailUseCase.deleteBook(bookId: bookId)
+            .subscribe(onNext: { [weak self] _ in
+                self?.completeDelete.accept(())
             }).disposed(by: disposeBag)
     }
 }
