@@ -10,5 +10,6 @@ import Moya
 
 protocol HomeRepository {
     func getReadingBooks() -> RxSwift.Observable<ReadingBookInfo>
+    func deleteMyBook(id: Int) -> Observable<Response>
 }
 

@@ -176,7 +176,7 @@ extension BookAPI: TargetType {
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
             defaultHeaders["social-token"] = socialToken
-        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead, .bookList, .bookListReading:
+        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead, .bookList, .bookListReading, .deleteBook:
             defaultHeaders["Authorization"] = accessToken
         default:
             break

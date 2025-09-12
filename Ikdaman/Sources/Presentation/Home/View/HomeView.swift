@@ -16,6 +16,7 @@ class HomeView: UIView {
     
     private var readingBooks: [ReadingBook] = []
     private var currentIndex: Int = 0
+    private var editMode: EditMode = .default
     
     // MARK: - UI Components
     let backgroundView = GradientBackgroundView()
@@ -152,6 +153,10 @@ class HomeView: UIView {
         $0.layer.cornerRadius = 45 / 2
     }
     
+    private var emptyLibraryView = EmptyLibraryView().then {
+        $0.isHidden = true
+    }
+    
     // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -178,7 +183,7 @@ class HomeView: UIView {
     
     private func setupLayout() {
         addSubview(backgroundView)
-        addSubviews([topBarView, dayContainerView, colorPickerView, bookTailImageView, collectionView, bookTitleContainerView, progressView, firstImpressionContainerView, addRecordBtn, addButton])
+        addSubviews([topBarView, emptyLibraryView, dayContainerView, colorPickerView, bookTailImageView, collectionView, bookTitleContainerView, progressView, addRecordBtn, firstImpressionContainerView, addButton])
         
         backgroundView.snp.makeConstraints {
             $0.edges.equalToSuperview()
@@ -200,6 +205,12 @@ class HomeView: UIView {
         dayContainerView.snp.makeConstraints {
             $0.top.equalTo(topBarView.snp.bottom).offset(20)
             $0.centerX.equalTo(collectionView)
+        }
+        
+        emptyLibraryView.snp.makeConstraints {
+            $0.top.equalTo(topBarView.snp.bottom).offset(20)
+            $0.horizontalEdges.equalToSuperview()
+            $0.height.equalTo(175)
         }
         
         bookTailImageView.snp.makeConstraints {
@@ -225,14 +236,14 @@ class HomeView: UIView {
             $0.height.equalTo(28)
         }
         
-        firstImpressionContainerView.snp.makeConstraints {
-            $0.top.equalTo(progressView.snp.bottom).offset(30)
-            $0.horizontalEdges.equalToSuperview().inset(20)
+        addRecordBtn.snp.makeConstraints {
+            $0.top.equalTo(progressView.snp.bottom).offset(20)
+            $0.centerX.equalTo(firstImpressionContainerView)
         }
         
-        addRecordBtn.snp.makeConstraints {
-            $0.top.equalTo(firstImpressionContainerView.snp.bottom).offset(24)
-            $0.centerX.equalTo(firstImpressionContainerView)
+        firstImpressionContainerView.snp.makeConstraints {
+            $0.top.equalTo(addRecordBtn.snp.bottom).offset(30)
+            $0.horizontalEdges.equalToSuperview().inset(20)
         }
         
         addButton.snp.makeConstraints {
@@ -250,6 +261,11 @@ class HomeView: UIView {
         
         addButton.rx.tap
             .map { .addBookButtonTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
+        emptyLibraryView.rx.tap
+            .map { .emptyLibraryViewTapped }
             .bind(to: actionTriggers)
             .disposed(by: disposeBag)
         
@@ -279,6 +295,9 @@ class HomeView: UIView {
             .bind(to: action)
             .disposed(by: disposeBag)
         
+        topBarView
+            .setupDI(action: action)
+        
         return self
     }
     
@@ -302,7 +321,6 @@ class HomeView: UIView {
             .withUnretained(self)
             .subscribe(onNext: { `self`, books in
                 self.readingBooks = books
-                self.setupDayLabel()
                 self.setupBookTitle()
                 self.collectionView.reloadData()
                 
@@ -318,13 +336,22 @@ class HomeView: UIView {
         return self
     }
     
+    @discardableResult
+    func setupDI(editMode: BehaviorRelay<EditMode>) -> Self {
+        editMode
+            .withUnretained(self)
+            .subscribe(onNext: { `self`, mode in
+                self.editMode = mode
+                self.collectionView.reloadData()
+            })
+            .disposed(by: disposeBag)
+        
+        return self
+    }
+    
     // MARK: - Public Methods
-    private func setupDayLabel() {
-        guard let mostRecentBook = readingBooks.first else {
-            dayLabel.text = ""
-            return
-        }
-        let calculateDaysAgo = calculateDaysAgo(from: mostRecentBook.recentEdit)
+    private func setupDayLabel(_ book: ReadingBook) {
+        let calculateDaysAgo = calculateDaysAgo(from: book.recentEdit)
         let fullText = "\(calculateDaysAgo)일 전에 읽다만 책이에요"
         let attributedString = NSMutableAttributedString(string: fullText)
         let daysAgo = "\(calculateDaysAgo)일"
@@ -353,13 +380,29 @@ class HomeView: UIView {
     }
     
     private func setupBookTitle() {
-        guard currentIndex < readingBooks.count else { return }
-        let book = readingBooks[currentIndex]
+        defer { setupBookInfoViews(readingBooks.isEmpty) }
         
+        guard !readingBooks.isEmpty, currentIndex < readingBooks.count else {
+            return
+        }
+        
+        let book = readingBooks[currentIndex]
         titleLabel.text = book.title
         authorLabel.text = book.author
         progressView.progress = CGFloat(book.progress.toInt)
         impressionContentLabel.text = book.firstImpression
+        setupDayLabel(book)
+    }
+    
+    private func setupBookInfoViews(_ isHidden: Bool) {
+        dayContainerView.isHidden = isHidden
+        collectionView.isHidden = isHidden
+        progressView.isHidden = isHidden
+        addRecordBtn.isHidden = isHidden
+        firstImpressionContainerView.isHidden = isHidden
+        bookTitleContainerView.isHidden = isHidden
+        
+        emptyLibraryView.isHidden = !isHidden
     }
     
     func updateBackgroundGradient(colors: [CGColor]) {
@@ -394,7 +437,12 @@ extension HomeView: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ReadingBookCell.identifier, for: indexPath) as! ReadingBookCell
         let book = readingBooks[indexPath.item]
-        cell.configure(with: book)
+        cell.configure(with: book, editMode: editMode)
+        
+        cell.deleteBtn.rx.tap
+            .map { .deleteBtnTapped(book.mybookId) }
+            .bind(to: actionTriggers)
+            .disposed(by: cell.disposeBag)
         return cell
     }
 }

@@ -6,10 +6,12 @@
 //
 
 import UIKit
-import SnapKit
-import Then
+import RxSwift
+import RxCocoa
 
 final class TopBarView: UIView {
+    private let disposeBag = DisposeBag()
+    private var actionTriggers = PublishRelay<HomeTriggerType>()
     
     // MARK: - UI Components
     
@@ -47,6 +49,7 @@ final class TopBarView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
+        bind()
     }
     
     required init?(coder: NSCoder) {
@@ -76,5 +79,28 @@ final class TopBarView: UIView {
                 $0.size.equalTo(26)
             }
         }
+    }
+    
+    private func bind() {
+        binButton.rx.tap
+            .map { .binTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
+        menuButton.rx.tap
+            .map { .menuTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+    }
+    
+    // MARK: - Data Binding
+    
+    @discardableResult
+    func setupDI(action: PublishRelay<HomeTriggerType>) -> Self {
+        actionTriggers
+            .bind(to: action)
+            .disposed(by: disposeBag)
+        
+        return self
     }
 }

@@ -40,6 +40,7 @@ class SearchDetailViewController: UIViewController {
                 case .home:
                     self.navigationController?.popToRootViewController(animated: true) {
                         TabBarNavigator.shared.navigateToHome()
+                        NotificationCenter.default.post(name: .reloadBookList, object: nil)
                     }
                 }
             })
