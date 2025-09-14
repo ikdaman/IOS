@@ -11,6 +11,7 @@ import Moya
 
 protocol HomeUseCase {
     func getReadingBooks() -> RxSwift.Observable<ReadingBookInfo>
+    func deleteMyBook(id: Int) -> RxSwift.Observable<Moya.Response>
 }
 
 final class DefaultHomeUseCase: HomeUseCase {
@@ -23,5 +24,9 @@ final class DefaultHomeUseCase: HomeUseCase {
     
     func getReadingBooks() -> RxSwift.Observable<ReadingBookInfo> {
         homeRepository.getReadingBooks()
+    }
+    
+    func deleteMyBook(id: Int) -> RxSwift.Observable<Moya.Response> {
+        homeRepository.deleteMyBook(id: id)
     }
 }

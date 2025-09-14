@@ -18,9 +18,9 @@ enum RecordInputType {
         case .firstImpression:
             return "이 책의 첫인상"
         case .progress:
-            return "진행도 기록하기"
+            return "2024년 12월 23일 22시 15분의 기록✏️"
         case .completion:
-            return "완독을 축하드려요! 🎉"
+            return "완독을 축하드려요!🥳"
         }
     }
     
@@ -34,43 +34,58 @@ enum RecordInputType {
             return "이 책이 당신에게 어떤 의미로 남았나요?"
         }
     }
+    
+    var topTitle: String {
+        switch self {
+        case .firstImpression:
+            return "기록 추가하기"
+        case .progress:
+            return "기록 추가하기"
+        case .completion:
+            return "완독 추가하기"
+        }
+    }
 }
 
 class AddRecordViewController: BaseViewController {
     
     // MARK: - Properties
-    let topBarView = CustomTopBarView(
-        centerTitle: "기록 추가하기"
-    )
     private let disposeBag = DisposeBag()
-    
-    private let viewModel: RecordInputViewModel
+    private let viewType: RecordInputType
+    private let viewModel: AddRecordViewModel
     
     // MARK: - UI
     private let titleLabel = UILabel().then {
-        $0.font = .boldSystemFont(ofSize: 20)
+        $0.font = .pretendard(.bold, size: 20)
         $0.textColor = .black
         $0.numberOfLines = 0
     }
     
     private let subtitleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 14)
-        $0.textColor = .darkGray
+        $0.font = .pretendard(.medium, size: 12)
+        $0.textColor = .black
         $0.numberOfLines = 0
     }
     
     private lazy var textView = UITextView().then {
-        $0.font = .systemFont(ofSize: 16)
-        $0.layer.cornerRadius = 8
+        $0.font = .pretendard(.regular, size: 13)
+        $0.backgroundColor = #colorLiteral(red: 0.9607843757, green: 0.9607843757, blue: 0.9607843757, alpha: 1)
+        $0.layer.cornerRadius = 10
         $0.layer.borderWidth = 1
         $0.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.4).cgColor
         $0.delegate = self
-        $0.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        $0.textContainerInset = UIEdgeInsets(top: 17, left: 15, bottom: 52, right: 15)
     }
     
     private let placeholderLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 16)
-        $0.textColor = .lightGray
+        $0.font = .pretendard(.regular, size: 13)
+        $0.textColor = #colorLiteral(red: 0.2000000477, green: 0.2000000477, blue: 0.2000000477, alpha: 1)
+    }
+    
+    private var currentTextCount = UILabel().then {
+        $0.font = .pretendard(.regular, size: 12)
+        $0.textColor = #colorLiteral(red: 0.1725490093, green: 0.1725490093, blue: 0.1725490093, alpha: 1)
+        $0.text = "0/500"
     }
     
     private let confirmButton = UIButton(type: .system).then {
@@ -79,8 +94,9 @@ class AddRecordViewController: BaseViewController {
         $0.setTitleColor(.white, for: .normal)
         $0.layer.cornerRadius = 10
     }
-    init(viewModel: RecordInputViewModel) {
+    init(viewModel: AddRecordViewModel) {
         self.viewModel = viewModel
+        self.viewType = viewModel.type
         super.init()
     }
     
@@ -96,15 +112,12 @@ class AddRecordViewController: BaseViewController {
         view.backgroundColor = .white
         
         titleLabel.text = viewModel.type.title
-        subtitleLabel.text = "1111"
+        subtitleLabel.text = "\(viewModel.bookTitle) / \(viewModel.bookAuthor)"
         placeholderLabel.text = viewModel.type.placeholder
         
-        view.addSubview(topBarView)
-        view.addSubview(titleLabel)
+        let topBarView = CustomTopBarView(centerTitle: viewModel.type.topTitle)
+        view.addSubviews([topBarView, titleLabel, textView, placeholderLabel, currentTextCount, confirmButton])
         view.addSubview(subtitleLabel)
-        view.addSubview(textView)
-        textView.addSubview(placeholderLabel)
-        view.addSubview(confirmButton)
         
         // Layout
         topBarView.snp.makeConstraints {
@@ -117,25 +130,128 @@ class AddRecordViewController: BaseViewController {
             $0.left.right.equalToSuperview().inset(20)
         }
         
-        subtitleLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
-            $0.left.right.equalToSuperview().inset(20)
-        }
-        
-        textView.snp.makeConstraints {
-            $0.top.equalTo(subtitleLabel.snp.bottom).offset(20)
-            $0.left.right.equalToSuperview().inset(20)
-            $0.height.equalTo(200)
-        }
-        
-        placeholderLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(8)
-            $0.left.equalToSuperview().offset(6)
+        switch viewType {
+        case .firstImpression:
+            let descriptionLabel = UILabel().then {
+                $0.text = "* 첫인상은 추후 수정과 삭제가 어려워요.\n나의 첫 생각을 간직하기 위함이니 참고해주세요.☺️"
+                $0.font = .pretendard(.regular, size: 12)
+                $0.textColor = #colorLiteral(red: 0.5333333611, green: 0.5333333611, blue: 0.5333333611, alpha: 1)
+                $0.numberOfLines = 0
+            }
+            view.addSubviews([subtitleLabel, descriptionLabel])
+            
+            subtitleLabel.snp.makeConstraints {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(10)
+                $0.left.right.equalToSuperview().inset(20)
+            }
+            
+            textView.snp.makeConstraints {
+                $0.top.equalTo(subtitleLabel.snp.bottom).offset(20)
+                $0.left.right.equalToSuperview().inset(20)
+                $0.height.equalTo(200)
+            }
+            
+            placeholderLabel.snp.makeConstraints {
+                $0.top.equalTo(textView.snp.top).offset(17)
+                $0.left.right.equalTo(textView).inset(15)
+            }
+            
+            currentTextCount.snp.makeConstraints {
+                $0.bottom.equalTo(textView.snp.bottom).inset(17)
+                $0.trailing.equalTo(textView.snp.trailing).inset(16)
+            }
+            
+            descriptionLabel.snp.makeConstraints {
+                $0.top.equalTo(textView.snp.bottom).offset(17)
+                $0.leading.equalToSuperview().offset(20)
+            }
+        case .progress:
+            let currentPageLabel = UILabel().then {
+                $0.text = "어디까지 읽으셨나요?"
+                $0.font = .pretendard(.semiBold, size: 14)
+                $0.textColor = .black
+            }
+            
+            let pageView = PageInputView()
+            
+            let readLabel = UILabel().then {
+                $0.text = "독서하며 든 생각"
+                $0.font = .pretendard(.semiBold, size: 14)
+                $0.textColor = .black
+            }
+            
+            view.addSubviews([subtitleLabel, currentPageLabel, pageView, readLabel])
+            
+            subtitleLabel.snp.makeConstraints {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(10)
+                $0.left.right.equalToSuperview().inset(20)
+            }
+            
+            currentPageLabel.snp.makeConstraints {
+                $0.top.equalTo(subtitleLabel.snp.bottom).offset(40)
+                $0.leading.equalToSuperview().offset(20)
+            }
+            
+            pageView.snp.makeConstraints {
+                $0.top.equalTo(currentPageLabel.snp.bottom).offset(10)
+                $0.leading.equalToSuperview().offset(20)
+            }
+            
+            readLabel.snp.makeConstraints {
+                $0.top.equalTo(pageView.snp.bottom).offset(50)
+                $0.leading.equalToSuperview().offset(20)
+            }
+            
+            textView.snp.makeConstraints {
+                $0.top.equalTo(readLabel.snp.bottom).offset(20)
+                $0.left.right.equalToSuperview().inset(20)
+                $0.height.equalTo(200)
+            }
+            
+            placeholderLabel.snp.makeConstraints {
+                $0.top.equalTo(textView.snp.top).offset(17)
+                $0.left.right.equalTo(textView).inset(15)
+            }
+            
+            currentTextCount.snp.makeConstraints {
+                $0.bottom.equalTo(textView.snp.bottom).inset(17)
+                $0.trailing.equalTo(textView.snp.trailing).inset(16)
+            }
+            
+        case .completion:
+            let completeLabel = UILabel().then {
+                $0.text = "완독 후의 생각"
+                $0.font = .pretendard(.semiBold, size: 14)
+                $0.textColor = .black
+            }
+            
+            view.addSubviews([completeLabel])
+            
+            completeLabel.snp.makeConstraints {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(30)
+                $0.leading.equalToSuperview().offset(20)
+            }
+            
+            textView.snp.makeConstraints {
+                $0.top.equalTo(completeLabel.snp.bottom).offset(10)
+                $0.left.right.equalToSuperview().inset(20)
+                $0.height.equalTo(200)
+            }
+            
+            placeholderLabel.snp.makeConstraints {
+                $0.top.equalTo(textView.snp.top).offset(17)
+                $0.left.right.equalTo(textView).inset(15)
+            }
+            
+            currentTextCount.snp.makeConstraints {
+                $0.bottom.equalTo(textView.snp.bottom).inset(17)
+                $0.trailing.equalTo(textView.snp.trailing).inset(16)
+            }
         }
         
         confirmButton.snp.makeConstraints {
             $0.left.right.equalToSuperview().inset(20)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-36)
             $0.height.equalTo(50)
         }
         
@@ -154,19 +270,86 @@ extension AddRecordViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         placeholderLabel.isHidden = !textView.text.isEmpty
         viewModel.inputText = textView.text
+        currentTextCount.text = "\(textView.text.count)/500"
     }
 }
 
-final class RecordInputViewModel {
+class AddRecordViewModel {
     let type: RecordInputType
+    var bookTitle: String? = nil
+    var bookAuthor: String? = nil
+    var totalPage: Int? = nil
+    var nowPage: Int? = nil
+    
     var inputText: String = ""
     
-    init(type: RecordInputType) {
+    init(type: RecordInputType, bookTitle: String? = nil, bookAuthor: String? = nil, totalPage: Int? = nil, nowPage: Int? = nil) {
         self.type = type
+        self.bookTitle = bookTitle
+        self.bookAuthor = bookAuthor
+        self.totalPage = totalPage
+        self.nowPage = nowPage
     }
     
     func confirmAction() {
         // 서버 저장 / 화면 이동 등 공통 처리
-        print("저장됨: \(inputText)")
+//        switch type {
+//        case .firstImpression:
+//            <#code#>
+//        case .progress:
+//            <#code#>
+//        case .completion:
+//            <#code#>
+//        }
+    }
+}
+
+class PageInputView: UIView {
+    let currentPageField = UITextField().then {
+        $0.text = "188p"
+        $0.font = .pretendard(.regular, size: 14)
+        $0.textColor = .black
+        $0.textAlignment = .center
+        $0.keyboardType = .numberPad
+        $0.backgroundColor = #colorLiteral(red: 0.9607843757, green: 0.9607843757, blue: 0.9607843757, alpha: 1)
+        $0.layer.cornerRadius = 5
+        $0.clipsToBounds = true
+    }
+    
+    let totalPageLabel = UILabel().then {
+        $0.text = "/ 260p"
+        $0.font = .pretendard(.bold, size: 14)
+        $0.textColor = #colorLiteral(red: 0.650980413, green: 0.650980413, blue: 0.650980413, alpha: 1)
+        $0.textAlignment = .center
+        $0.textColor = .gray
+        $0.backgroundColor = #colorLiteral(red: 0.9607843757, green: 0.9607843757, blue: 0.9607843757, alpha: 1)
+        $0.layer.cornerRadius = 5
+        $0.clipsToBounds = true
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupLayout()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupLayout() {
+        addSubviews([currentPageField, totalPageLabel])
+        
+        currentPageField.snp.makeConstraints {
+            $0.leading.top.bottom.equalToSuperview()
+            $0.width.equalTo(80)   // 첫 박스 너비
+            $0.height.equalTo(44)
+        }
+        
+        totalPageLabel.snp.makeConstraints {
+            $0.leading.equalTo(currentPageField.snp.trailing).offset(5)
+            $0.top.bottom.trailing.equalToSuperview()
+            $0.width.equalTo(80)   // 두 번째 박스 너비
+            $0.height.equalTo(44)
+        }
     }
 }

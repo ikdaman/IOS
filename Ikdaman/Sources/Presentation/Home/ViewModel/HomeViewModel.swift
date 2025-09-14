@@ -13,6 +13,15 @@ enum HomeTriggerType {
     case colorSelected(ColorType)
     case addBookButtonTapped
     case addRecordBtnTapped
+    case binTapped
+    case menuTapped
+    case deleteBtnTapped(Int)
+    case emptyLibraryViewTapped
+}
+
+enum EditMode {
+    case `default`
+    case delete
 }
 
 final class HomeViewModel {
@@ -24,6 +33,7 @@ final class HomeViewModel {
     private let readingBooksRelay = BehaviorRelay<[ReadingBook]>(value: [])
     private let selectedColorRelay = BehaviorRelay<ColorType>(value: .purple)
     private let colorPickerVisibleRelay = BehaviorRelay<Bool>(value: false)
+    private let editModeRelay = BehaviorRelay<EditMode>(value: .default)
     
     let books = PublishSubject<[Book]>()
     
@@ -38,7 +48,7 @@ final class HomeViewModel {
         let readingBooks: Observable<[ReadingBook]>
         let selectedColorType: Observable<ColorType>
         let outputRequest: Observable<RequestDestinationVC>
-        
+        let editMode: BehaviorRelay<EditMode>
         
 //        let isColorPickerVisible: Observable<Bool>
     }
@@ -79,7 +89,8 @@ final class HomeViewModel {
         return Output(
             readingBooks: readingBooksRelay.asObservable(),
             selectedColorType: selectedColorRelay.asObservable(),
-            outputRequest: outputRequest.asObservable()
+            outputRequest: outputRequest.asObservable(),
+            editMode: editModeRelay
             
 //            books: books.asObserver(),
 //            selectedColorType: selectedColorRelay.asObservable(),
@@ -97,16 +108,38 @@ final class HomeViewModel {
             
         case .addRecordBtnTapped:
             print("책 기록 추가 버튼 탭")
+            
+        case .binTapped:
+            print("삭제 버튼 탭")
+            let mode = editModeRelay.value
+            editModeRelay.accept(mode == .delete ? .default : .delete)
+            
+        case .menuTapped:
+            print("메뉴 버튼 탭")
+            
+        case .deleteBtnTapped(let id):
+            print("책 삭제 버튼 탭 > \(id)")
+            Alert.show(title: "지금 이 책을 삭제하면\n책과 기록을 영영 복구하지 못해요 😢\n그래도 삭제하시겠어요?",
+                       cancelText: "취소",
+                       confirmText: "삭제",
+                       onConfirm: { [weak self] in
+                guard let self = self else { return }
+                self.deleteBook(id)
+                    .subscribe(
+                        onNext: { _ in
+                            print("삭제 완료")
+                            self.editModeRelay.accept(.default)
+                            self.fetchBookDatas()
+                        },
+                        onError: { error in
+                            print("❌ 에러:", error)
+                        }
+                    )
+                    .disposed(by: self.disposeBag)
+            })
+        case .emptyLibraryViewTapped:
+            TabBarNavigator.shared.navigateToSearch()
         }
-    }
-    
-    private func fetch(userId: Int) {
-//        fetchBooksUseCase.execute(requestValue: .init(userId: userId))
-//            .compactMap { $0 }
-//            .subscribe(onNext: { [weak self] bookList in
-//                self?.books.onNext(bookList.books)
-//            })
-//            .disposed(by: disposeBag)
     }
     
     private func fetchBookDatas() {
@@ -122,6 +155,24 @@ final class HomeViewModel {
                 self.readingBooksRelay.accept(bookInfo.books)
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func deleteBook(_ id: Int) -> Observable<Void> {
+        return homeUseCase.deleteMyBook(id: id)
+            .asObservable()
+            .flatMap { response -> Observable<Void> in
+                if response.statusCode == 205 {
+                    print("deleteMyBook() 성공")
+                    return .just(())
+                } else {
+                    print("deleteMyBook() 실패 > \(response.statusCode)")
+                    return .empty()
+                }
+            }
+            .catch { error in
+                print("❌ deleteMyBook() 에러:", error)
+                return .empty()
+            }
     }
 }
 

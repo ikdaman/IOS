@@ -17,4 +17,10 @@ final class HomeRepositoryImpl: HomeRepository {
             .request(BookAPI.bookListReading, type: ReadingBookInfo.self)
             .asObservable()
     }
+    
+    func deleteMyBook(id: Int) -> RxSwift.Observable<Moya.Response> {
+        return networkProvider
+            .requestRaw(BookAPI.deleteBook(bookId: id))
+            .asObservable()
+    }
 }

@@ -13,6 +13,8 @@ import RxCocoa
 
 final class HomeViewController: BaseViewController {
     
+    private var needsRefresh = false
+    
     // MARK: - Properties
     private let homeView = HomeView()
     typealias ViewModel = HomeViewModel
@@ -33,6 +35,15 @@ final class HomeViewController: BaseViewController {
         requestTrigger.accept(())
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        if needsRefresh {
+            needsRefresh = false
+            requestTrigger.accept(())
+        }
+    }
+    
     private func setupLayout() {
         view.addSubview(homeView)
         homeView.snp.makeConstraints {
@@ -48,16 +59,14 @@ final class HomeViewController: BaseViewController {
         homeView
             .setupDI(colorType: response.selectedColorType)
             .setupDI(readingBooks: response.readingBooks)
+            .setupDI(editMode: response.editMode)
             .setupDI(action: actionTriggers)
         
-//        // ColorPicker 열기/닫기 애니메이션
-//        output.isColorPickerVisible
-//            .distinctUntilChanged()
-//            .subscribe(onNext: { [weak self] isVisible in
-//                UIView.animate(withDuration: 0.2) {
-//                    self?.homeView.topBarView.colorPickerView.alpha = isVisible ? 1 : 0
-//                }
-//            })
-//            .disposed(by: disposeBag)
+        
+        NotificationCenter.default.rx.notification(.reloadBookList)
+            .subscribe(onNext: { [weak self] _ in
+                self?.needsRefresh = true
+            })
+            .disposed(by: disposeBag)
     }
 }
