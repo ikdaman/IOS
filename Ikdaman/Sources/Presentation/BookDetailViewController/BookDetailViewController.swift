@@ -18,6 +18,8 @@ final class BookDetailViewController: BaseViewController {
     private let viewModel: BookDetailViewModel
     private let disposeBag = DisposeBag()
     
+    private var currentBookInfo: MyBookInfo? // bookInfo 보관
+    
     // MARK: - Initializer
     init(viewModel: BookDetailViewModel) {
         self.viewModel = viewModel
@@ -53,6 +55,7 @@ final class BookDetailViewController: BaseViewController {
         output.bookInfo
             .subscribe(onNext: { [weak self] myBookInfo in
                 guard let myBookInfo else { return }
+                self?.currentBookInfo = myBookInfo
                 self?.bookDetailView.configure(myBookInfo: myBookInfo)
                 self?.bookDetailView.bookInfoView.configure(myBookInfo: myBookInfo)
             }).disposed(by: disposeBag)
@@ -82,13 +85,13 @@ final class BookDetailViewController: BaseViewController {
     private func bindActions() {
         bookDetailView.emptyImpressionView.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .firstImpression))
+                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .firstImpression, bookTitle: self?.currentBookInfo?.bookInfo.title, bookAuthor: self?.currentBookInfo?.bookInfo.author))
                 self?.navigationController?.pushViewController(vc, animated: true)
             }).disposed(by: disposeBag)
         
         Observable.merge(bookDetailView.progressView.rx.tap.asObservable(), bookDetailView.addBookButton.rx.tap.asObservable())
             .subscribe(onNext: { [weak self] _ in
-                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .progress))
+                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .progress, bookTitle: self?.currentBookInfo?.bookInfo.title, bookAuthor: self?.currentBookInfo?.bookInfo.author, totalPage: self?.currentBookInfo?.bookInfo.totalPage, nowPage: self?.currentBookInfo?.nowPage))
                 self?.navigationController?.pushViewController(vc, animated: true)
             }).disposed(by: disposeBag)
         
@@ -124,13 +127,13 @@ class BookDetailView: UIView {
     let bookInfoView = MyBookInfoView()
     
     let progressLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 31, weight: .bold)
+        $0.font = .pretendard(.bold, size: 31)
         $0.numberOfLines = 0
         $0.textAlignment = .center
     }
     
     let readCompleteButton = UIButton().then {
-        $0.setTitle("다 읽었어요!", for: .normal)
+        $0.setTitle("✌다 읽었어요!", for: .normal)
         $0.setTitleColor(.black, for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .regular)
         $0.backgroundColor = .white
@@ -316,7 +319,20 @@ class BookDetailView: UIView {
     
     func configure(myBookInfo: MyBookInfo) {
         let day = dayToString(startDate: myBookInfo.startDate)
-        progressLabel.text = "📖\n\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%\n독서중인 책이에요."
+        let text = "📖\n\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%\n독서중인 책이에요."
+
+        let attributedText = NSMutableAttributedString(string: text)
+
+        // 앞부분 스타일 (굵고 크게)
+        let boldRange = (text as NSString).range(of: "\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%")
+        attributedText.addAttribute(.font, value: UIFont.pretendard(.bold, size: 17), range: boldRange)
+
+        // 뒷부분 스타일 (작고 얇게)
+        let normalRange = (text as NSString).range(of: "독서중인 책이에요.")
+        attributedText.addAttribute(.font, value: UIFont.pretendard(.regular, size: 17), range: normalRange)
+
+        progressLabel.attributedText = attributedText
+//        progressLabel.text = "📖\n\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%\n독서중인 책이에요."
         progressView.progress = CGFloat(myBookInfo.progress)
         emptyImpressionView.isHidden = myBookInfo.impression != nil
     }

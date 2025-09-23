@@ -172,7 +172,10 @@ class AddRecordViewController: BaseViewController {
                 $0.textColor = .black
             }
             
-            let pageView = PageInputView()
+            let pageView = PageInputView().then {
+                $0.currentPageField.text = "\(viewModel.nowPage)"
+                $0.totalPageLabel.text = "/ \(viewModel.totalPage)"
+            }
             
             let readLabel = UILabel().then {
                 $0.text = "독서하며 든 생각"
@@ -306,7 +309,6 @@ class AddRecordViewModel {
 
 class PageInputView: UIView {
     let currentPageField = UITextField().then {
-        $0.text = "188p"
         $0.font = .pretendard(.regular, size: 14)
         $0.textColor = .black
         $0.textAlignment = .center
@@ -317,7 +319,6 @@ class PageInputView: UIView {
     }
     
     let totalPageLabel = UILabel().then {
-        $0.text = "/ 260p"
         $0.font = .pretendard(.bold, size: 14)
         $0.textColor = #colorLiteral(red: 0.650980413, green: 0.650980413, blue: 0.650980413, alpha: 1)
         $0.textAlignment = .center
