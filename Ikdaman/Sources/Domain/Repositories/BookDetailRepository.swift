@@ -17,5 +17,5 @@ protocol BookDetailRepository {
     func addBookLog(bookId: Int, content: String, page: Int, createdAt: Date) -> Observable<Response>
     func modifyBookLog(bookId: Int, content: String, bookLogId: Int) -> Observable<Response>
     func deleteBookLog(bookId: Int, bookLogId: Int) -> Observable<Response>
-    func addCompletedBook(bookId: Int) -> Observable<Response>
+    func addCompletedBook(bookId: Int, review: String, createdAt: Date) -> Observable<Response>
 }

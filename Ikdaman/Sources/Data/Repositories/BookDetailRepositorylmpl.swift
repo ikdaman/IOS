@@ -49,8 +49,7 @@ final class BookDetailRepositorylmpl: BookDetailRepository {
             .asObservable()
     }
     
-    func addCompletedBook(bookId: Int) -> RxSwift.Observable<Moya.Response> {
-        return networkProvider.requestRaw(BookAPI.addCompleteRead(bookId: bookId))
-            .asObservable()
-    }
+    func addCompletedBook(bookId: Int, review: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
+        return networkProvider.requestRaw(BookAPI.addCompleteRead(bookId: bookId, review: review, createdAt: createdAt))
+            .asObservable()    }
 }

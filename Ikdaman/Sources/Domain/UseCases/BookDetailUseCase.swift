@@ -17,7 +17,7 @@ protocol BookDetailUseCase {
     func addBookLog(bookId: Int, content: String, page: Int, createdAt: Date) -> Observable<Response>
     func modifyBookLog(bookId: Int, content: String, bookLogId: Int) -> Observable<Response>
     func deleteBookLog(bookId: Int, bookLogId: Int) -> Observable<Response>
-    func addCompletedBook(bookId: Int) -> Observable<Response>
+    func addCompletedBook(bookId: Int, review: String, createdAt: Date) -> Observable<Response>
 }
 
 final class DefaultBookDetailUseCase: BookDetailUseCase {
@@ -56,7 +56,7 @@ final class DefaultBookDetailUseCase: BookDetailUseCase {
         bookDetailRepository.deleteBookLog(bookId: bookId, bookLogId: bookLogId)
     }
     
-    func addCompletedBook(bookId: Int) -> RxSwift.Observable<Moya.Response> {
-        bookDetailRepository.addCompletedBook(bookId: bookId)
+    func addCompletedBook(bookId: Int, review: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
+        bookDetailRepository.addCompletedBook(bookId: bookId, review: review, createdAt: createdAt)
     }
 }

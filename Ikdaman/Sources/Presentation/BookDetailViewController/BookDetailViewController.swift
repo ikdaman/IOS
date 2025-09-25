@@ -83,22 +83,66 @@ final class BookDetailViewController: BaseViewController {
     }
     
     private func bindActions() {
+        let recordRepository: RecordRepository = AddRecordRepositorylmpl() // 서버 호출 구현체
+        let addRecordUseCase: AddRecordUseCase = DefaultAddRecordUseCase(recordRepository: recordRepository)
+        
         bookDetailView.emptyImpressionView.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .firstImpression, bookTitle: self?.currentBookInfo?.bookInfo.title, bookAuthor: self?.currentBookInfo?.bookInfo.author))
-                self?.navigationController?.pushViewController(vc, animated: true)
+                guard let self = self,
+                      let bookId = self.currentBookInfo?.mybookId,
+                      let bookTitle = self.currentBookInfo?.bookInfo.title,
+                      let bookAuthor = self.currentBookInfo?.bookInfo.author else { return }
+
+                let vm = DefaultAddRecordViewModel(
+                    addRecordUseCase: addRecordUseCase,
+                    type: .firstImpression,
+                    bookId: Int(bookId) ?? 0,
+                    bookTitle: bookTitle,
+                    bookAuthor: bookAuthor
+                )
+
+                let vc = AddRecordViewController(viewModel: vm)
+                self.navigationController?.pushViewController(vc, animated: true)
             }).disposed(by: disposeBag)
         
-        Observable.merge(bookDetailView.progressView.rx.tap.asObservable(), bookDetailView.addBookButton.rx.tap.asObservable())
+        Observable.merge(bookDetailView.progressView.rx.tap.asObservable(),
+                         bookDetailView.addBookButton.rx.tap.asObservable())
             .subscribe(onNext: { [weak self] _ in
-                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .progress, bookTitle: self?.currentBookInfo?.bookInfo.title, bookAuthor: self?.currentBookInfo?.bookInfo.author, totalPage: self?.currentBookInfo?.bookInfo.totalPage, nowPage: self?.currentBookInfo?.nowPage))
-                self?.navigationController?.pushViewController(vc, animated: true)
+                guard let self = self,
+                      let bookId = self.currentBookInfo?.mybookId,
+                      let bookTitle = self.currentBookInfo?.bookInfo.title,
+                      let bookAuthor = self.currentBookInfo?.bookInfo.author,
+                      let totalPage = self.currentBookInfo?.bookInfo.totalPage,
+                      let nowPage = self.currentBookInfo?.nowPage else { return }
+
+                let vm = DefaultAddRecordViewModel(
+                    addRecordUseCase: addRecordUseCase,
+                    type: .progress,
+                    bookId: Int(bookId) ?? 0,
+                    bookTitle: bookTitle,
+                    bookAuthor: bookAuthor,
+                    totalPage: totalPage,
+                    nowPage: nowPage
+                )
+
+                let vc = AddRecordViewController(viewModel: vm)
+                self.navigationController?.pushViewController(vc, animated: true)
             }).disposed(by: disposeBag)
         
         bookDetailView.readCompleteButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let vc = AddRecordViewController(viewModel: AddRecordViewModel(type: .completion))
-                self?.navigationController?.pushViewController(vc, animated: true)
+                guard let self = self,
+                      let bookId = self.currentBookInfo?.mybookId else { return }
+
+                let vm = DefaultAddRecordViewModel(
+                    addRecordUseCase: addRecordUseCase,
+                    type: .completion,
+                    bookId: Int(bookId) ?? 0
+                )
+
+                let vc = AddRecordViewController(viewModel: vm)
+                self.navigationController?.pushViewController(vc, animated: true)
+
             }).disposed(by: disposeBag)
     }
     
@@ -159,6 +203,7 @@ class BookDetailView: UIView {
     let impressionLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 13, weight: .regular)
         $0.numberOfLines = 0
+        $0.textColor = #colorLiteral(red: 0.3999999762, green: 0.3999999762, blue: 0.3999999762, alpha: 1)
     }
     
     let emptyImpressionView = UIView().then {
@@ -332,9 +377,16 @@ class BookDetailView: UIView {
         attributedText.addAttribute(.font, value: UIFont.pretendard(.regular, size: 17), range: normalRange)
 
         progressLabel.attributedText = attributedText
-//        progressLabel.text = "📖\n\(day)일째, \(myBookInfo.nowPage)p, \(myBookInfo.progress)%\n독서중인 책이에요."
         progressView.progress = CGFloat(myBookInfo.progress)
         emptyImpressionView.isHidden = myBookInfo.impression != nil
+        
+        if myBookInfo.impression != nil {
+            impressionLabel.text = myBookInfo.impression
+            bookRecordLabel.snp.remakeConstraints {
+                $0.top.equalTo(impressionView.snp.bottom).offset(35)
+                $0.leading.equalToSuperview()
+            }
+        }
     }
     
     func dayToString(startDate: String) -> Int {

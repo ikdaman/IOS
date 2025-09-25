@@ -166,53 +166,53 @@ class ManageMyViewController: BaseViewController {
         }
         
         nicknameTextField.snp.makeConstraints {
-            $0.top.equalTo(nicknameTitleLabel.snp.bottom).offset(8)
+            $0.top.equalTo(nicknameTitleLabel.snp.bottom).offset(10)
             $0.leading.equalToSuperview().offset(20)
             $0.trailing.equalTo(checkButton.snp.leading).offset(-8)
-            $0.height.equalTo(48)
+            $0.height.equalTo(54)
         }
         
         checkButton.snp.makeConstraints {
             $0.centerY.equalTo(nicknameTextField)
-            $0.trailing.equalToSuperview().offset(-20)
+            $0.trailing.equalToSuperview().offset(-31)
             $0.width.equalTo(80)
-            $0.height.equalTo(40)
+            $0.height.equalTo(54)
         }
         
         birthdateTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(nicknameTextField.snp.bottom).offset(24)
+            $0.top.equalTo(nicknameTextField.snp.bottom).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         
         birthdateTextField.snp.makeConstraints {
-            $0.top.equalTo(birthdateTitleLabel.snp.bottom).offset(8)
+            $0.top.equalTo(birthdateTitleLabel.snp.bottom).offset(10)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(48)
+            $0.height.equalTo(54)
         }
         
         genderTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(birthdateTextField.snp.bottom).offset(24)
+            $0.top.equalTo(birthdateTextField.snp.bottom).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         
         maleButton.snp.makeConstraints {
-            $0.top.equalTo(genderTitleLabel.snp.bottom).offset(8)
+            $0.top.equalTo(genderTitleLabel.snp.bottom).offset(10)
             $0.leading.equalToSuperview().offset(20)
             $0.width.equalTo(80)
-            $0.height.equalTo(48)
+            $0.height.equalTo(54)
         }
         
         femaleButton.snp.makeConstraints {
-            $0.top.equalTo(genderTitleLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(maleButton.snp.trailing).offset(16)
+            $0.top.equalTo(genderTitleLabel.snp.bottom).offset(10)
+            $0.leading.equalTo(maleButton.snp.trailing).offset(10)
             $0.width.equalTo(80)
-            $0.height.equalTo(48)
+            $0.height.equalTo(54)
         }
         
         saveButton.snp.makeConstraints {
             $0.top.equalTo(maleButton.snp.bottom).offset(40)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(56)
+            $0.height.equalTo(50)
         }
         
         logoutButton.snp.makeConstraints {
@@ -221,7 +221,7 @@ class ManageMyViewController: BaseViewController {
         }
         
         withdrawButton.snp.makeConstraints {
-            $0.top.equalTo(logoutButton.snp.bottom).offset(16)
+            $0.top.equalTo(logoutButton.snp.bottom).offset(12)
             $0.leading.equalToSuperview().offset(20)
         }
     }

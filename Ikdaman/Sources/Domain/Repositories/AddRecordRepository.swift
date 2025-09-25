@@ -10,7 +10,7 @@ import Moya
 import Foundation
 
 protocol RecordRepository {
-    func addFirstImpression(impression: String, createdAt: Date) -> Observable<Response>
-    func addProgress(page: String, content: String?, createdAt: Date) -> Observable<Response>
-    func addCompletion(review: String, createdAt: Date) -> Observable<Response>
+    func addFirstImpression(bookId: Int, impression: String, createdAt: Date) -> Observable<Response>
+    func addProgress(bookId: Int, page: Int, content: String, createdAt: Date) -> Observable<Response>
+    func addCompletion(bookId: Int, review: String, createdAt: Date) -> Observable<Response>
 }
