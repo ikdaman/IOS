@@ -10,16 +10,16 @@ import RxSwift
 import RxRelay
 
 struct BookLogs: Codable {
-    let booklogs: [BookLog]
+    let booklogs: [BookLog]?
     let hasNext: Bool
 }
 
 struct BookLog: Codable {
     let booklogId: Int
     let type: String
-    let page: Int
-    let content: String
-    let loggedDate: Date
+    let page: Int?
+    let content: String?
+    let loggedDate: String
 }
 
 protocol BookDetailViewModel {

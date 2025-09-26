@@ -273,8 +273,7 @@ class AddRecordViewController: BaseViewController {
         
         output.completeSave
             .subscribe(onNext: { [weak self] in
-                // 저장 성공 → 화면 닫기 or Toast
-                self?.dismiss(animated: true)
+                self?.navigationController?.popToRootViewController(animated: false)
             })
             .disposed(by: disposeBag)
         
@@ -380,36 +379,6 @@ final class DefaultAddRecordViewModel: AddRecordViewModel {
         return AddRecordViewModelOutput(completeSave: completeSave, error: error)
     }
 }
-
-//class AddRecordViewModel {
-//    let type: RecordInputType
-//    var bookTitle: String? = nil
-//    var bookAuthor: String? = nil
-//    var totalPage: Int? = nil
-//    var nowPage: Int? = nil
-//    
-//    var inputText: String = ""
-//    
-//    init(type: RecordInputType, bookTitle: String? = nil, bookAuthor: String? = nil, totalPage: Int? = nil, nowPage: Int? = nil) {
-//        self.type = type
-//        self.bookTitle = bookTitle
-//        self.bookAuthor = bookAuthor
-//        self.totalPage = totalPage
-//        self.nowPage = nowPage
-//    }
-//    
-//    func confirmAction() {
-//        // 서버 저장 / 화면 이동 등 공통 처리
-////        switch type {
-////        case .firstImpression:
-////            <#code#>
-////        case .progress:
-////            <#code#>
-////        case .completion:
-////            <#code#>
-////        }
-//    }
-//}
 
 class PageInputView: UIView {
     let currentPageField = UITextField().then {

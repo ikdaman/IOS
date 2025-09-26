@@ -80,7 +80,7 @@ extension BookAPI: TargetType {
         case .withDrawal:
             "/members/me"
         case .bookHistory(let bookId, _, _):
-            "/mybooks/\(bookId)"
+            "/mybooks/\(bookId)/booklog"
         case .bookList(_, _, _, _):
             "/mybooks"
         case .deleteBook(let bookId):

@@ -60,16 +60,47 @@ final class BookDetailViewController: BaseViewController {
                 self?.bookDetailView.bookInfoView.configure(myBookInfo: myBookInfo)
             }).disposed(by: disposeBag)
 
+//        output.bookHistory
+//            .compactMap { $0?.booklogs }
+//            .bind(to: bookDetailView.bookRecordView.rx.items(
+//                cellIdentifier: BookLogCell.identifier,
+//                cellType: BookLogCell.self
+//            )) { [weak self] index, log, cell in
+//                cell.configure(with: log)
+//                self?.bookDetailView.bookRecordView.reloadData()
+//            }
+//            .disposed(by: disposeBag)
+        
+//        output.bookHistory
+//            .compactMap { $0?.booklogs }
+//            .bind(to: bookDetailView.bookRecordView.rx.items(
+//                cellIdentifier: BookLogCell.identifier,
+//                cellType: BookLogCell.self
+//            )) { index, log, cell in
+//                cell.configure(with: log)
+//            }
+//            .disposed(by: disposeBag)
+//
+//        output.bookHistory
+//            .compactMap { $0?.booklogs }
+//            .subscribe(onNext: { [weak self] logs in
+//                guard let self = self else { return }
+//                print("logs: \(logs)")
+//                DispatchQueue.main.async {
+//                    self.bookDetailView.bookRecordView.snp.updateConstraints {
+//                        $0.height.equalTo(self.bookDetailView.bookRecordView.contentSize.height)
+//                    }
+//                }
+//            })
+//            .disposed(by: disposeBag)
+        
         output.bookHistory
             .compactMap { $0?.booklogs }
-            .bind(to: bookDetailView.bookRecordView.rx.items(
-                cellIdentifier: BookLogCell.identifier,
-                cellType: BookLogCell.self
-            )) { [weak self] index, log, cell in
-                cell.configure(with: log)
-                self?.bookDetailView.bookRecordView.reloadData()
-            }
+            .subscribe(onNext: { [weak self] logs in
+                self?.bookDetailView.updateLogs(logs)
+            })
             .disposed(by: disposeBag)
+
         
         output.completeDelete
             .subscribe(onNext: {
@@ -226,12 +257,19 @@ class BookDetailView: UIView {
         $0.layer.cornerRadius = 10
     }
     
-    let bookRecordView = UITableView().then {
-        $0.register(BookLogCell.self, forCellReuseIdentifier: BookLogCell.identifier)
-        $0.separatorStyle = .none
-        $0.showsVerticalScrollIndicator = false
-        $0.isScrollEnabled = false
-        $0.estimatedRowHeight = 64
+//    var bookRecordView = UITableView().then {
+//        $0.register(BookLogCell.self, forCellReuseIdentifier: BookLogCell.identifier)
+//        $0.separatorStyle = .none
+//        $0.showsVerticalScrollIndicator = false
+//        $0.isScrollEnabled = false
+//        $0.estimatedRowHeight = 64
+//    }
+    
+    let bookRecordStackView = UIStackView().then {
+        $0.axis = .vertical
+        $0.spacing = 12
+        $0.alignment = .fill
+        $0.distribution = .equalSpacing
     }
     
     let disposeBag = DisposeBag()
@@ -249,7 +287,7 @@ class BookDetailView: UIView {
     
     private func setupViews() {
         addSubviews([backgroundView, topBarView, scrollView])
-        scrollView.addSubviews([bookInfoView, progressLabel, readCompleteButton, progressView, firstImpressionLabel, impressionView, emptyImpressionView, bookRecordLabel, addBookButton, bookRecordView])
+        scrollView.addSubviews([bookInfoView, progressLabel, readCompleteButton, progressView, firstImpressionLabel, impressionView, emptyImpressionView, bookRecordLabel, addBookButton, bookRecordStackView])
         impressionView.addSubview(impressionLabel)
     }
     
@@ -347,12 +385,17 @@ class BookDetailView: UIView {
             $0.height.equalTo(50)
         }
         
-        bookRecordView.snp.makeConstraints {
+//        bookRecordView.snp.makeConstraints {
+//            $0.top.equalTo(addBookButton.snp.bottom).offset(15)
+//            $0.width.equalToSuperview()
+////            $0.bottom.equalToSuperview().inset(58)
+//            $0.height.equalTo(0)
+//        }
+        bookRecordStackView.snp.makeConstraints {
             $0.top.equalTo(addBookButton.snp.bottom).offset(15)
             $0.width.equalToSuperview()
             $0.bottom.equalToSuperview().inset(58)
         }
-        
     }
     
     func setBackgroundColor() {
@@ -389,6 +432,17 @@ class BookDetailView: UIView {
         }
     }
     
+    func updateLogs(_ logs: [BookLog]) {
+        // 기존 뷰들 제거
+        bookRecordStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        logs.forEach { log in
+            let cell = BookLogView() // 기존 UITableViewCell 대신 그냥 UIView로 쓰기 가능
+            cell.configure(with: log)
+            bookRecordStackView.addArrangedSubview(cell)
+        }
+    }
+    
     func dayToString(startDate: String) -> Int {
         var isoString = startDate
         // 소수점 이하 잘라내기 (초 단위까지만)
@@ -409,68 +463,177 @@ class BookDetailView: UIView {
     }
 }
 
-class BookLogCell: UITableViewCell {
-    static let identifier = "BookLogCell"
+class BookLogView: UIView {
+    private let timeLabel = UILabel().then {
+        $0.font = .pretendard(.regular, size: 12)
+        $0.textColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
+    }
     
-    private let dateLabel = UILabel().then {
-        $0.font = .pretendard(.regular, size: 14)
-        $0.textColor = #colorLiteral(red: 0.4756370187, green: 0.4756369591, blue: 0.4756369591, alpha: 1)
+    private let titleLabel = UILabel().then {
+        $0.font = .pretendard(.medium, size: 14)
+        $0.textColor = .black
+    }
+    
+    private let expandButton = UIButton().then {
+        $0.setImage(UIImage(systemName: "chevron.down"), for: .normal)
+        $0.setImage(UIImage(systemName: "chevron.up"), for: .selected)
+        $0.tintColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
     }
     
     private let contentLabel = UILabel().then {
-        $0.font = .pretendard(.semiBold, size: 14)
+        $0.font = .pretendard(.regular, size: 13)
+        $0.textColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1)
+        $0.numberOfLines = 0
     }
     
-    private let logContainerView = UIView()
+    private let contentView = UIView()
     
     private let pageLabel = UILabel().then {
         $0.font = .pretendard(.bold, size: 14)
     }
     
-    private let logLabel = UILabel().then {
-        $0.font = .pretendard(.regular, size: 13)
+    private let likeButton = UIButton().then {
+        $0.setTitle("수정", for: .normal)
+        $0.setTitleColor(.white, for: .normal)
+        $0.titleLabel?.font = .pretendard(.medium, size: 12)
+        $0.backgroundColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
+        $0.layer.cornerRadius = 12
     }
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        contentView.addSubviews([contentLabel, dateLabel, logContainerView])
-        
-        dateLabel.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().inset(20)
-        }
-
-        contentLabel.snp.makeConstraints {
-            $0.centerY.equalTo(dateLabel)
-            $0.leading.equalTo(dateLabel.snp.trailing).offset(6)
-        }
-        
-        logContainerView.snp.makeConstraints {
-            $0.top.equalTo(dateLabel.snp.bottom).offset(15)
-            $0.leading.equalToSuperview().offset(20)
-            $0.trailing.equalToSuperview().inset(21)
-            $0.bottom.equalToSuperview().inset(20)
-        }
-        
-        logContainerView.addSubviews([pageLabel, logLabel])
-        pageLabel.snp.makeConstraints {
-            $0.top.leading.equalToSuperview()
-        }
-        
-        logLabel.snp.makeConstraints {
-            $0.top.equalTo(pageLabel.snp.bottom).offset(20)
-            $0.leading.trailing.bottom.equalToSuperview()
-        }
+    
+    private let deleteButton = UIButton().then {
+        $0.setTitle("삭제", for: .normal)
+        $0.setTitleColor(.white, for: .normal)
+        $0.titleLabel?.font = .pretendard(.medium, size: 12)
+        $0.backgroundColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1)
+        $0.layer.cornerRadius = 12
     }
-
+    
+    private let containerView = UIView().then {
+        $0.backgroundColor = UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1)
+        $0.layer.cornerRadius = 10
+        $0.layer.masksToBounds = true
+    }
+    
+    private var isExpanded = false
+    private var contentHeightConstraint: Constraint?
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+        setupLayout()
+        setupActions()
+    }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
+    private func setupViews() {
+        addSubview(containerView)
+        containerView.addSubviews([timeLabel, titleLabel, expandButton])
+        contentView.addSubviews([pageLabel, contentLabel, likeButton, deleteButton])
+        containerView.addSubview(contentView)
+    }
+    
+    private func setupLayout() {
+        containerView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        
+        timeLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+        
+        titleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(20)
+            $0.leading.equalTo(timeLabel.snp.trailing).offset(6)
+        }
+        
+        expandButton.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().inset(20)
+            $0.size.equalTo(24)
+        }
+        
+        contentView.snp.makeConstraints {
+            $0.top.equalTo(timeLabel.snp.bottom).offset(15)
+            $0.leading.trailing.bottom.equalToSuperview().inset(20)
+        }
+        
+        
+    }
+    
+    private func setupActions() {
+        expandButton.addTarget(self, action: #selector(toggleExpand), for: .touchUpInside)
+    }
+    
+    @objc private func toggleExpand() {
+        isExpanded.toggle()
+        expandButton.isSelected = isExpanded
+        
+        UIView.animate(withDuration: 0.3, animations: {
+            self.layoutIfNeeded()
+        })
+    }
+    
     func configure(with log: BookLog) {
-        contentLabel.text = log.content
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM/dd HH:mm"
-        dateLabel.text = formatter.string(from: log.loggedDate)
+        // 시간 포맷팅 (예: "24/12/12 17:00")
+        timeLabel.text = formatISODate(log.loggedDate)
+        
+        // 로그 타입에 따른 이모지와 타이틀 설정
+        switch log.type {
+        case "IMPRESSION":
+            titleLabel.text = "💕첫인상을 추가했어요."
+        case "THINK":
+            titleLabel.text = "✏️생각을 추가했어요."
+        case "REVIEW":
+            titleLabel.text = "🎵책을 덮었어요."
+        default:
+            titleLabel.text = "📖책을 펼쳤어요."
+        }
+        
+        // 내용 설정
+        if let content = log.content, !content.isEmpty {
+            contentLabel.text = content
+        } else {
+            contentLabel.text = "해당에서 찾을 전체에서 책자뎌 위해 된다. 지금은 다음은 이야기뎌 를 알았는데, 탐을 값속을 인물뎌 와 지금 탐자 이야기뎌 나가지 위한 학음을 이야기다."
+        }
+        
+        // 페이지 정보가 있다면 추가 표시
+//        if let pages = log.pages, pages > 0 {
+//            contentLabel.text = "\(pages)p\n\(contentLabel.text ?? "")"
+//        }
+    }
+    
+    // ISO8601 문자열 → Date → 원하는 형식 문자열
+    func formatISODate(_ isoString: String, format: String = "yy/MM/dd HH:mm") -> String {
+        var iso = isoString
+        
+        // Z 붙이기 (UTC 기준)
+        if !iso.hasSuffix("Z") {
+            iso += "Z"
+        }
+        
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        guard let date = isoFormatter.date(from: iso) else {
+            return isoString // 변환 실패 시 원본 반환
+        }
+        
+        return date.toString(format: format)
     }
 }
+
+extension Date {
+    func toString(format: String = "yy/MM/dd HH:mm") -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        formatter.locale = Locale(identifier: "ko_KR") // 한국 시간
+        formatter.timeZone = TimeZone.current
+        return formatter.string(from: self)
+    }
+}
+
+

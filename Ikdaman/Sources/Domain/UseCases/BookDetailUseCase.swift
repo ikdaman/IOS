@@ -32,8 +32,8 @@ final class DefaultBookDetailUseCase: BookDetailUseCase {
     }
     
     func getMyBookHistory(bookId: Int, page: Int?, limit: Int?) -> RxSwift.Observable<BookLogs> {
-//        bookDetailRepository.getMyBookHistory(bookId: bookId, page: page, limit: limit)
-        .just(BookLogs(booklogs: [BookLog(booklogId: 1, type: "11", page: 1, content: "컨텐츠", loggedDate: Date())], hasNext: false))
+        bookDetailRepository.getMyBookHistory(bookId: bookId, page: page, limit: limit)
+//        .just(BookLogs(booklogs: [BookLog(booklogId: 1, type: "11", page: 1, content: "컨텐츠", loggedDate: Date())], hasNext: false))
     }
     
     func deleteBook(bookId: Int) -> RxSwift.Observable<Moya.Response> {
