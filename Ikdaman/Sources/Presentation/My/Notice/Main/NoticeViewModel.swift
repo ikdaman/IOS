@@ -12,7 +12,9 @@ final class NoticeViewModel {
     let fetchUseCase: NoticesUseCase
     var disposeBag = DisposeBag()
     var notices: Notices?
+    var notice: NoticeDetail?
     let reloadTrigger = PublishSubject<Void>()
+    let noticeContentTrigger = PublishSubject<String?>()
     
     init(fetchUseCase: NoticesUseCase = DefaultNoticesUseCase(
         repository: NoticeRepositoryImpl()
@@ -28,6 +30,16 @@ final class NoticeViewModel {
                 self?.reloadTrigger.onNext(())
             }, onError: { error in
                 print("Load notices error: \(error)")
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func loadNotice(id: Int) {
+        fetchUseCase.getNotice(id: id)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notice in
+                self?.notice = notice
+                self?.noticeContentTrigger.onNext(notice.content)
             })
             .disposed(by: disposeBag)
     }

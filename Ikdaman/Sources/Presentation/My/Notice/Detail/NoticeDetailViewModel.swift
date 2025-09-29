@@ -11,7 +11,7 @@ import RxCocoa
 final class NoticeDetailViewModel {
     private let fetchUseCase: NoticesUseCase
     var id: Int
-    var notice = PublishRelay<Notice>()
+//    var notice = PublishRelay<Notice>()
     var disposeBag = DisposeBag()
 
     init(fetchUseCase: NoticesUseCase, id: Int) {
@@ -23,7 +23,7 @@ final class NoticeDetailViewModel {
         fetchUseCase.getNotice(id: id)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] notice in
-                self?.notice.accept(notice)
+//                self?.notice.accept(notice)
             })
             .disposed(by: disposeBag)
     }

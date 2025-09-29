@@ -18,3 +18,9 @@ struct Notice: Codable {
     let uploadedAt: String
     var isExpanded: Bool? = false
 }
+
+struct NoticeDetail: Codable {
+    let noticeId: Int
+    let title: String
+    let content: String
+}

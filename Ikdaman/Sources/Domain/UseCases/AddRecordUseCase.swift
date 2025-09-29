@@ -10,9 +10,9 @@ import Moya
 import Foundation
 
 protocol AddRecordUseCase {
-    func addFirstImpression(impression: String, createdAt: Date) -> Observable<Response>
-    func addProgress(page: String, content: String?, createdAt: Date) -> Observable<Response>
-    func addCompletion(review: String, createdAt: Date) -> Observable<Response>
+    func addFirstImpression(bookId: Int, impression: String, createdAt: Date) -> Observable<Response>
+    func addProgress(bookId: Int, page: Int, content: String, createdAt: Date) -> Observable<Response>
+    func addCompletion(bookId: Int, review: String, createdAt: Date) -> Observable<Response>
 }
 
 final class DefaultAddRecordUseCase: AddRecordUseCase {
@@ -22,15 +22,15 @@ final class DefaultAddRecordUseCase: AddRecordUseCase {
         self.recordRepository = recordRepository
     }
     
-    func addFirstImpression(impression: String, createdAt: Date) -> Observable<Response> {
-        recordRepository.addFirstImpression(impression: impression, createdAt: createdAt)
+    func addFirstImpression(bookId: Int, impression: String, createdAt: Date) -> Observable<Response> {
+        recordRepository.addFirstImpression(bookId: bookId, impression: impression, createdAt: createdAt)
     }
     
-    func addProgress(page: String, content: String?, createdAt: Date) -> Observable<Response> {
-        recordRepository.addProgress(page: page, content: content, createdAt: createdAt)
+    func addProgress(bookId: Int, page: Int, content: String, createdAt: Date) -> Observable<Response> {
+        recordRepository.addProgress(bookId: bookId, page: page, content: content, createdAt: createdAt)
     }
     
-    func addCompletion(review: String, createdAt: Date) -> Observable<Response> {
-        recordRepository.addCompletion(review: review, createdAt: createdAt)
+    func addCompletion(bookId: Int, review: String, createdAt: Date) -> Observable<Response> {
+        recordRepository.addCompletion(bookId: bookId, review: review, createdAt: createdAt)
     }
 }

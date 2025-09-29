@@ -7,6 +7,8 @@
 
 import UIKit
 import RxSwift
+import RxRelay
+import Moya
 
 enum RecordInputType {
     case firstImpression   // 첫인상
@@ -52,7 +54,7 @@ class AddRecordViewController: BaseViewController {
     // MARK: - Properties
     private let disposeBag = DisposeBag()
     private let viewType: RecordInputType
-    private let viewModel: AddRecordViewModel
+    private let viewModel: DefaultAddRecordViewModel
     
     // MARK: - UI
     private let titleLabel = UILabel().then {
@@ -94,7 +96,10 @@ class AddRecordViewController: BaseViewController {
         $0.setTitleColor(.white, for: .normal)
         $0.layer.cornerRadius = 10
     }
-    init(viewModel: AddRecordViewModel) {
+    
+    private let pageView = PageInputView()
+    
+    init(viewModel: DefaultAddRecordViewModel) {
         self.viewModel = viewModel
         self.viewType = viewModel.type
         super.init()
@@ -106,13 +111,14 @@ class AddRecordViewController: BaseViewController {
         super.viewDidLoad()
         setCustomBackButton()
         setupUI()
+        bindViewModel()
     }
     
     private func setupUI() {
         view.backgroundColor = .white
         
-        titleLabel.text = viewModel.type.title
-        subtitleLabel.text = "\(viewModel.bookTitle) / \(viewModel.bookAuthor)"
+        titleLabel.text = viewType.title
+        subtitleLabel.text = "\(viewModel.bookTitle ?? "") / \(viewModel.bookAuthor ?? "")"
         placeholderLabel.text = viewModel.type.placeholder
         
         let topBarView = CustomTopBarView(centerTitle: viewModel.type.topTitle)
@@ -172,13 +178,14 @@ class AddRecordViewController: BaseViewController {
                 $0.textColor = .black
             }
             
-            let pageView = PageInputView()
-            
             let readLabel = UILabel().then {
                 $0.text = "독서하며 든 생각"
                 $0.font = .pretendard(.semiBold, size: 14)
                 $0.textColor = .black
             }
+            
+            pageView.currentPageField.text = "\(viewModel.nowPage ?? 0)"
+            pageView.totalPageLabel.text = "/ \(viewModel.totalPage ?? 0)"
             
             view.addSubviews([subtitleLabel, currentPageLabel, pageView, readLabel])
             
@@ -254,16 +261,27 @@ class AddRecordViewController: BaseViewController {
             $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-36)
             $0.height.equalTo(50)
         }
-        
-        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
     }
     
     private func bindViewModel() {
-        // 필요하다면 ViewModel → View 데이터 바인딩
-    }
-    
-    @objc private func confirmTapped() {
-        viewModel.confirmAction()
+        let input = AddRecordViewModelInput(
+            tapConfirm: confirmButton.rx.tap.asObservable(),
+            nowPageText: (viewType == .progress ? (pageView.currentPageField.rx.text.asObservable()) : .empty())
+        )
+        
+        let output = viewModel.transform(input: input)
+        
+        output.completeSave
+            .subscribe(onNext: { [weak self] in
+                self?.navigationController?.popToRootViewController(animated: false)
+            })
+            .disposed(by: disposeBag)
+        
+        output.error
+            .subscribe(onNext: { error in
+                print("저장 실패: \(error.localizedDescription)")
+            })
+            .disposed(by: disposeBag)
     }
 }
 extension AddRecordViewController: UITextViewDelegate {
@@ -274,39 +292,96 @@ extension AddRecordViewController: UITextViewDelegate {
     }
 }
 
-class AddRecordViewModel {
+protocol AddRecordViewModel {
+    func transform(input: AddRecordViewModelInput) -> AddRecordViewModelOutput
+}
+
+struct AddRecordViewModelInput {
+    let tapConfirm: Observable<Void>
+    let nowPageText: Observable<String?> // ✅ 현재 페이지 입력 바인딩
+}
+
+struct AddRecordViewModelOutput {
+    let completeSave: PublishRelay<Void>
+    let error: PublishRelay<Error>
+}
+
+final class DefaultAddRecordViewModel: AddRecordViewModel {
+    
+    // MARK: - Properties
+    private let disposeBag = DisposeBag()
+    private let addRecordUseCase: AddRecordUseCase
     let type: RecordInputType
+    let bookId: Int
+    var inputText: String = ""
+    var createdAt: Date = Date()
     var bookTitle: String? = nil
     var bookAuthor: String? = nil
     var totalPage: Int? = nil
     var nowPage: Int? = nil
     
-    var inputText: String = ""
+    private let nowPageRelay = BehaviorRelay<Int?>(value: nil) // ✅ 현재 페이지 저장
     
-    init(type: RecordInputType, bookTitle: String? = nil, bookAuthor: String? = nil, totalPage: Int? = nil, nowPage: Int? = nil) {
+    // MARK: - Init
+    init(addRecordUseCase: AddRecordUseCase, type: RecordInputType, bookId: Int, bookTitle: String? = nil, bookAuthor: String? = nil, totalPage: Int? = nil, nowPage: Int? = nil) {
+        self.addRecordUseCase = addRecordUseCase
         self.type = type
+        self.bookId = bookId
         self.bookTitle = bookTitle
         self.bookAuthor = bookAuthor
         self.totalPage = totalPage
         self.nowPage = nowPage
     }
     
-    func confirmAction() {
-        // 서버 저장 / 화면 이동 등 공통 처리
-//        switch type {
-//        case .firstImpression:
-//            <#code#>
-//        case .progress:
-//            <#code#>
-//        case .completion:
-//            <#code#>
-//        }
+    // MARK: - Transform
+    func transform(input: AddRecordViewModelInput) -> AddRecordViewModelOutput {
+        let completeSave = PublishRelay<Void>()
+        let error = PublishRelay<Error>()
+        
+        // ✅ TextField 값 → nowPageRelay
+        input.nowPageText
+            .map { text -> Int? in
+                guard let t = text, let page = Int(t) else { return nil }
+                return page
+            }
+            .bind(to: nowPageRelay)
+            .disposed(by: disposeBag)
+        
+        // ✅ 확인 버튼 탭 → 서버 저장
+        input.tapConfirm
+            .flatMapLatest { [weak self] _ -> Observable<Response> in
+                guard let self = self else { return .empty() }
+                
+                switch self.type {
+                case .firstImpression:
+                    return self.addRecordUseCase
+                        .addFirstImpression(bookId:self.bookId, impression: self.inputText, createdAt: self.createdAt)
+                    
+                case .progress:
+                    guard let page = self.nowPageRelay.value else {
+                        return .error(NSError(domain: "AddRecord", code: -1, userInfo: [NSLocalizedDescriptionKey: "현재 페이지 정보 없음"]))
+                    }
+                    return self.addRecordUseCase
+                        .addProgress(bookId:self.bookId, page: page, content: self.inputText, createdAt: self.createdAt)
+                    
+                case .completion:
+                    return self.addRecordUseCase
+                        .addCompletion(bookId:self.bookId, review: self.inputText, createdAt: self.createdAt)
+                }
+            }
+            .subscribe(onNext: { _ in
+                completeSave.accept(())
+            }, onError: { err in
+                error.accept(err)
+            })
+            .disposed(by: disposeBag)
+        
+        return AddRecordViewModelOutput(completeSave: completeSave, error: error)
     }
 }
 
 class PageInputView: UIView {
     let currentPageField = UITextField().then {
-        $0.text = "188p"
         $0.font = .pretendard(.regular, size: 14)
         $0.textColor = .black
         $0.textAlignment = .center
@@ -317,7 +392,6 @@ class PageInputView: UIView {
     }
     
     let totalPageLabel = UILabel().then {
-        $0.text = "/ 260p"
         $0.font = .pretendard(.bold, size: 14)
         $0.textColor = #colorLiteral(red: 0.650980413, green: 0.650980413, blue: 0.650980413, alpha: 1)
         $0.textAlignment = .center
@@ -351,5 +425,9 @@ class PageInputView: UIView {
             $0.width.equalTo(80)   // 두 번째 박스 너비
             $0.height.equalTo(44)
         }
+    }
+    
+    func configure(totalPage: Int) {
+        totalPageLabel.text = "/ \(totalPage)"
     }
 }

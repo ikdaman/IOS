@@ -45,7 +45,7 @@ enum BookAPI {
     /// 생각 추가
     case addThink(bookId: Int, content: String, page: Int, createdAt: Date)
     /// 완독 추가
-    case addCompleteRead(bookId: Int)
+    case addCompleteRead(bookId: Int, review: String, createdAt: Date)
     /// 완독 삭제
     case deleteCompleteRead(bookId: Int, bookLogId: Int)
     /// 완독 수정
@@ -69,7 +69,6 @@ extension BookAPI: TargetType {
             "/auth/reissue"
         case .login:
             "/auth/login"
-//            "/auth/login/idToken"
         case .logout:
             "/auth/logout"
         case .modifyProfile:
@@ -81,7 +80,7 @@ extension BookAPI: TargetType {
         case .withDrawal:
             "/members/me"
         case .bookHistory(let bookId, _, _):
-            "/mybooks/\(bookId)"
+            "/mybooks/\(bookId)/booklog"
         case .bookList(_, _, _, _):
             "/mybooks"
         case .deleteBook(let bookId):
@@ -98,7 +97,7 @@ extension BookAPI: TargetType {
             "/mybooks/\(bookId)/booklog/\(bookLodId)"
         case .addThink(let bookId, _, _, _):
             "/mybooks/\(bookId)/booklog"
-        case .addCompleteRead(let bookId):
+        case .addCompleteRead(let bookId, _, _):
             "/mybooks/\(bookId)/completed"
         case .deleteCompleteRead(let bookId, let bookLogId):
             "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
@@ -117,7 +116,7 @@ extension BookAPI: TargetType {
     
     var method: Moya.Method {
         switch self {
-        case .reissueToken, .login, .addBook(_), .addThink(_, _, _, _), .addCompleteRead(_), .firstImpression(_, _, _), .addNotice:
+        case .reissueToken, .login, .addBook(_), .addThink(_, _, _, _), .addCompleteRead(_, _, _), .firstImpression(_, _, _), .addNotice:
             return .post
         case .logout, .withDrawal, .deleteBook(_), .deleteThink(_, _), .deleteCompleteRead(_, _):
             return .delete
@@ -161,6 +160,12 @@ extension BookAPI: TargetType {
                      "isbn": book.isbn, "page": book.page, "coverImage": book.coverImage,
                      "itemId": book.itemId, "impression": book.impression, "createdAt": book.createdAt]
             return .requestParameters(parameters: param, encoding: JSONEncoding.default)
+        case .firstImpression(_, let impression, let createdAt):
+            param = ["impression": impression, "createdAt": createdAt.utcString]
+        case .addThink(_, let content, let page, let createdAt):
+            param = ["content": content, "page": page, "createdAt": createdAt.utcString]
+        case .addCompleteRead(_, let review, let createdAt):
+            param = ["review": review, "createdAt": createdAt.utcString]
         default:
             return .requestPlain
         }
@@ -180,7 +185,7 @@ extension BookAPI: TargetType {
             defaultHeaders["refresh-token"] = refreshToken
         case .login(_):
             defaultHeaders["social-token"] = socialToken
-        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead, .bookList, .bookListReading, .deleteBook:
+        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead, .bookList, .noticeDetail, .bookListReading, .deleteBook:
             defaultHeaders["Authorization"] = accessToken
         default:
             break
@@ -192,3 +197,13 @@ extension BookAPI: TargetType {
 
 extension BookAPI: BaseTargetType {}
 
+extension Date {
+    /// UTC 기준 ISO 8601 문자열 반환
+    var utcString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'" // ISO 8601
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.string(from: self)
+    }
+}

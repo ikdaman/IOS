@@ -187,7 +187,7 @@ class BookCaseView: UIView {
             $0.top.equalTo(searchBar.snp.bottom).offset(40)
             $0.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(17)
-            $0.width.equalTo(188)
+//            $0.width.equalTo(188)
         }
         
         bookListView.snp.makeConstraints {
@@ -220,8 +220,8 @@ class BookCaseView: UIView {
 
 enum FilterType: String, CaseIterable {
     case all = "전체"
-    case completed = "완독한 책"
-    case inProgress = "독서중인 책"
+    case completed = "🎵완독한 책"
+    case inProgress = "📖독서중인 책"
     
     var status: String? {
         switch self {
@@ -271,18 +271,25 @@ class FilterView: UIView {
             case .all:
                 width = 24
             case .completed:
-                width = 66
+                width = 68
             case .inProgress:
-                width = 78
+                width = 80
             }
-
+            
             let button = UIButton(type: .system).then {
-                $0.setTitle(filter.rawValue, for: .normal)
-                $0.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
-                $0.setTitleColor(filter == .all ? .white : UIColor(white: 1.0, alpha: 0.6), for: .normal)
+                let title = filter.rawValue
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.pretendard(.medium, size: 14),
+                    .foregroundColor: filter == .all ? UIColor.white : UIColor(white: 1.0, alpha: 0.6),
+                    .kern: -0.56
+                ]
+                let attributedTitle = NSAttributedString(string: title, attributes: attributes)
+                $0.setAttributedTitle(attributedTitle, for: .normal)
+                
                 $0.tag = buttons.count
                 $0.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
             }
+
 
             buttons.append(button)
             stackView.addArrangedSubview(button)

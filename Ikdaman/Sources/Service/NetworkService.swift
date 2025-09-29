@@ -51,8 +51,10 @@ final class NetworkProvider {
                     "\($0.key)".lowercased() == "Authorization" ||
                     "\($0.key)".lowercased() == "refresh-token"
                 })?.value as? String {
-                    KeychainService.shared.save(token, forKey: .accessToken)
-                    KeychainService.shared.save(token, forKey: .refreshToken)
+                    let _ = KeychainService.shared.delete(forKey: .accessToken)
+                    let _ = KeychainService.shared.delete(forKey: .refreshToken)
+                    let _ = KeychainService.shared.save(token, forKey: .accessToken)
+                    let _ = KeychainService.shared.save(token, forKey: .refreshToken)
                     print("🔐 토큰 저장됨: \(token)")
                 }
                 
@@ -61,6 +63,7 @@ final class NetworkProvider {
             })
             .filterSuccessfulStatusCodes()
             .flatMap { response in
+                print("\(response.data)")
                 guard !response.data.isEmpty else {
                     return .error(NSError(domain: "EmptyData", code: -1000, userInfo: [NSLocalizedDescriptionKey: "응답 데이터가 비어 있습니다."]))
                 }
