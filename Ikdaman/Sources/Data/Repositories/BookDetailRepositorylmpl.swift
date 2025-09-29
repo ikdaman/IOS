@@ -29,7 +29,7 @@ final class BookDetailRepositorylmpl: BookDetailRepository {
             .asObservable()
     }
     
-    func addImression(bookId: Int, impression: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
+    func addImpression(bookId: Int, impression: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
         return networkProvider.requestRaw(BookAPI.firstImpression(bookId: bookId, impression: impression, createdAt: createdAt))
             .asObservable()
     }

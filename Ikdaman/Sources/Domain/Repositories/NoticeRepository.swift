@@ -9,5 +9,5 @@ import RxSwift
 
 protocol NoticeRepository {
     func fetchNotices(page: Int?, limit: Int?) -> Observable<Notices>
-    func fetchNotice(id: Int) -> Observable<Notice>
+    func fetchNotice(id: Int) -> Observable<NoticeDetail>
 }

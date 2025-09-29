@@ -132,6 +132,7 @@ final class DefaultManageMyViewModel: ManageMyViewModel {
                     AuthService.shared.logout()
                     self?.logoutCompleteRelay.accept(())
                 case .error(let error):
+                    AuthService.shared.logout()
                     self?.errorRelay.accept(error.localizedDescription)
                 default: break
                 }

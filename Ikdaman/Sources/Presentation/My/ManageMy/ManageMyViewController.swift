@@ -227,6 +227,7 @@ class ManageMyViewController: BaseViewController {
     }
     
     private func bind() {
+        
         let genderSelected = Observable.merge(maleButton.rx.tap.map{ "male" }.asObservable(), femaleButton.rx.tap.map{ "female" }.asObservable())
         
         genderSelected.subscribe(onNext :{ [weak self] gender in
@@ -255,6 +256,23 @@ class ManageMyViewController: BaseViewController {
                 return formatter.string(from: date)
             }
             .bind(to: birthdateTextField.rx.text)
+            .disposed(by: disposeBag)
+        
+        // 생년월일 텍스트 필드 상태
+        let isBirthdateValid = birthdateTextField.rx.text.orEmpty
+            .map { [weak self] text -> Bool in
+                guard let self = self else { return false }
+                return self.formatDate(from: text) != nil
+            }
+            .share(replay: 1)
+
+        // 저장 버튼 활성화 여부 = 생년월일이 유효하면 활성화
+        isBirthdateValid
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] isValid in
+                self?.saveButton.isEnabled = isValid
+                self?.saveButton.backgroundColor = isValid ? .black : .gray
+            })
             .disposed(by: disposeBag)
         
         let input = ManageMyViewModelInput(

@@ -41,7 +41,7 @@ final class DefaultBookDetailUseCase: BookDetailUseCase {
     }
     
     func addImression(bookId: Int, impression: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
-        bookDetailRepository.addImression(bookId: bookId, impression: impression, createdAt: createdAt)
+        bookDetailRepository.addImpression(bookId: bookId, impression: impression, createdAt: createdAt)
     }
     
     func addBookLog(bookId: Int, content: String, page: Int, createdAt: Date) -> RxSwift.Observable<Moya.Response> {

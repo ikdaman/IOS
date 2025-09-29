@@ -11,112 +11,251 @@ import Then
 import RxSwift
 import RxCocoa
 
+//final class BookDetailViewController: BaseViewController {
+//
+//    // MARK: - Properties
+//    private let bookDetailView = BookDetailView()
+//    private let viewModel: BookDetailViewModel
+//    private let disposeBag = DisposeBag()
+//
+//    private var currentBookInfo: MyBookInfo? // bookInfo 보관
+//    private let tapModifyLogSubject = PublishSubject<(String, Int)>()
+//    private let tapDeleteLogSubject = PublishSubject<Int>()
+//
+//    var tapModifyLog: Observable<(String, Int)> {
+//        return tapModifyLogSubject.asObservable()
+//    }
+//
+//    var tapDeleteLog: Observable<Int> {
+//        return tapDeleteLogSubject.asObservable()
+//    }
+//
+//    // MARK: - Initializer
+//    init(viewModel: BookDetailViewModel) {
+//        self.viewModel = viewModel
+//        super.init()
+//    }
+//
+//    required init?(coder: NSCoder) {
+//        fatalError("init(coder:) has not been implemented")
+//    }
+//
+//    // MARK: - LifeCycle
+//    override func loadView() {
+//        self.view = bookDetailView
+//    }
+//
+//    override func viewDidLoad() {
+//        super.viewDidLoad()
+//        setCustomBackButton()
+//        bindViewModel()
+//        bindActions()
+//    }
+//
+//    // MARK: - Binding
+//    private func bindViewModel() {
+//        let input = BookDetailViewModelInput(
+//            fetchBookInfo: Observable.just(()),
+//            fetchBookHistory: Observable.just(()),
+//            tapDeleteBook: bookDetailView.topBarView.customButton?.rx.tap.asObservable() ?? .empty(),
+//            tapModifyLog: tapModifyLog.asObservable(),
+//            tapDeleteLog: tapDeleteLog.asObservable()
+//        )
+//
+//        let output = viewModel.transform(input: input)
+//        
+//        output.bookInfo
+//            .subscribe(onNext: { [weak self] myBookInfo in
+//                guard let myBookInfo else { return }
+//                self?.currentBookInfo = myBookInfo
+//                self?.bookDetailView.configure(myBookInfo: myBookInfo)
+//                self?.bookDetailView.bookInfoView.configure(myBookInfo: myBookInfo)
+//            }).disposed(by: disposeBag)
+//        
+//        output.bookHistory
+//            .map { $0?.booklogs ?? [] } // nil이면 빈 배열
+//            .subscribe(onNext: { [weak self] logs in
+//                guard let self = self else { return }
+//
+//                // 기존 방식 대신, Subject를 넘겨서 updateLogs에서 바로 bind
+//                self.bookDetailView.updateLogs(
+//                    logs,
+//                    modifyLogSubject: self.tapModifyLogSubject,
+//                    deleteLogSubject: self.tapDeleteLogSubject
+//                )
+//            })
+//            .disposed(by: disposeBag)
+//
+//        output.completeDelete
+//            .subscribe(onNext: {
+//                self.navigationController?.popViewController(animated: true)
+//            }).disposed(by: disposeBag)
+//    }
+//    
+//    private func bindActions() {
+//        let recordRepository: RecordRepository = AddRecordRepositorylmpl() // 서버 호출 구현체
+//        let addRecordUseCase: AddRecordUseCase = DefaultAddRecordUseCase(recordRepository: recordRepository)
+//        
+//        bookDetailView.emptyImpressionView.rx.tap
+//            .subscribe(onNext: { [weak self] _ in
+//                guard let self = self,
+//                      let bookId = self.currentBookInfo?.mybookId,
+//                      let bookTitle = self.currentBookInfo?.bookInfo.title,
+//                      let bookAuthor = self.currentBookInfo?.bookInfo.author else { return }
+//
+//                let vm = DefaultAddRecordViewModel(
+//                    addRecordUseCase: addRecordUseCase,
+//                    type: .firstImpression,
+//                    bookId: Int(bookId) ?? 0,
+//                    bookTitle: bookTitle,
+//                    bookAuthor: bookAuthor
+//                )
+//
+//                let vc = AddRecordViewController(viewModel: vm)
+//                self.navigationController?.pushViewController(vc, animated: true)
+//            }).disposed(by: disposeBag)
+//        
+//        Observable.merge(bookDetailView.progressView.rx.tap.asObservable(),
+//                         bookDetailView.addBookButton.rx.tap.asObservable())
+//            .subscribe(onNext: { [weak self] _ in
+//                guard let self = self,
+//                      let bookId = self.currentBookInfo?.mybookId,
+//                      let bookTitle = self.currentBookInfo?.bookInfo.title,
+//                      let bookAuthor = self.currentBookInfo?.bookInfo.author,
+//                      let totalPage = self.currentBookInfo?.bookInfo.totalPage,
+//                      let nowPage = self.currentBookInfo?.nowPage else { return }
+//
+//                let vm = DefaultAddRecordViewModel(
+//                    addRecordUseCase: addRecordUseCase,
+//                    type: .progress,
+//                    bookId: Int(bookId) ?? 0,
+//                    bookTitle: bookTitle,
+//                    bookAuthor: bookAuthor,
+//                    totalPage: totalPage,
+//                    nowPage: nowPage
+//                )
+//
+//                let vc = AddRecordViewController(viewModel: vm)
+//                self.navigationController?.pushViewController(vc, animated: true)
+//            }).disposed(by: disposeBag)
+//        
+//        bookDetailView.readCompleteButton.rx.tap
+//            .subscribe(onNext: { [weak self] _ in
+//                guard let self = self,
+//                      let bookId = self.currentBookInfo?.mybookId else { return }
+//
+//                let vm = DefaultAddRecordViewModel(
+//                    addRecordUseCase: addRecordUseCase,
+//                    type: .completion,
+//                    bookId: Int(bookId) ?? 0
+//                )
+//
+//                let vc = AddRecordViewController(viewModel: vm)
+//                self.navigationController?.pushViewController(vc, animated: true)
+//
+//            }).disposed(by: disposeBag)
+//    }
+//    
+//}
 final class BookDetailViewController: BaseViewController {
-    
+
     // MARK: - Properties
     private let bookDetailView = BookDetailView()
     private let viewModel: BookDetailViewModel
     private let disposeBag = DisposeBag()
-    
+
     private var currentBookInfo: MyBookInfo? // bookInfo 보관
-    
+    private let tapModifyLogSubject = PublishSubject<(String, Int)>()
+    private let tapDeleteLogSubject = PublishSubject<Int>()
+
+    var tapModifyLog: Observable<(String, Int)> {
+        return tapModifyLogSubject.asObservable()
+    }
+
+    var tapDeleteLog: Observable<Int> {
+        return tapDeleteLogSubject.asObservable()
+    }
+
     // MARK: - Initializer
     init(viewModel: BookDetailViewModel) {
         self.viewModel = viewModel
         super.init()
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: - LifeCycle
     override func loadView() {
         self.view = bookDetailView
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setCustomBackButton()
         bindViewModel()
         bindActions()
     }
-    
+
     // MARK: - Binding
     private func bindViewModel() {
+        // 타입 명시
+        let tapModifyLogObservable: Observable<(String, Int)> = tapModifyLogSubject.asObservable()
+        let tapDeleteLogObservable: Observable<Int> = tapDeleteLogSubject.asObservable()
+
+        // ViewModel Input
         let input = BookDetailViewModelInput(
             fetchBookInfo: Observable.just(()),
             fetchBookHistory: Observable.just(()),
-            tapDeleteBook: bookDetailView.topBarView.customButton?.rx.tap.asObservable() ?? .empty()
+            tapDeleteBook: bookDetailView.topBarView.customButton?.rx.tap.asObservable() ?? .empty(),
+            tapModifyLog: tapModifyLogObservable,
+            tapDeleteLog: tapDeleteLogObservable
         )
 
         let output = viewModel.transform(input: input)
         
+        // Book Info 바인딩
         output.bookInfo
             .subscribe(onNext: { [weak self] myBookInfo in
-                guard let myBookInfo else { return }
+                guard let myBookInfo = myBookInfo else { return }
                 self?.currentBookInfo = myBookInfo
                 self?.bookDetailView.configure(myBookInfo: myBookInfo)
                 self?.bookDetailView.bookInfoView.configure(myBookInfo: myBookInfo)
-            }).disposed(by: disposeBag)
-
-//        output.bookHistory
-//            .compactMap { $0?.booklogs }
-//            .bind(to: bookDetailView.bookRecordView.rx.items(
-//                cellIdentifier: BookLogCell.identifier,
-//                cellType: BookLogCell.self
-//            )) { [weak self] index, log, cell in
-//                cell.configure(with: log)
-//                self?.bookDetailView.bookRecordView.reloadData()
-//            }
-//            .disposed(by: disposeBag)
-        
-//        output.bookHistory
-//            .compactMap { $0?.booklogs }
-//            .bind(to: bookDetailView.bookRecordView.rx.items(
-//                cellIdentifier: BookLogCell.identifier,
-//                cellType: BookLogCell.self
-//            )) { index, log, cell in
-//                cell.configure(with: log)
-//            }
-//            .disposed(by: disposeBag)
-//
-//        output.bookHistory
-//            .compactMap { $0?.booklogs }
-//            .subscribe(onNext: { [weak self] logs in
-//                guard let self = self else { return }
-//                print("logs: \(logs)")
-//                DispatchQueue.main.async {
-//                    self.bookDetailView.bookRecordView.snp.updateConstraints {
-//                        $0.height.equalTo(self.bookDetailView.bookRecordView.contentSize.height)
-//                    }
-//                }
-//            })
-//            .disposed(by: disposeBag)
-        
-        output.bookHistory
-            .compactMap { $0?.booklogs }
-            .subscribe(onNext: { [weak self] logs in
-                self?.bookDetailView.updateLogs(logs)
             })
             .disposed(by: disposeBag)
-
         
+        // Book History 바인딩
+        output.bookHistory
+            .map { $0?.booklogs ?? [] }
+            .subscribe(onNext: { [weak self] logs in
+                guard let self = self else { return }
+                self.bookDetailView.updateLogs(
+                    logs,
+                    modifyLogSubject: self.tapModifyLogSubject,
+                    deleteLogSubject: self.tapDeleteLogSubject
+                )
+            })
+            .disposed(by: disposeBag)
+        
+        // 삭제 완료 시 pop
         output.completeDelete
-            .subscribe(onNext: {
-                self.navigationController?.popViewController(animated: true)
-            }).disposed(by: disposeBag)
-
-        bookDetailView.emptyImpressionView.rx.tap
-            .subscribe(onNext: {
-                print("tatatatat")
-            }).disposed(by: disposeBag)
-    }
-    
-    private func bindActions() {
-        let recordRepository: RecordRepository = AddRecordRepositorylmpl() // 서버 호출 구현체
-        let addRecordUseCase: AddRecordUseCase = DefaultAddRecordUseCase(recordRepository: recordRepository)
+            .subscribe(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: disposeBag)
         
+//        output.completDeleteLog
+//            .subscribe(onNext: { [weak self] _ in
+//                self?.viewModel.fetchBookHistory()
+//            }).disposed(by: disposeBag)
+    }
+
+
+    private func bindActions() {
+        let recordRepository: RecordRepository = AddRecordRepositorylmpl()
+        let addRecordUseCase: AddRecordUseCase = DefaultAddRecordUseCase(recordRepository: recordRepository)
+
         bookDetailView.emptyImpressionView.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self = self,
@@ -134,8 +273,9 @@ final class BookDetailViewController: BaseViewController {
 
                 let vc = AddRecordViewController(viewModel: vm)
                 self.navigationController?.pushViewController(vc, animated: true)
-            }).disposed(by: disposeBag)
-        
+            })
+            .disposed(by: disposeBag)
+
         Observable.merge(bookDetailView.progressView.rx.tap.asObservable(),
                          bookDetailView.addBookButton.rx.tap.asObservable())
             .subscribe(onNext: { [weak self] _ in
@@ -158,8 +298,9 @@ final class BookDetailViewController: BaseViewController {
 
                 let vc = AddRecordViewController(viewModel: vm)
                 self.navigationController?.pushViewController(vc, animated: true)
-            }).disposed(by: disposeBag)
-        
+            })
+            .disposed(by: disposeBag)
+
         bookDetailView.readCompleteButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self = self,
@@ -173,11 +314,11 @@ final class BookDetailViewController: BaseViewController {
 
                 let vc = AddRecordViewController(viewModel: vm)
                 self.navigationController?.pushViewController(vc, animated: true)
-
-            }).disposed(by: disposeBag)
+            })
+            .disposed(by: disposeBag)
     }
-    
 }
+
 
 class BookDetailView: UIView {
     let backgroundView = GradientBackgroundView()
@@ -256,14 +397,6 @@ class BookDetailView: UIView {
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 10
     }
-    
-//    var bookRecordView = UITableView().then {
-//        $0.register(BookLogCell.self, forCellReuseIdentifier: BookLogCell.identifier)
-//        $0.separatorStyle = .none
-//        $0.showsVerticalScrollIndicator = false
-//        $0.isScrollEnabled = false
-//        $0.estimatedRowHeight = 64
-//    }
     
     let bookRecordStackView = UIStackView().then {
         $0.axis = .vertical
@@ -385,12 +518,6 @@ class BookDetailView: UIView {
             $0.height.equalTo(50)
         }
         
-//        bookRecordView.snp.makeConstraints {
-//            $0.top.equalTo(addBookButton.snp.bottom).offset(15)
-//            $0.width.equalToSuperview()
-////            $0.bottom.equalToSuperview().inset(58)
-//            $0.height.equalTo(0)
-//        }
         bookRecordStackView.snp.makeConstraints {
             $0.top.equalTo(addBookButton.snp.bottom).offset(15)
             $0.width.equalToSuperview()
@@ -432,14 +559,25 @@ class BookDetailView: UIView {
         }
     }
     
-    func updateLogs(_ logs: [BookLog]) {
-        // 기존 뷰들 제거
+    func updateLogs(_ logs: [BookLog],
+                    modifyLogSubject: PublishSubject<(String, Int)>,
+                    deleteLogSubject: PublishSubject<Int>) {
+
         bookRecordStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         logs.forEach { log in
-            let cell = BookLogView() // 기존 UITableViewCell 대신 그냥 UIView로 쓰기 가능
+            let cell = BookLogView()
             cell.configure(with: log)
             bookRecordStackView.addArrangedSubview(cell)
+
+            // Cell의 tap 이벤트를 바로 외부 Subject에 연결
+            cell.tapModify
+                .bind(to: modifyLogSubject)
+                .disposed(by: disposeBag)
+
+            cell.tapDelete
+                .bind(to: deleteLogSubject)
+                .disposed(by: disposeBag)
         }
     }
     
@@ -475,15 +613,16 @@ class BookLogView: UIView {
     }
     
     private let expandButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "chevron.down"), for: .normal)
-        $0.setImage(UIImage(systemName: "chevron.up"), for: .selected)
-        $0.tintColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
+        $0.setImage(UIImage(named: "arrowDown"), for: .normal)
+        $0.setImage(UIImage(named: "arrowUp"), for: .selected)
     }
     
-    private let contentLabel = UILabel().then {
+    private let contentLabel = UITextView().then {
         $0.font = .pretendard(.regular, size: 13)
         $0.textColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1)
-        $0.numberOfLines = 0
+        $0.isScrollEnabled = false
+        $0.backgroundColor = .clear
+        $0.isHidden = true
     }
     
     private let contentView = UIView()
@@ -492,12 +631,13 @@ class BookLogView: UIView {
         $0.font = .pretendard(.bold, size: 14)
     }
     
-    private let likeButton = UIButton().then {
+    private let modifyButton = UIButton().then {
         $0.setTitle("수정", for: .normal)
         $0.setTitleColor(.white, for: .normal)
         $0.titleLabel?.font = .pretendard(.medium, size: 12)
         $0.backgroundColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
-        $0.layer.cornerRadius = 12
+        $0.layer.cornerRadius = 5
+        $0.isHidden = true
     }
     
     private let deleteButton = UIButton().then {
@@ -505,7 +645,8 @@ class BookLogView: UIView {
         $0.setTitleColor(.white, for: .normal)
         $0.titleLabel?.font = .pretendard(.medium, size: 12)
         $0.backgroundColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1)
-        $0.layer.cornerRadius = 12
+        $0.layer.cornerRadius = 5
+        $0.isHidden = true
     }
     
     private let containerView = UIView().then {
@@ -516,6 +657,10 @@ class BookLogView: UIView {
     
     private var isExpanded = false
     private var contentHeightConstraint: Constraint?
+    
+    var logId: Int = 0
+    let tapModify = PublishSubject<(String, Int)>()
+    let tapDelete = PublishSubject<Int>()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -531,7 +676,7 @@ class BookLogView: UIView {
     private func setupViews() {
         addSubview(containerView)
         containerView.addSubviews([timeLabel, titleLabel, expandButton])
-        contentView.addSubviews([pageLabel, contentLabel, likeButton, deleteButton])
+        contentView.addSubviews([pageLabel, contentLabel, modifyButton, deleteButton])
         containerView.addSubview(contentView)
     }
     
@@ -551,36 +696,87 @@ class BookLogView: UIView {
         }
         
         expandButton.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(20)
+            $0.centerY.equalTo(titleLabel)
             $0.trailing.equalToSuperview().inset(20)
             $0.size.equalTo(24)
         }
         
         contentView.snp.makeConstraints {
             $0.top.equalTo(timeLabel.snp.bottom).offset(15)
-            $0.leading.trailing.bottom.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(5)
+            $0.height.equalTo(0)
         }
         
+        pageLabel.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.leading.equalToSuperview()
+        }
         
+        contentLabel.snp.makeConstraints {
+            $0.top.equalTo(pageLabel.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview().inset(46)
+        }
+        
+        deleteButton.snp.makeConstraints {
+            $0.trailing.bottom.equalToSuperview()
+            $0.width.equalTo(41)
+            $0.height.equalTo(26)
+        }
+        
+        modifyButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(47)
+            $0.bottom.equalToSuperview()
+            $0.width.equalTo(41)
+            $0.height.equalTo(26)
+        }
     }
     
     private func setupActions() {
         expandButton.addTarget(self, action: #selector(toggleExpand), for: .touchUpInside)
+        modifyButton.addTarget(self, action: #selector(toggleModify), for: .touchUpInside)
+        deleteButton.addTarget(self, action: #selector(toggleDelete), for: .touchUpInside)
     }
     
     @objc private func toggleExpand() {
         isExpanded.toggle()
         expandButton.isSelected = isExpanded
+        deleteButton.isHidden = !isExpanded
+        modifyButton.isHidden = !isExpanded
+        contentLabel.isHidden = !isExpanded
         
-        UIView.animate(withDuration: 0.3, animations: {
-            self.layoutIfNeeded()
-        })
+        if isExpanded {
+            contentView.snp.remakeConstraints {
+                $0.top.equalTo(timeLabel.snp.bottom).offset(15)
+                $0.leading.trailing.bottom.equalToSuperview().inset(20)
+            }
+        } else {
+            contentView.snp.remakeConstraints {
+                $0.top.equalTo(timeLabel.snp.bottom).offset(15)
+                $0.leading.trailing.equalToSuperview().inset(20)
+                $0.bottom.equalToSuperview().inset(5)
+                $0.height.equalTo(0)
+            }
+        }
+        
+        self.layoutIfNeeded()
+    }
+    
+    @objc private func toggleModify() {
+        tapModify.onNext((contentLabel.text ?? "", logId))
+        self.layoutIfNeeded()
+    }
+    
+    @objc private func toggleDelete() {
+        tapDelete.onNext(logId)
+        self.layoutIfNeeded()
     }
     
     func configure(with log: BookLog) {
         // 시간 포맷팅 (예: "24/12/12 17:00")
         timeLabel.text = formatISODate(log.loggedDate)
-        
+        self.logId = log.booklogId
         // 로그 타입에 따른 이모지와 타이틀 설정
         switch log.type {
         case "IMPRESSION":
@@ -596,14 +792,12 @@ class BookLogView: UIView {
         // 내용 설정
         if let content = log.content, !content.isEmpty {
             contentLabel.text = content
-        } else {
-            contentLabel.text = "해당에서 찾을 전체에서 책자뎌 위해 된다. 지금은 다음은 이야기뎌 를 알았는데, 탐을 값속을 인물뎌 와 지금 탐자 이야기뎌 나가지 위한 학음을 이야기다."
         }
         
         // 페이지 정보가 있다면 추가 표시
-//        if let pages = log.pages, pages > 0 {
-//            contentLabel.text = "\(pages)p\n\(contentLabel.text ?? "")"
-//        }
+        if let pages = log.page, pages > 0 {
+            pageLabel.text = "\(pages)p"
+        }
     }
     
     // ISO8601 문자열 → Date → 원하는 형식 문자열

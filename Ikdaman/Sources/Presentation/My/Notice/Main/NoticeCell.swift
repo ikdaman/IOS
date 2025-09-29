@@ -70,9 +70,8 @@ class NoticeCell: UITableViewCell {
     }
 
     func configure(with notice: Notice) {
-        dateLabel.text = notice.uploadedAt
+        dateLabel.text = notice.uploadedAt.toYYYYMMDD()
         titleLabel.text = notice.title
-        detailLabel.text = "1111"
         isExpanded = notice.isExpanded ?? false
     }
     
@@ -84,7 +83,6 @@ class NoticeCell: UITableViewCell {
         
         if isExpanded {
             expandView.addSubview(detailLabel)
-            detailLabel.text = "공지사항 내용입니다"
             detailLabel.numberOfLines = 0
             detailLabel.font = .systemFont(ofSize: 14)
             detailLabel.textColor = .darkGray
@@ -106,7 +104,44 @@ class NoticeCell: UITableViewCell {
         }
     }
     
+    func setDetailLabel(detail: String) {
+        self.detailLabel.text = detail
+    }
+    
     required init?(coder: NSCoder) {
         fatalError()
+    }
+}
+
+extension String {
+    /// ISO 8601 문자열을 "yyyy-MM-dd" 형식으로 변환
+    func toYYYYMMDD() -> String? {
+        // 가능한 입력 포맷 배열 (마이크로초 유무, 초 유무 등)
+        let formats = [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS", // 마이크로초 포함
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",    // 밀리초 포함
+            "yyyy-MM-dd'T'HH:mm:ss",        // 초까지
+            "yyyy-MM-dd"                     // 날짜만
+        ]
+        
+        let inputFormatter = DateFormatter()
+        inputFormatter.locale = Locale(identifier: "en_US_POSIX")
+        
+        var date: Date? = nil
+        for format in formats {
+            inputFormatter.dateFormat = format
+            if let d = inputFormatter.date(from: self) {
+                date = d
+                break
+            }
+        }
+        
+        guard let validDate = date else { return nil }
+        
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "yyyy-MM-dd"
+        outputFormatter.locale = Locale(identifier: "ko_KR")
+        
+        return outputFormatter.string(from: validDate)
     }
 }

@@ -30,6 +30,8 @@ struct BookDetailViewModelInput {
     let fetchBookInfo: Observable<Void>
     let fetchBookHistory: Observable<Void>
     let tapDeleteBook: Observable<Void>
+    let tapModifyLog: Observable<(String, Int)>
+    let tapDeleteLog: Observable<Int>
 }
 
 struct BookDetailViewModelOutput {
@@ -75,6 +77,17 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
             .subscribe(onNext: { [weak self] _ in
                 self?.deleteBook()
             }).disposed(by: disposeBag)
+        
+        input.tapModifyLog
+            .subscribe(onNext: { [weak self] tuple in
+                let (content, logId) = tuple
+                self?.modifyLog(content: content, bookLogId: logId)
+            }).disposed(by: disposeBag)
+        
+        input.tapDeleteLog
+            .subscribe(onNext: { [weak self] logId in
+                self?.deleteLog(logId: logId)
+            }).disposed(by: disposeBag)
 
         return BookDetailViewModelOutput(bookInfo: bookInfo, bookHistory: bookHistory, completeDelete: completeDelete)
     }
@@ -98,5 +111,21 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
             .subscribe(onNext: { [weak self] _ in
                 self?.completeDelete.accept(())
             }).disposed(by: disposeBag)
+    }
+    
+    private func modifyLog(content: String, bookLogId: Int) {
+        bookDetailUseCase.modifyBookLog(bookId: bookId, content: content, bookLogId: bookLogId)
+            .subscribe(onNext: { _ in
+                print("modifyLog")
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func deleteLog(logId: Int) {
+        bookDetailUseCase.deleteBookLog(bookId: bookId, bookLogId: logId)
+            .subscribe(onNext: { _ in
+                self.fetchBookHistory()
+            })
+            .disposed(by: disposeBag)
     }
 }
