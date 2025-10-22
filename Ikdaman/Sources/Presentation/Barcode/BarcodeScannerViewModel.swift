@@ -13,6 +13,7 @@ import AVFoundation
 enum BarcodeScannerriggerType {
     case scannedIsbn(String)
     case closeBottomSheet
+    case backBtnTapped
     
     case addBookTapped
 }
@@ -117,6 +118,9 @@ class BarcodeScannerViewModel {
                     }
                 })
                 .disposed(by: disposeBag)
+            
+        case .backBtnTapped:
+            outputRequest.accept(.close)
         }
         
     }

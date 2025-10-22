@@ -6,16 +6,14 @@
 //
 
 import UIKit
-import SnapKit
-import Then
+import RxSwift
+import RxCocoa
 
 final class TopBarView: UIView {
+    private let disposeBag = DisposeBag()
+    private var actionTriggers = PublishRelay<HomeTriggerType>()
     
     // MARK: - UI Components
-    
-    let colorPickerView = ColorPickerView().then {
-        $0.alpha = 0
-    }
     
     let colorButton = UIButton().then {
         $0.layer.cornerRadius = 11.5
@@ -29,23 +27,29 @@ final class TopBarView: UIView {
         $0.backgroundColor = .systemPurple
     }
     
+    private let binButton = UIButton().then {
+        $0.setImage(UIImage(named: "ic_bin"), for: .normal)
+    }
+    
     private let menuButton = UIButton().then {
         $0.setImage(UIImage(named: "Menu"), for: .normal)
     }
     
-    private let stackView = UIStackView().then {
+    private let leftStackView = UIStackView().then {
         $0.axis = .horizontal
-        $0.alignment = .center
-        $0.distribution = .equalSpacing
         $0.spacing = 0
+    }
+    
+    private let rightStackView = UIStackView().then {
+        $0.axis = .horizontal
+        $0.spacing = 12
     }
     
     // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
-        setupViews()
         setupLayout()
+        bind()
     }
     
     required init?(coder: NSCoder) {
@@ -53,36 +57,50 @@ final class TopBarView: UIView {
     }
     
     // MARK: - Setup
-    private func setupViews() {
-        addSubview(stackView)
-        addSubview(colorPickerView)
-        
-        stackView.addArrangedSubview(colorButton)
-        stackView.addArrangedSubview(menuButton)
-    }
-    
     private func setupLayout() {
-        stackView.snp.makeConstraints {
+        addSubviews([leftStackView, rightStackView])
+        leftStackView.addArrangedSubview(colorButton)
+        rightStackView.addArrangedSubviews([binButton, menuButton])
+        
+        leftStackView.snp.makeConstraints {
             $0.top.equalTo(safeAreaLayoutGuide)
-            $0.leading.equalToSuperview().offset(16)
-            $0.trailing.equalToSuperview().inset(16)
+            $0.left.equalToSuperview().inset(16)
             $0.height.equalTo(23)
         }
         
-        colorButton.snp.makeConstraints {
-            $0.width.height.equalTo(23)
+        rightStackView.snp.makeConstraints {
+            $0.top.equalTo(safeAreaLayoutGuide)
+            $0.right.equalToSuperview().inset(16)
+            $0.height.equalTo(23)
         }
         
-        menuButton.snp.makeConstraints {
-            $0.width.equalTo(20)
-            $0.height.equalTo(14)
+        [colorButton, binButton, menuButton].forEach {
+            $0.snp.makeConstraints {
+                $0.size.equalTo(26)
+            }
         }
+    }
+    
+    private func bind() {
+        binButton.rx.tap
+            .map { .binTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
         
-        colorPickerView.snp.makeConstraints {
-            $0.top.equalTo(stackView.snp.bottom).offset(12)
-            $0.leading.equalTo(colorButton)
-            $0.width.equalTo(185)
-            $0.height.equalTo(53)
-        }
+        menuButton.rx.tap
+            .map { .menuTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+    }
+    
+    // MARK: - Data Binding
+    
+    @discardableResult
+    func setupDI(action: PublishRelay<HomeTriggerType>) -> Self {
+        actionTriggers
+            .bind(to: action)
+            .disposed(by: disposeBag)
+        
+        return self
     }
 }

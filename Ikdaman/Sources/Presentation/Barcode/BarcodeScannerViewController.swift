@@ -41,6 +41,7 @@ class BarcodeScannerViewController: UIViewController {
                 case .closeAll:
                     self.dismissAll(animated: true) {
                         TabBarNavigator.shared.navigateTo(tab: 0)
+                        NotificationCenter.default.post(name: .reloadBookList, object: nil)
                     }
                 }
             })

@@ -22,7 +22,7 @@ class BarcodeScannerView: UIView {
     
     // MARK: - UI Elements
     private lazy var naviBarView = UIView().then {
-        $0.addSubviews([backBtn, naviTitleLabel, closeButton])
+        $0.addSubviews([backBtn, naviTitleLabel])
         
         backBtn.snp.makeConstraints {
             $0.verticalEdges.equalToSuperview().inset(12)
@@ -33,12 +33,6 @@ class BarcodeScannerView: UIView {
         naviTitleLabel.snp.makeConstraints {
             $0.centerX.equalToSuperview()
             $0.centerY.equalTo(backBtn)
-        }
-        
-        closeButton.snp.makeConstraints {
-            $0.centerY.equalTo(backBtn)
-            $0.right.equalToSuperview().inset(14)
-            $0.size.equalTo(26)
         }
     }
     
@@ -52,12 +46,6 @@ class BarcodeScannerView: UIView {
         $0.textColor = .white
         $0.font = .systemFont(ofSize: 18, weight: .semibold)
     }
-    
-    lazy var closeButton = UIButton(type: .system).then {
-        $0.setImage(UIImage(named: "ic_close")?.withRenderingMode(.alwaysTemplate), for: .normal)
-        $0.tintColor = .white
-    }
-    
     
     private let descLabel1 = UILabel().then {
         $0.text = "바코드를 영역에 맞춰 보세요"
@@ -135,7 +123,10 @@ class BarcodeScannerView: UIView {
     }
     
     private func bind() {
-        
+        backBtn.rx.tap
+            .map { .backBtnTapped }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
     }
     
     func startScanning() {
