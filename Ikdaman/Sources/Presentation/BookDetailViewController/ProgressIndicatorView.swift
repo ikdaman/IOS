@@ -87,10 +87,10 @@ class ProgressIndicatorView: UIView {
     }
 
     private func updateProgress() {
-        percentageLabel.text = "\(Int(progress * 100))%"
+        percentageLabel.text = "\(Int(progress))%"
         
         let totalWidth = self.bounds.width
-        let fillWidth = totalWidth * progress
+        let fillWidth = totalWidth / 100 * progress 
         
         fillView.snp.updateConstraints {
             $0.width.equalTo(fillWidth)

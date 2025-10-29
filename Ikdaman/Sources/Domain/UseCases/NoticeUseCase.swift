@@ -9,7 +9,7 @@ import RxSwift
 
 protocol NoticesUseCase {
     func getNotices(page: Int?, limit: Int?) -> Observable<Notices>
-    func getNotice(id: Int) -> Observable<Notice>
+    func getNotice(id: Int) -> Observable<NoticeDetail>
 }
 
 final class DefaultNoticesUseCase: NoticesUseCase {
@@ -23,7 +23,7 @@ final class DefaultNoticesUseCase: NoticesUseCase {
         return repository.fetchNotices(page: page, limit: limit)
     }
 
-    func getNotice(id: Int) -> Observable<Notice> {
+    func getNotice(id: Int) -> Observable<NoticeDetail> {
         return repository.fetchNotice(id: id)
     }
 }

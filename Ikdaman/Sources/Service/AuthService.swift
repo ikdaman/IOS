@@ -28,8 +28,8 @@ class AuthService: NSObject {
         loginType.accept(nil)
         UserDefaults.standard.nickName = nil
         
-        KeychainService.shared.delete(forKey: .accessToken)
-        KeychainService.shared.delete(forKey: .refreshToken)
+        let _ = KeychainService.shared.delete(forKey: .accessToken)
+        let _ = KeychainService.shared.delete(forKey: .refreshToken)
     }
     
     // 로그인 여부 확인
@@ -92,6 +92,7 @@ extension AuthService {
                 print(error)
             } else {
                 print("kakaoUnlink() success")
+                self.logout()
             }
         }
     }

@@ -126,37 +126,73 @@ final class NoticeViewController: BaseViewController, UITableViewDelegate, UITab
         if let notices = viewModel.notices?.notices[indexPath.row] {
             cell.configure(with: notices)
         }
+        
         return cell
     }
     
     // MARK: - Expand Logic
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+//    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+////        guard var notices = viewModel.notices?.notices else { return }
+////
+////        for i in 0..<notices.count {
+////            if i == indexPath.row {
+////                // 선택한 셀만 toggle
+////                let isCurrentlyExpanded = notices[i].isExpanded ?? false
+////                notices[i].isExpanded = !isCurrentlyExpanded
+////            } else {
+////                // 나머지는 다 닫기
+////                notices[i].isExpanded = false
+////            }
+////        }
+////        viewModel.notices?.notices = notices
+////        tableView.reloadRows(at: [indexPath], with: .automatic)
 //        guard var notices = viewModel.notices?.notices else { return }
+//        
+//        
 //
 //        for i in 0..<notices.count {
-//            if i == indexPath.row {
-//                // 선택한 셀만 toggle
-//                let isCurrentlyExpanded = notices[i].isExpanded ?? false
-//                notices[i].isExpanded = !isCurrentlyExpanded
-//            } else {
-//                // 나머지는 다 닫기
-//                notices[i].isExpanded = false
-//            }
+//            notices[i].isExpanded = (i == indexPath.row) ? !(notices[i].isExpanded ?? false) : false
 //        }
+//
+//        // 🔥 반드시 다시 할당해야 viewModel의 데이터가 갱신됨
 //        viewModel.notices?.notices = notices
+//        
+//        
+//
+//        // 애니메이션 reload
+//        tableView.beginUpdates()
 //        tableView.reloadRows(at: [indexPath], with: .automatic)
+//        tableView.endUpdates()
+//    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard var notices = viewModel.notices?.notices else { return }
-
-        for i in 0..<notices.count {
-            notices[i].isExpanded = (i == indexPath.row) ? !(notices[i].isExpanded ?? false) : false
+        
+        let notice = notices[indexPath.row]
+        
+        // Expand toggle
+        notices[indexPath.row].isExpanded = !(notices[indexPath.row].isExpanded ?? false)
+        for i in 0..<notices.count where i != indexPath.row {
+            notices[i].isExpanded = false
         }
-
-        // 🔥 반드시 다시 할당해야 viewModel의 데이터가 갱신됨
         viewModel.notices?.notices = notices
-
-        // 애니메이션 reload
-        tableView.beginUpdates()
+        
         tableView.reloadRows(at: [indexPath], with: .automatic)
-        tableView.endUpdates()
+        
+        // Expand 된 경우에만 loadNotice 호출
+        if notices[indexPath.row].isExpanded ?? false {
+            viewModel.loadNotice(id: notice.noticeId)
+            
+            // content가 로드되면 셀에 반영
+            viewModel.noticeContentTrigger
+                .take(1)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] content in
+                    guard let cell = tableView.cellForRow(at: indexPath) as? NoticeCell else { return }
+                    cell.setDetailLabel(detail: content ?? "")
+                })
+                .disposed(by: disposeBag)
+        }
     }
+
 }

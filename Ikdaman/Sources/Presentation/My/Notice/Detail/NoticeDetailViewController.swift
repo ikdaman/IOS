@@ -79,14 +79,14 @@ final class NoticeDetailViewController: UIViewController {
     }
 
     private func bind() {
-        viewModel.notice
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notice in
-                self?.titleLabel.text = notice.title
-                self?.dateLabel.text = "25.05.31"
-//                self?.contentLabel.text = notice.content
-            })
-            .disposed(by: disposeBag)
+//        viewModel.notice
+//            .observe(on: MainScheduler.instance)
+//            .subscribe(onNext: { [weak self] notice in
+//                self?.titleLabel.text = notice.title
+//                self?.dateLabel.text = "25.05.31"
+////                self?.contentLabel.text = notice.content
+//            })
+//            .disposed(by: disposeBag)
     }
 
     @objc private func backTapped() {

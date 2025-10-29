@@ -9,22 +9,24 @@ import RxSwift
 import Moya
 import Foundation
 
-final class AddRecordRepositorylmpl: AddRecordUseCase {
-    private let repository: RecordRepository
+final class AddRecordRepositorylmpl: RecordRepository {
+    private let networkProvider = NetworkProvider.shared
     
-    init(repository: RecordRepository) {
-        self.repository = repository
+    func addFirstImpression(bookId: Int, impression: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
+        return networkProvider
+            .requestRaw(BookAPI.firstImpression(bookId: bookId, impression: impression, createdAt: createdAt))
+            .asObservable()
     }
     
-    func addFirstImpression(impression: String, createdAt: Date) -> Observable<Response> {
-        repository.addFirstImpression(impression: impression, createdAt: createdAt)
+    func addProgress(bookId: Int, page: Int, content: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
+        return networkProvider
+            .requestRaw(BookAPI.addThink(bookId: bookId, content: content, page: page, createdAt: createdAt))
+            .asObservable()
     }
     
-    func addProgress(page: String, content: String?, createdAt: Date) -> Observable<Response> {
-        repository.addProgress(page: page, content: content, createdAt: createdAt)
-    }
-    
-    func addCompletion(review: String, createdAt: Date) -> Observable<Response> {
-        repository.addCompletion(review: review, createdAt: createdAt)
+    func addCompletion(bookId: Int, review: String, createdAt: Date) -> RxSwift.Observable<Moya.Response> {
+        return networkProvider
+            .requestRaw(BookAPI.addCompleteRead(bookId: bookId, review: review, createdAt: createdAt))
+            .asObservable()
     }
 }
