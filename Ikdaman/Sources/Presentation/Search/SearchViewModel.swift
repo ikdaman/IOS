@@ -11,6 +11,7 @@ import RxCocoa
 
 enum SearchTriggerType {
     case searchQuery(String)
+    case searchReturnKeyTapped(String)
     case cameraBtnTapped
     case searchBtnTapped
     case selectBook(AladinBook)
@@ -53,10 +54,6 @@ class SearchViewModel {
     }
     
     func transform(req: ViewModel.Input) -> ViewModel.Output {
-        req.viewDidLoad
-            .subscribe(onNext: fetchDataList)
-            .disposed(by: disposeBag)
-        
         req.action
             .subscribe(onNext: actionTriggerRequest)
             .disposed(by: disposeBag)
@@ -75,6 +72,9 @@ class SearchViewModel {
         case .searchQuery(let query):
             searchQueryRelay.accept(query)
             searchModeRelay.accept(query.isEmpty ? .default : .searching)
+            
+        case let .searchReturnKeyTapped(query):
+            resetSearchResults(query)
             
         case .cameraBtnTapped:
             outputRequest.accept(.barcodeScanner)
@@ -108,13 +108,12 @@ class SearchViewModel {
 }
 
 extension SearchViewModel {
-    private func fetchDataList() {
-        
-    }
-    
     func searchWithQuery(_ query: String) {
         print("검색어 > \(query)")
-        
+        resetSearchResults(query)
+    }
+    
+    private func resetSearchResults(_ query: String) {
         // 새로운 검색이면 초기화
         if currentQuery != query {
             currentQuery = query

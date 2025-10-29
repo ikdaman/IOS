@@ -41,7 +41,6 @@ class SearchDetailView: UIView {
     }
     
     private let bookImageView = UIImageView().then {
-        $0.backgroundColor = .red
         $0.contentMode = .scaleAspectFit
     }
     
