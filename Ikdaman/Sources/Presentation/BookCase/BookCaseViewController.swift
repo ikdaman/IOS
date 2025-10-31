@@ -157,6 +157,7 @@ class BookCaseView: UIView {
         super.init(frame: frame)
         setupViews()
         setupLayout()
+        setupDismissKeyboardGesture()
     }
     
     required init?(coder: NSCoder) {
@@ -215,6 +216,16 @@ class BookCaseView: UIView {
            let colorType = ColorType(rawValue: rawValue) {
             backgroundView.updateGradient(colors: colorType.gradientColors)
         }
+    }
+    
+    private func setupDismissKeyboardGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false // 다른 터치 이벤트 방해하지 않도록
+        addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func dismissKeyboard() {
+        endEditing(true)
     }
 }
 
@@ -356,7 +367,7 @@ class BookCaseCell: UICollectionViewCell {
     }
 }
 
-class CustomSearchBar: UIView {
+class CustomSearchBar: UIView, UITextFieldDelegate {
 
     // MARK: - UI Components
     private let textField: UITextField = {
@@ -377,15 +388,22 @@ class CustomSearchBar: UIView {
         return button
     }()
 
+    // MARK: - Callback
+    var onSearchReturn: ((String) -> Void)?
+
     // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
+        textField.delegate = self
+        setupButtonAction()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupView()
+        textField.delegate = self
+        setupButtonAction()
     }
 
     // MARK: - Setup View
@@ -414,11 +432,17 @@ class CustomSearchBar: UIView {
         }
     }
 
-    // MARK: - Public Methods
-    func onSearchTapped(_ target: Any?, action: Selector) {
-        searchButton.addTarget(target, action: action, for: .touchUpInside)
+    // MARK: - Button Action
+    private func setupButtonAction() {
+        searchButton.addTarget(self, action: #selector(searchButtonTapped), for: .touchUpInside)
     }
 
+    @objc private func searchButtonTapped() {
+        onSearchReturn?(textField.text ?? "")
+        textField.resignFirstResponder()
+    }
+
+    // MARK: - Public Methods
     func getSearchText() -> String {
         return textField.text ?? ""
     }
@@ -426,74 +450,11 @@ class CustomSearchBar: UIView {
     func setDelegate(_ delegate: UITextFieldDelegate) {
         textField.delegate = delegate
     }
-}
 
-class RowSeparatorView: UICollectionReusableView {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        let topView = UIView()
-        topView.backgroundColor = #colorLiteral(red: 1, green: 0.9999999404, blue: 1, alpha: 0.3)
-        let bottomView = UIView()
-        bottomView.backgroundColor = .clear
-
-        addSubview(topView)
-        addSubview(bottomView)
-
-        topView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(23)
-        }
-        bottomView.snp.makeConstraints {
-            $0.top.equalTo(topView.snp.bottom)
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(27)
-        }
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-class RowSeparatorFlowLayout: UICollectionViewFlowLayout {
-    override func prepare() {
-        super.prepare()
-        // Decoration View 등록
-        self.register(RowSeparatorView.self, forDecorationViewOfKind: "RowSeparator")
-    }
-
-    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        guard let attributes = super.layoutAttributesForElements(in: rect) else { return nil }
-        var allAttributes = attributes
-
-        // 셀만 뽑아서 같은 Y값(= 같은 행) 기준으로 그룹핑
-        let cellAttrs = attributes.filter { $0.representedElementCategory == .cell }
-        let grouped = Dictionary(grouping: cellAttrs) { attr in
-            Int(attr.frame.minY.rounded())
-        }
-
-        for (_, rowAttrs) in grouped {
-            guard let first = rowAttrs.first else { continue }
-
-            // 한 행 전체 width 만큼 밑줄 뷰 생성
-            let decoration = UICollectionViewLayoutAttributes(
-                forDecorationViewOfKind: "RowSeparator",
-                with: IndexPath(item: first.indexPath.item, section: first.indexPath.section)
-            )
-
-            let rowMaxY = rowAttrs.map { $0.frame.maxY }.max() ?? first.frame.maxY
-            decoration.frame = CGRect(
-                x: 0,
-                y: rowMaxY,
-                width: collectionView?.bounds.width ?? 0,
-                height: 50
-            )
-            decoration.zIndex = -1 // 셀보다 뒤로
-
-            allAttributes.append(decoration)
-        }
-
-        return allAttributes
+    // MARK: - UITextFieldDelegate
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        searchButtonTapped()
+        textField.resignFirstResponder()
+        return true
     }
 }

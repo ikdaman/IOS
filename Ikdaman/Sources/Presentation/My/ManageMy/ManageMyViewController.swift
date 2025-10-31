@@ -55,6 +55,7 @@ class ManageMyViewController: BaseViewController {
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 15, height: $0.frame.height))
         $0.leftView = paddingView
         $0.leftViewMode = .always
+        $0.keyboardType = .numberPad
     }
     
     private let genderTitleLabel = UILabel().then {
@@ -229,51 +230,66 @@ class ManageMyViewController: BaseViewController {
     private func bind() {
         
         let genderSelected = Observable.merge(maleButton.rx.tap.map{ "male" }.asObservable(), femaleButton.rx.tap.map{ "female" }.asObservable())
+        let isNicknameChecked = BehaviorSubject<Bool>(value: true)
         
         genderSelected.subscribe(onNext :{ [weak self] gender in
             self?.maleButton.isSelected = (gender == "male")
             self?.femaleButton.isSelected = (gender == "female")
         }).disposed(by: disposeBag)
         
-        nicknameTextField.rx.text
+        nicknameTextField.rx.text.orEmpty
             .distinctUntilChanged()
             .subscribe(onNext: { [weak self] text in
-                self?.checkButton.isEnabled = text?.count ?? 0 > 0 ? true : false
-                self?.checkButton.backgroundColor = self?.checkButton.isEnabled ?? false ? .black : .gray
-            }).disposed(by: disposeBag)
+                guard let self = self else { return }
+
+                // ✅ 10자 초과 방지 (한글자씩 사라지는 문제 없음)
+                if text.count > 10 {
+                    let limited = String(text.prefix(10))
+                    self.nicknameTextField.text = limited
+                }
+
+                // 닉네임 입력 시 중복확인 다시 필요
+                if text.count > 0 {
+                    isNicknameChecked.onNext(false)
+                }
+
+                // 중복확인 버튼 상태 갱신
+                self.checkButton.isEnabled = text.count > 0
+                self.checkButton.backgroundColor = self.checkButton.isEnabled ? .black : .gray
+            })
+            .disposed(by: disposeBag)
         
         birthdateTextField.rx.text.orEmpty
-            .map { input -> String in
+            .distinctUntilChanged()
+            .map { String($0.prefix(8)) } // 8글자 제한
+            .bind(to: birthdateTextField.rx.text)
+            .disposed(by: disposeBag)
+
+        birthdateTextField.rx.text.orEmpty
+            .filter { $0.count == 8 } // 8자리 완성되면
+            .subscribe(onNext: { [weak self] input in
+                guard let self else { return }
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyyMMdd"
                 formatter.locale = Locale(identifier: "ko_KR")
-                
-                guard input.count == 8, let date = formatter.date(from: input) else {
-                    return input // 8자리가 아닐 경우 그냥 원래 문자열 반환
-                }
 
-                formatter.dateFormat = "yyyy-MM-dd"
-                return formatter.string(from: date)
-            }
-            .bind(to: birthdateTextField.rx.text)
+                if let date = formatter.date(from: input) {
+                    formatter.dateFormat = "yyyy-MM-dd"
+                    self.birthdateTextField.text = formatter.string(from: date)
+                }
+            })
             .disposed(by: disposeBag)
         
         // 생년월일 텍스트 필드 상태
         let isBirthdateValid = birthdateTextField.rx.text.orEmpty
             .map { [weak self] text -> Bool in
                 guard let self = self else { return false }
-                return self.formatDate(from: text) != nil
+                print("입력된 날짜:", text)
+                let date = self.formatDate(from: text)
+                print("변환된 결과:", date as Any)
+                return date != nil
             }
             .share(replay: 1)
-
-        // 저장 버튼 활성화 여부 = 생년월일이 유효하면 활성화
-        isBirthdateValid
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] isValid in
-                self?.saveButton.isEnabled = isValid
-                self?.saveButton.backgroundColor = isValid ? .black : .gray
-            })
-            .disposed(by: disposeBag)
         
         let input = ManageMyViewModelInput(
             viewWillAppear: self.rx.methodInvoked(#selector(UIViewController.viewWillAppear(_:)))
@@ -302,12 +318,16 @@ class ManageMyViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
+        // 닉네임 중복 확인 결과 처리
         output.nicknameCheckResult
             .emit(onNext: { [weak self] isAvailable in
                 let message = isAvailable ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다."
                 let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "확인", style: .default))
                 self?.present(alert, animated: true)
+                
+                // ✅ 사용 가능할 때만 true
+                isNicknameChecked.onNext(isAvailable)
             })
             .disposed(by: disposeBag)
 
@@ -315,6 +335,18 @@ class ManageMyViewController: BaseViewController {
             .emit(onNext: { [weak self] _ in
                 self?.navigationController?.popViewController(animated: true)
             }).disposed(by: disposeBag)
+        
+        Observable.combineLatest(isNicknameChecked, isBirthdateValid)
+            .map { isNicknameOK, isBirthOK in
+                return isNicknameOK && isBirthOK
+            }
+            .distinctUntilChanged()
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] isEnabled in
+                self?.saveButton.isEnabled = isEnabled
+                self?.saveButton.backgroundColor = isEnabled ? .black : .gray
+            })
+            .disposed(by: disposeBag)
         
         Observable.merge(output.logoutCompleted.asObservable(),
                          output.withdrawCompleted.asObservable())
@@ -326,18 +358,17 @@ class ManageMyViewController: BaseViewController {
     
     private func formatDate(from string: String) -> String? {
         let inputFormatter = DateFormatter()
-        inputFormatter.dateFormat = "yyyyMMdd"
+        inputFormatter.dateFormat = "yyyy-MM-dd"
         inputFormatter.locale = Locale(identifier: "ko_KR")
         
         let outputFormatter = DateFormatter()
         outputFormatter.dateFormat = "yyyy-MM-dd"
         outputFormatter.locale = Locale(identifier: "ko_KR")
         
-        if let date = inputFormatter.date(from: string) {
+        if let date = inputFormatter.date(from: string.trimmingCharacters(in: .whitespacesAndNewlines)) {
             return outputFormatter.string(from: date)
-        } else {
-            return nil // 유효하지 않은 입력일 경우
         }
+        return nil
     }
     
     private func navigateToSignup() {
