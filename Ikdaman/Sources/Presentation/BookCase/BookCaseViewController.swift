@@ -56,7 +56,7 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
         if output != nil { return } // 중복 방지
 
         let searchTappedObservable = bookCaseView.searchBar.searchButton.rx.tap
-            .map { [weak self] in self?.bookCaseView.searchBar.getSearchText() ?? "" }
+            .map { [weak self] in self?.bookCaseView.searchBar.getSearchText().trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
         
         let input = BookCaseViewModelInput(
             fetchBooks: Observable.just(()),
@@ -76,9 +76,6 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
         output = viewModel.transform(input: input)
 
         output.books
-            .do(onNext: { [weak self] books in
-                self?.bookCaseView.emptyLibraryView.isHidden = !books.isEmpty
-            })
             .bind(to: bookCaseView.bookListView.rx.items(
                 cellIdentifier: BookCaseCell.identifier,
                 cellType: BookCaseCell.self
@@ -86,6 +83,38 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
                 cell.configure(book: book)
             }
             .disposed(by: disposeBag)
+        
+        output.books
+            .bind(to: bookCaseView.searchResultView.rx.items(
+                cellIdentifier: BookCaseSearchCell.identifier,
+                cellType: BookCaseSearchCell.self
+            )) { _, book, cell in
+                cell.configure(book: book)
+            }
+            .disposed(by: disposeBag)
+        
+        Observable.combineLatest(
+            output.books,
+            output.isKeywordSearch
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onNext: { [weak self] books, isSearchMode in
+            guard let self = self else { return }
+            
+            let isEmpty = books.isEmpty
+            
+            self.bookCaseView.bookListView.isHidden = isSearchMode
+            self.bookCaseView.searchResultView.isHidden = !isSearchMode
+            self.bookCaseView.emptyLibraryView.isHidden = !(isEmpty && !isSearchMode)
+            self.bookCaseView.searchEmptyLibraryView.isHidden = !(isEmpty && isSearchMode)
+            
+            // ✅ 검색 결과 없을 때 메시지 갱신
+            if isSearchMode {
+                let title = self.bookCaseView.searchBar.getSearchText()
+                self.bookCaseView.searchEmptyLibraryView.messageLabel.text = "\(title)\n에 대한 검색결과가 없어요.\n\n검색어나 필터를 확인해 보거나\n독서를 추가해 보세요 🤓"
+            }
+        })
+        .disposed(by: disposeBag)
     }
     
     private func bindActions() {
@@ -96,6 +125,15 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
             .disposed(by: disposeBag)
         
         bookCaseView.bookListView.rx.modelSelected(Book.self)
+            .subscribe(onNext: { [weak self] book in
+                let vc = BookDetailViewController(
+                    viewModel: DefaultBookDetailViewModel(bookId: book.mybookId)
+                )
+                self?.navigationController?.pushViewController(vc, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        bookCaseView.searchResultView.rx.modelSelected(Book.self)
             .subscribe(onNext: { [weak self] book in
                 let vc = BookDetailViewController(
                     viewModel: DefaultBookDetailViewModel(bookId: book.mybookId)
@@ -134,8 +172,8 @@ class BookCaseView: UIView {
         let layout = RowSeparatorFlowLayout()
         layout.itemSize = CGSize(width: 100, height: 160)
         layout.minimumLineSpacing = 50
-        layout.minimumInteritemSpacing = 26
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 50, right: 20)
+        layout.minimumInteritemSpacing = 10
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 21, bottom: 50, right: 21)
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         return layout
@@ -143,8 +181,24 @@ class BookCaseView: UIView {
         $0.register(BookCaseCell.self, forCellWithReuseIdentifier: BookCaseCell.identifier)
         $0.backgroundColor = .clear
     }
+
+    let searchResultView = UICollectionView(frame: .zero, collectionViewLayout: {
+        let layout = UICollectionViewFlowLayout()
+        layout.itemSize = CGSize(width: 110, height: 230)
+        layout.minimumLineSpacing = 40
+        layout.minimumInteritemSpacing = 26
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 50, right: 20)
+        return layout
+    }()).then {
+        $0.register(BookCaseSearchCell.self, forCellWithReuseIdentifier: BookCaseSearchCell.identifier)
+        $0.backgroundColor = .clear
+        $0.isHidden = true // 기본 숨김
+    }
     
     var emptyLibraryView = EmptyLibraryView()
+    var searchEmptyLibraryView = SearchEmptyLibraryView().then {
+        $0.isHidden = true
+    }
     let addButton = UIButton().then {
         $0.backgroundColor = .black
         $0.layer.cornerRadius = 22.5
@@ -168,7 +222,7 @@ class BookCaseView: UIView {
     private func setupViews() {
         addSubview(backgroundView)
         addSubview(emptyLibraryView)
-        addSubviews([searchBar, filterView, bookListView])
+        addSubviews([searchBar, filterView, bookListView, searchResultView, searchEmptyLibraryView])
         addSubview(addButton)
     }
     
@@ -188,7 +242,6 @@ class BookCaseView: UIView {
             $0.top.equalTo(searchBar.snp.bottom).offset(40)
             $0.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(17)
-//            $0.width.equalTo(188)
         }
         
         bookListView.snp.makeConstraints {
@@ -201,6 +254,17 @@ class BookCaseView: UIView {
             $0.top.equalTo(filterView.snp.bottom).offset(17)
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(175)
+        }
+        
+        searchResultView.snp.makeConstraints {
+            $0.top.equalTo(filterView.snp.bottom).offset(17)
+            $0.horizontalEdges.equalToSuperview()
+            $0.bottom.equalTo(backgroundView.snp.bottom)
+        }
+        
+        searchEmptyLibraryView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.top.equalTo(filterView.snp.bottom).offset(68)
         }
         
         addButton.snp.makeConstraints {
@@ -363,6 +427,59 @@ class BookCaseCell: UICollectionViewCell {
     }
 
     func configure(book: Book) {
+        imageView.kf.setImage(with: URL(string: book.coverImage))
+    }
+}
+
+class BookCaseSearchCell: UICollectionViewCell {
+    static let identifier = "BookCaseSearchCell"
+
+    private let imageView = UIImageView()
+    private let titleLabel = UILabel().then {
+        $0.font = .pretendard(.medium, size: 14)
+        $0.numberOfLines = 2
+        $0.textAlignment = .left
+    }
+    private let authorLabel = UILabel().then {
+        $0.font = .pretendard(.regular, size: 12)
+        $0.textAlignment = .left
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupViews()
+    }
+
+    private func setupViews() {
+
+        contentView.addSubviews([imageView, titleLabel, authorLabel])
+        imageView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(160)
+        }
+        
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(imageView.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(36)
+        }
+        
+        authorLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(5)
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(21)
+        }
+        
+    }
+
+    func configure(book: Book) {
+        titleLabel.text = book.title
+        authorLabel.text = book.author
         imageView.kf.setImage(with: URL(string: book.coverImage))
     }
 }

@@ -21,6 +21,7 @@ struct BookCaseViewModelInput {
 
 struct BookCaseViewModelOutput {
     var books: BehaviorRelay<[Book]>
+    var isKeywordSearch: BehaviorRelay<Bool>
 }
 
 class DefaultBookCaseViewModel: BookCaseViewModel {
@@ -34,6 +35,7 @@ class DefaultBookCaseViewModel: BookCaseViewModel {
     var totalPage = 1
     var isLoading = false
     private var keyword: String? = nil
+    private var isKeywordSearh = BehaviorRelay<Bool>(value: false)
     
     init(booksUseCase: BookCaseUseCase = DefaultBookCaseUseCase(bookCaseRepository: BookCaseRepositorylmpl())) {
         self.booksUseCase = booksUseCase
@@ -59,12 +61,18 @@ class DefaultBookCaseViewModel: BookCaseViewModel {
         input.searchTapped
             .subscribe(onNext: { [weak self] keyword in
                 self?.keyword = keyword
+                if keyword == "" {
+                    self?.isKeywordSearh.accept(false)
+                } else {
+                    self?.isKeywordSearh.accept(true)
+                }
                 self?.resetAndFetch()
             })
             .disposed(by: disposeBag)
         
         return BookCaseViewModelOutput(
-            books: books
+            books: books,
+            isKeywordSearch: isKeywordSearh
         )
     }
     
