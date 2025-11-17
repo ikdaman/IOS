@@ -9,6 +9,7 @@ import UIKit
 import KakaoSDKCommon
 import NaverThirdPartyLogin
 import GoogleSignIn
+import UserNotifications
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -34,6 +35,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         
         KakaoSDK.initSDK(appKey: "f7c657a31a53ae9ea50ae17d61d4345d")
+        
+        UNUserNotificationCenter.current().requestAuthorization(
+            options: [.alert, .sound, .badge]
+        ) { granted, error in
+            print("🔔 Notification permission:", granted)
+        }
         return true
     }
 

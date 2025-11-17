@@ -49,7 +49,8 @@ class ReadingBookCell: UICollectionViewCell {
     }
     
     func configure(with book: ReadingBook, editMode: EditMode) {
-        bookImageView.setImage(from: book.coverImage, placeholder: UIImage(named: "ic_no_image"))
+        let image = book.coverImage.aladinHighResURL()
+        bookImageView.setImage(from: image, placeholder: UIImage(named: "ic_no_image"))
         deleteBtn.isHidden = editMode == .default
     }
     

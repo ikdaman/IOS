@@ -389,7 +389,7 @@ class HomeView: UIView {
         let book = readingBooks[currentIndex]
         titleLabel.text = book.title
         authorLabel.text = book.author
-        progressView.progress = CGFloat(book.progress.toInt)
+        progressView.progress = CGFloat(book.progress?.toInt ?? 0)
         impressionContentLabel.text = book.firstImpression
         setupDayLabel(book)
     }

@@ -427,7 +427,11 @@ class BookCaseCell: UICollectionViewCell {
     }
 
     func configure(book: Book) {
-        imageView.kf.setImage(with: URL(string: book.coverImage))
+        let highResURLString = book.coverImage.aladinHighResURL()
+        
+        if let url = URL(string: highResURLString) {
+            imageView.kf.setImage(with: url)
+        }
     }
 }
 
@@ -480,7 +484,11 @@ class BookCaseSearchCell: UICollectionViewCell {
     func configure(book: Book) {
         titleLabel.text = book.title
         authorLabel.text = book.author
-        imageView.kf.setImage(with: URL(string: book.coverImage))
+        let highResURLString = book.coverImage.aladinHighResURL()
+        
+        if let url = URL(string: highResURLString) {
+            imageView.kf.setImage(with: url)
+        }
     }
 }
 
