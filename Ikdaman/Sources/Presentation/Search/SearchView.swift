@@ -160,6 +160,12 @@ class SearchView: UIView {
             .bind(to: actionTriggers)
             .disposed(by: disposeBag)
         
+        searchTextField.rx.controlEvent(.editingDidEndOnExit)
+            .withLatestFrom(searchTextField.rx.text.orEmpty)
+            .map { .searchReturnKeyTapped($0) }
+            .bind(to: actionTriggers)
+            .disposed(by: disposeBag)
+        
         cameraBtn.rx.tap
             .map { .cameraBtnTapped }
             .bind(to: actionTriggers)
