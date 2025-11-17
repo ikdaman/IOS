@@ -58,8 +58,16 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
         let searchTappedObservable = bookCaseView.searchBar.searchButton.rx.tap
             .map { [weak self] in self?.bookCaseView.searchBar.getSearchText().trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
         
+        let reloadObservable = NotificationCenter.default.rx.notification(.reloadBookList)
+            .map { _ in () }   // Void 이벤트로 변환
+
+        let fetchBooksObservable = Observable.merge(
+            Observable.just(()),     // 최초 1회 호출
+            reloadObservable         // reload 시에도 호출
+        )
+        
         let input = BookCaseViewModelInput(
-            fetchBooks: Observable.just(()),
+            fetchBooks: fetchBooksObservable,
             searchTapped: searchTappedObservable,
             filterTapped: bookCaseView.filterView.filterTapped
                 .distinctUntilChanged()
@@ -351,22 +359,19 @@ class FilterView: UIView {
                 width = 80
             }
             
-            let button = UIButton(type: .system).then {
+            let button = UIButton(type: .custom).then {
                 let title = filter.rawValue
-                let attributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.pretendard(.medium, size: 14),
-                    .foregroundColor: filter == .all ? UIColor.white : UIColor(white: 1.0, alpha: 0.6),
-                    .kern: -0.56
-                ]
-                let attributedTitle = NSAttributedString(string: title, attributes: attributes)
-                $0.setAttributedTitle(attributedTitle, for: .normal)
-                
-                $0.tag = buttons.count
+
+                // 초기(비선택) 상태 attributed title 설정
+                $0.setAttributedTitle(makeAttributedTitle(title, isSelected: filter == selectedFilter), for: .normal)
+                // 선택 상태용도 미리 설정해두면 update 시 덜 복잡
+                $0.setAttributedTitle(makeAttributedTitle(title, isSelected: true), for: .selected)
+
                 $0.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
             }
 
-
             buttons.append(button)
+            button.tag = buttons.count - 1
             stackView.addArrangedSubview(button)
 
             button.snp.makeConstraints {
@@ -386,10 +391,18 @@ class FilterView: UIView {
 
     private func updateButtonStates() {
         for (index, button) in buttons.enumerated() {
-            let isSelected = FilterType.allCases[index] == selectedFilter
-            button.setTitleColor(isSelected ? .white : #colorLiteral(red: 1, green: 0.9999999404, blue: 1, alpha: 0.6), for: .normal)
+            let filter = FilterType.allCases[index]
+            let isSelected = filter == selectedFilter
+            
+            button.isSelected = isSelected
+            
+            button.setAttributedTitle(
+                makeAttributedTitle(filter.rawValue, isSelected: isSelected),
+                for: .normal
+            )
         }
     }
+
 
     func setFilter(_ filter: FilterType) {
         selectedFilter = filter
@@ -399,6 +412,19 @@ class FilterView: UIView {
     func getSelectedFilter() -> FilterType {
         return selectedFilter
     }
+    
+    private func makeAttributedTitle(_ title: String, isSelected: Bool) -> NSAttributedString {
+        let color: UIColor = isSelected ? .white : UIColor(white: 1.0, alpha: 0.6)
+        let font = UIFont.pretendard(.medium, size: 14)
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: color,
+            .kern: -0.56
+        ]
+        return NSAttributedString(string: title, attributes: attributes)
+    }
+
 }
 
 class BookCaseCell: UICollectionViewCell {

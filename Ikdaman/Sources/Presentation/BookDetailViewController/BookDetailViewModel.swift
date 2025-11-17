@@ -109,6 +109,7 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
     private func deleteBook() {
         bookDetailUseCase.deleteBook(bookId: bookId)
             .subscribe(onNext: { [weak self] _ in
+                NotificationCenter.default.post(name: .reloadBookList, object: nil)
                 self?.completeDelete.accept(())
             }).disposed(by: disposeBag)
     }
@@ -116,7 +117,7 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
     private func modifyLog(content: String, bookLogId: Int) {
         bookDetailUseCase.modifyBookLog(bookId: bookId, content: content, bookLogId: bookLogId)
             .subscribe(onNext: { _ in
-                print("modifyLog")
+                NotificationCenter.default.post(name: .reloadBookList, object: nil)
             })
             .disposed(by: disposeBag)
     }
@@ -124,6 +125,7 @@ final class DefaultBookDetailViewModel: BookDetailViewModel {
     private func deleteLog(logId: Int) {
         bookDetailUseCase.deleteBookLog(bookId: bookId, bookLogId: logId)
             .subscribe(onNext: { _ in
+                NotificationCenter.default.post(name: .reloadBookList, object: nil)
                 self.fetchBookHistory()
             })
             .disposed(by: disposeBag)

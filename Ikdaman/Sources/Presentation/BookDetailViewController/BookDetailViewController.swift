@@ -241,6 +241,7 @@ final class BookDetailViewController: BaseViewController {
         // 삭제 완료 시 pop
         output.completeDelete
             .subscribe(onNext: { [weak self] in
+                NotificationCenter.default.post(name: .reloadBookList, object: nil)
                 self?.navigationController?.popViewController(animated: true)
             })
             .disposed(by: disposeBag)

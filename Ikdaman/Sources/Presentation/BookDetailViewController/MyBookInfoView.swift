@@ -160,7 +160,7 @@ class MyBookInfoView: UIView {
     func configure(myBookInfo: MyBookInfo) {
         let bookInfo = myBookInfo.bookInfo
         bookTitle.setText(bookInfo.title, letterSpacing: -0.4)
-        bookImage.kf.setImage(with: URL(string: bookInfo.coverImage))
+        bookImage.kf.setImage(with: URL(string: bookInfo.coverImage.aladinHighResURL()))
         bookAuthor.setText(bookInfo.author, letterSpacing: -0.4)
         bookPulbisher.setText(bookInfo.publisher, letterSpacing: -0.4)
         bookTotalPage.setText("\(bookInfo.totalPage)", letterSpacing: -0.4)
