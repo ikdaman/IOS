@@ -92,9 +92,22 @@ class AlarmSettingTableViewCell: UITableViewCell {
             .bind(to: toggleRelay)
             .disposed(by: disposeBag)
 
-//        timeButton.rx.tap
-//            .bind(to: timeTapRelay)
-//            .disposed(by: disposeBag)
+        timePicker.rx.date
+            .skip(1)
+            .subscribe(onNext: { [weak self] date in
+                let calendar = Calendar.current
+                let hour = calendar.component(.hour, from: date)
+                let minute = calendar.component(.minute, from: date)
+
+                UserDefaults.standard.set(hour, forKey: "alarmHour")
+                UserDefaults.standard.set(minute, forKey: "alarmMinute")
+
+                // 현재 ON 상태라면 바로 예약 갱신
+                if self?.toggleSwitch.isOn == true {
+                    UserNotificationService.shared.scheduleDailyNotification(hour: hour, minute: minute)
+                }
+            })
+            .disposed(by: disposeBag)
     }
 
     func configureBindings() {

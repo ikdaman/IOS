@@ -283,12 +283,26 @@ class AddRecordViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
     }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
+    }
 }
 extension AddRecordViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         placeholderLabel.isHidden = !textView.text.isEmpty
         viewModel.inputText = textView.text
         currentTextCount.text = "\(textView.text.count)/500"
+    }
+    
+    func textView(_ textView: UITextView,
+                  shouldChangeTextIn range: NSRange,
+                  replacementText text: String) -> Bool {
+        if text == "\n" { // 줄바꿈 문자 감지
+            textView.resignFirstResponder() // 키보드 내리기
+            return false // 실제로 줄바꿈은 발생하지 않음
+        }
+        return true
     }
 }
 

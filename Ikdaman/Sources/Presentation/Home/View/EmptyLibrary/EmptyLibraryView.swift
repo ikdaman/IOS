@@ -71,3 +71,35 @@ class EmptyLibraryView: UIView {
         }
     }
 }
+
+class SearchEmptyLibraryView: UIView {
+    
+    // MARK: - UI
+    var messageLabel = UILabel().then {
+        $0.textAlignment = .center
+        $0.numberOfLines = 0
+        $0.font = .systemFont(ofSize: 15, weight: .regular)
+        $0.textColor = .black
+    }
+    
+    
+    // MARK: - Init
+    override init(frame: CGRect = .zero) {
+        super.init(frame: frame)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Setup
+    private func setupUI() {
+        addSubview(messageLabel)
+        
+        messageLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(56)
+            $0.centerX.equalToSuperview()
+        }
+    }
+}

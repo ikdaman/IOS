@@ -56,7 +56,7 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
         if output != nil { return } // 중복 방지
 
         let searchTappedObservable = bookCaseView.searchBar.searchButton.rx.tap
-            .map { [weak self] in self?.bookCaseView.searchBar.getSearchText() ?? "" }
+            .map { [weak self] in self?.bookCaseView.searchBar.getSearchText().trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
         
         let input = BookCaseViewModelInput(
             fetchBooks: Observable.just(()),
@@ -76,9 +76,6 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
         output = viewModel.transform(input: input)
 
         output.books
-            .do(onNext: { [weak self] books in
-                self?.bookCaseView.emptyLibraryView.isHidden = !books.isEmpty
-            })
             .bind(to: bookCaseView.bookListView.rx.items(
                 cellIdentifier: BookCaseCell.identifier,
                 cellType: BookCaseCell.self
@@ -86,6 +83,38 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
                 cell.configure(book: book)
             }
             .disposed(by: disposeBag)
+        
+        output.books
+            .bind(to: bookCaseView.searchResultView.rx.items(
+                cellIdentifier: BookCaseSearchCell.identifier,
+                cellType: BookCaseSearchCell.self
+            )) { _, book, cell in
+                cell.configure(book: book)
+            }
+            .disposed(by: disposeBag)
+        
+        Observable.combineLatest(
+            output.books,
+            output.isKeywordSearch
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onNext: { [weak self] books, isSearchMode in
+            guard let self = self else { return }
+            
+            let isEmpty = books.isEmpty
+            
+            self.bookCaseView.bookListView.isHidden = isSearchMode
+            self.bookCaseView.searchResultView.isHidden = !isSearchMode
+            self.bookCaseView.emptyLibraryView.isHidden = !(isEmpty && !isSearchMode)
+            self.bookCaseView.searchEmptyLibraryView.isHidden = !(isEmpty && isSearchMode)
+            
+            // ✅ 검색 결과 없을 때 메시지 갱신
+            if isSearchMode {
+                let title = self.bookCaseView.searchBar.getSearchText()
+                self.bookCaseView.searchEmptyLibraryView.messageLabel.text = "\(title)\n에 대한 검색결과가 없어요.\n\n검색어나 필터를 확인해 보거나\n독서를 추가해 보세요 🤓"
+            }
+        })
+        .disposed(by: disposeBag)
     }
     
     private func bindActions() {
@@ -96,6 +125,15 @@ final class BookCaseViewController: BaseViewController, UIScrollViewDelegate {
             .disposed(by: disposeBag)
         
         bookCaseView.bookListView.rx.modelSelected(Book.self)
+            .subscribe(onNext: { [weak self] book in
+                let vc = BookDetailViewController(
+                    viewModel: DefaultBookDetailViewModel(bookId: book.mybookId)
+                )
+                self?.navigationController?.pushViewController(vc, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        bookCaseView.searchResultView.rx.modelSelected(Book.self)
             .subscribe(onNext: { [weak self] book in
                 let vc = BookDetailViewController(
                     viewModel: DefaultBookDetailViewModel(bookId: book.mybookId)
@@ -134,8 +172,8 @@ class BookCaseView: UIView {
         let layout = RowSeparatorFlowLayout()
         layout.itemSize = CGSize(width: 100, height: 160)
         layout.minimumLineSpacing = 50
-        layout.minimumInteritemSpacing = 26
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 50, right: 20)
+        layout.minimumInteritemSpacing = 10
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 21, bottom: 50, right: 21)
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         return layout
@@ -143,8 +181,24 @@ class BookCaseView: UIView {
         $0.register(BookCaseCell.self, forCellWithReuseIdentifier: BookCaseCell.identifier)
         $0.backgroundColor = .clear
     }
+
+    let searchResultView = UICollectionView(frame: .zero, collectionViewLayout: {
+        let layout = UICollectionViewFlowLayout()
+        layout.itemSize = CGSize(width: 110, height: 230)
+        layout.minimumLineSpacing = 40
+        layout.minimumInteritemSpacing = 26
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 50, right: 20)
+        return layout
+    }()).then {
+        $0.register(BookCaseSearchCell.self, forCellWithReuseIdentifier: BookCaseSearchCell.identifier)
+        $0.backgroundColor = .clear
+        $0.isHidden = true // 기본 숨김
+    }
     
     var emptyLibraryView = EmptyLibraryView()
+    var searchEmptyLibraryView = SearchEmptyLibraryView().then {
+        $0.isHidden = true
+    }
     let addButton = UIButton().then {
         $0.backgroundColor = .black
         $0.layer.cornerRadius = 22.5
@@ -157,6 +211,7 @@ class BookCaseView: UIView {
         super.init(frame: frame)
         setupViews()
         setupLayout()
+        setupDismissKeyboardGesture()
     }
     
     required init?(coder: NSCoder) {
@@ -167,7 +222,7 @@ class BookCaseView: UIView {
     private func setupViews() {
         addSubview(backgroundView)
         addSubview(emptyLibraryView)
-        addSubviews([searchBar, filterView, bookListView])
+        addSubviews([searchBar, filterView, bookListView, searchResultView, searchEmptyLibraryView])
         addSubview(addButton)
     }
     
@@ -187,7 +242,6 @@ class BookCaseView: UIView {
             $0.top.equalTo(searchBar.snp.bottom).offset(40)
             $0.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(17)
-//            $0.width.equalTo(188)
         }
         
         bookListView.snp.makeConstraints {
@@ -200,6 +254,17 @@ class BookCaseView: UIView {
             $0.top.equalTo(filterView.snp.bottom).offset(17)
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(175)
+        }
+        
+        searchResultView.snp.makeConstraints {
+            $0.top.equalTo(filterView.snp.bottom).offset(17)
+            $0.horizontalEdges.equalToSuperview()
+            $0.bottom.equalTo(backgroundView.snp.bottom)
+        }
+        
+        searchEmptyLibraryView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.top.equalTo(filterView.snp.bottom).offset(68)
         }
         
         addButton.snp.makeConstraints {
@@ -215,6 +280,16 @@ class BookCaseView: UIView {
            let colorType = ColorType(rawValue: rawValue) {
             backgroundView.updateGradient(colors: colorType.gradientColors)
         }
+    }
+    
+    private func setupDismissKeyboardGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false // 다른 터치 이벤트 방해하지 않도록
+        addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func dismissKeyboard() {
+        endEditing(true)
     }
 }
 
@@ -352,11 +427,72 @@ class BookCaseCell: UICollectionViewCell {
     }
 
     func configure(book: Book) {
-        imageView.kf.setImage(with: URL(string: book.coverImage))
+        let highResURLString = book.coverImage.aladinHighResURL()
+        
+        if let url = URL(string: highResURLString) {
+            imageView.kf.setImage(with: url)
+        }
     }
 }
 
-class CustomSearchBar: UIView {
+class BookCaseSearchCell: UICollectionViewCell {
+    static let identifier = "BookCaseSearchCell"
+
+    private let imageView = UIImageView()
+    private let titleLabel = UILabel().then {
+        $0.font = .pretendard(.medium, size: 14)
+        $0.numberOfLines = 2
+        $0.textAlignment = .left
+    }
+    private let authorLabel = UILabel().then {
+        $0.font = .pretendard(.regular, size: 12)
+        $0.textAlignment = .left
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupViews()
+    }
+
+    private func setupViews() {
+
+        contentView.addSubviews([imageView, titleLabel, authorLabel])
+        imageView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(160)
+        }
+        
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(imageView.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(36)
+        }
+        
+        authorLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(5)
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(21)
+        }
+        
+    }
+
+    func configure(book: Book) {
+        titleLabel.text = book.title
+        authorLabel.text = book.author
+        let highResURLString = book.coverImage.aladinHighResURL()
+        
+        if let url = URL(string: highResURLString) {
+            imageView.kf.setImage(with: url)
+        }
+    }
+}
+
+class CustomSearchBar: UIView, UITextFieldDelegate {
 
     // MARK: - UI Components
     private let textField: UITextField = {
@@ -377,15 +513,22 @@ class CustomSearchBar: UIView {
         return button
     }()
 
+    // MARK: - Callback
+    var onSearchReturn: ((String) -> Void)?
+
     // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
+        textField.delegate = self
+        setupButtonAction()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupView()
+        textField.delegate = self
+        setupButtonAction()
     }
 
     // MARK: - Setup View
@@ -414,11 +557,17 @@ class CustomSearchBar: UIView {
         }
     }
 
-    // MARK: - Public Methods
-    func onSearchTapped(_ target: Any?, action: Selector) {
-        searchButton.addTarget(target, action: action, for: .touchUpInside)
+    // MARK: - Button Action
+    private func setupButtonAction() {
+        searchButton.addTarget(self, action: #selector(searchButtonTapped), for: .touchUpInside)
     }
 
+    @objc private func searchButtonTapped() {
+        onSearchReturn?(textField.text ?? "")
+        textField.resignFirstResponder()
+    }
+
+    // MARK: - Public Methods
     func getSearchText() -> String {
         return textField.text ?? ""
     }
@@ -426,74 +575,11 @@ class CustomSearchBar: UIView {
     func setDelegate(_ delegate: UITextFieldDelegate) {
         textField.delegate = delegate
     }
-}
 
-class RowSeparatorView: UICollectionReusableView {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        let topView = UIView()
-        topView.backgroundColor = #colorLiteral(red: 1, green: 0.9999999404, blue: 1, alpha: 0.3)
-        let bottomView = UIView()
-        bottomView.backgroundColor = .clear
-
-        addSubview(topView)
-        addSubview(bottomView)
-
-        topView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(23)
-        }
-        bottomView.snp.makeConstraints {
-            $0.top.equalTo(topView.snp.bottom)
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(27)
-        }
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-class RowSeparatorFlowLayout: UICollectionViewFlowLayout {
-    override func prepare() {
-        super.prepare()
-        // Decoration View 등록
-        self.register(RowSeparatorView.self, forDecorationViewOfKind: "RowSeparator")
-    }
-
-    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        guard let attributes = super.layoutAttributesForElements(in: rect) else { return nil }
-        var allAttributes = attributes
-
-        // 셀만 뽑아서 같은 Y값(= 같은 행) 기준으로 그룹핑
-        let cellAttrs = attributes.filter { $0.representedElementCategory == .cell }
-        let grouped = Dictionary(grouping: cellAttrs) { attr in
-            Int(attr.frame.minY.rounded())
-        }
-
-        for (_, rowAttrs) in grouped {
-            guard let first = rowAttrs.first else { continue }
-
-            // 한 행 전체 width 만큼 밑줄 뷰 생성
-            let decoration = UICollectionViewLayoutAttributes(
-                forDecorationViewOfKind: "RowSeparator",
-                with: IndexPath(item: first.indexPath.item, section: first.indexPath.section)
-            )
-
-            let rowMaxY = rowAttrs.map { $0.frame.maxY }.max() ?? first.frame.maxY
-            decoration.frame = CGRect(
-                x: 0,
-                y: rowMaxY,
-                width: collectionView?.bounds.width ?? 0,
-                height: 50
-            )
-            decoration.zIndex = -1 // 셀보다 뒤로
-
-            allAttributes.append(decoration)
-        }
-
-        return allAttributes
+    // MARK: - UITextFieldDelegate
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        searchButtonTapped()
+        textField.resignFirstResponder()
+        return true
     }
 }

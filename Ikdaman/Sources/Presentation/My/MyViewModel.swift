@@ -45,26 +45,33 @@ final class DefaultMyViewModel: MyViewModel {
     private let showTimePickerRelay = PublishRelay<Void>()
     
     func transform(input: MyViewModelInput) -> MyViewModelOutput {
-            input.viewDidLoad
-                .subscribe(onNext: setupTableView)
-                .disposed(by: disposeBag)
-
-            input.alarmToggleChanged
-                .subscribe(onNext: { isOn in
-                    print("🛎️ 알람 설정 변경: \(isOn)")
-                    // 알람 설정 저장 로직
-                })
-                .disposed(by: disposeBag)
-
-            input.alarmTimeTapped
-                .bind(to: showTimePickerRelay)
-                .disposed(by: disposeBag)
-
-            return MyViewModelOutput(
-                sections: sections.asObservable(),
-                showTimePicker: showTimePickerRelay.asObservable()
-            )
-        }
+        input.viewDidLoad
+            .subscribe(onNext: setupTableView)
+            .disposed(by: disposeBag)
+        
+        input.alarmToggleChanged
+            .subscribe(onNext: { isOn in
+                if isOn {
+                    // 기본 설정 시간 로드 (예: 09:00)
+                    let hour = UserDefaults.standard.integer(forKey: "alarmHour")
+                    let minute = UserDefaults.standard.integer(forKey: "alarmMinute")
+                    
+                    UserNotificationService.shared.scheduleDailyNotification(hour: hour, minute: minute)
+                } else {
+                    UserNotificationService.shared.cancelDailyNotification()
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        input.alarmTimeTapped
+            .bind(to: showTimePickerRelay)
+            .disposed(by: disposeBag)
+        
+        return MyViewModelOutput(
+            sections: sections.asObservable(),
+            showTimePicker: showTimePickerRelay.asObservable()
+        )
+    }
     
 }
 
