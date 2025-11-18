@@ -12,19 +12,16 @@ import RxDataSources
 
 // [START] Interface
 struct MyViewModelActions {
-//    let setupTableView: () -> Void
     let fetchUserInfo: () -> Void
 }
 
 struct MyViewModelInput {
     let viewDidLoad: Observable<Void>
-//    let fetchUserInfo: Observable<Int>
     let alarmToggleChanged: Observable<Bool>
     let alarmTimeTapped: Observable<Void>
 }
 
 struct MyViewModelOutput {
-//    var user: PublishSubject<[User]>
     var sections: Observable<[Section]>
     var showTimePicker: Observable<Void>
 }
@@ -94,44 +91,9 @@ extension DefaultMyViewModel {
     }
 }
 
-//final class DefaultMyViewModel: MyViewModel {
-//    // MARK: - Properties
-//    private var disposeBag = DisposeBag()
-//    private let fetchUserUseCase: FetchUserUseCase
-//    
-//    // MARK: - Output
-//    let user = PublishSubject<[User]>()
-//    
-//    // MARK: - Init
-//    init(fetchUserUseCase: FetchUserUseCase = DefaultFetchUserUseCase()) {
-//        self.fetchUserUseCase = fetchUserUseCase
-//    }
-//    
-//    // MARK: - Methods
-//    func transform(input: MyViewModelInput) -> MyViewModelOutput {
-//        input.fetchUserInfo
-//            .subscribe(onNext: { [weak self] userId in
-////                self?.fetch(userId: userId)
-//            }).disposed(by: disposeBag)
-//        
-//        return MyViewModelOutput(user: user.asObserver())
-//    }
-//    
-//    // MARK: - Private Methods
-//    private func fetch(userId: Int) {
-//        fetchUserUseCase.execute(requestValue: .init(userId: userId))
-//            .compactMap { $0 }
-//            .subscribe(onNext: { [weak self] userInfo in
-//                self?.user.onNext(userInfo)
-//            }).disposed(by: disposeBag)
-//    }
-//}
-
 enum CellType {
     case arrow(title: String)
     case alarm
-//    case toggle(title: String, isOn: Bool)
-//    case time(title: String, time: String)
 }
 
 struct Section {

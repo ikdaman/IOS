@@ -172,6 +172,8 @@ extension BookAPI: TargetType {
             param = ["content": content, "page": page, "createdAt": createdAt.utcString]
         case .addCompleteRead(_, let review, let createdAt):
             param = ["review": review, "createdAt": createdAt.utcString]
+        case .modifyThink(_, let content, _):
+            param = ["content": content]
         default:
             return .requestPlain
         }
@@ -202,14 +204,3 @@ extension BookAPI: TargetType {
 }
 
 extension BookAPI: BaseTargetType {}
-
-extension Date {
-    /// UTC 기준 ISO 8601 문자열 반환
-    var utcString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'" // ISO 8601
-        formatter.timeZone = TimeZone(abbreviation: "UTC")
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter.string(from: self)
-    }
-}
