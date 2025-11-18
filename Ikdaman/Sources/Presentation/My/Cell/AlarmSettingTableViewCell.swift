@@ -56,6 +56,7 @@ class AlarmSettingTableViewCell: UITableViewCell {
     // MARK: - Setup
 
     private func setupUI() {
+        contentView.backgroundColor = .white
         contentView.addSubview(titleLabel)
         contentView.addSubview(toggleSwitch)
         contentView.addSubview(timeTitleLabel)

@@ -10,7 +10,9 @@ import UIKit
 class SettingsTableViewCell: UITableViewCell {
     static let identifier = "SettingsTableViewCell"
     
-    private let titleLabel = UILabel()
+    private let titleLabel = UILabel().then {
+        $0.textColor = .black
+    }
     
     private let arrowImageView = UIImageView().then {
         $0.image = UIImage(systemName: "chevron.right")
@@ -29,6 +31,7 @@ class SettingsTableViewCell: UITableViewCell {
     }
     
     private func setupViews() {
+        contentView.backgroundColor = .white
         contentView.addSubview(titleLabel)
         contentView.addSubview(arrowImageView)
         

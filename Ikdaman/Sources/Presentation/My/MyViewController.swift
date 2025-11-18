@@ -64,12 +64,6 @@ class MyViewController: BaseViewController {
         let output = viewModel.transform(input: input)
 
         subView.setupDI(sections: output.sections)
-        
-        output.showTimePicker
-            .subscribe(onNext: { [weak self] in
-//                self?.showTimePickerModal()
-            })
-            .disposed(by: disposeBag)
     }
 
 }

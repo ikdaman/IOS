@@ -109,7 +109,6 @@ class ManageMyViewController: BaseViewController {
     init(viewModel: ManageMyViewModel) {
         self.viewModel = viewModel
         super.init()
-//        navigateToSignup()
     }
     
     required init?(coder: NSCoder) {
