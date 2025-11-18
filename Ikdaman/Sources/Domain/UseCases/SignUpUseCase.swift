@@ -26,7 +26,6 @@ final class DefaultSignUpUseCase :SignUpUseCase {
                 print("Login error: \(error.localizedDescription)")
                 // 에러 발생 시, 빈 Observable 리턴 (또는 다른 처리)
                 return Observable.empty()
-                // 또는 기본값 반환하고 싶으면: return Observable.just(defaultProfile)
             }
     }
     

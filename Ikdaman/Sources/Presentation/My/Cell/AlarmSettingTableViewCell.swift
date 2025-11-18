@@ -88,6 +88,19 @@ class AlarmSettingTableViewCell: UITableViewCell {
     }
     
     private func bind() {
+        let hour = UserDefaults.standard.integer(forKey: "alarmHour")
+        let minute = UserDefaults.standard.integer(forKey: "alarmMinute")
+
+        if hour != 0 || minute != 0 {
+            let calendar = Calendar.current
+            let date = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: Date())!
+            timePicker.setDate(date, animated: false)
+        }
+
+        // 저장된 토글 상태 로드
+        let isOn = UserDefaults.standard.bool(forKey: "alarmToggle")
+        toggleSwitch.isOn = isOn
+        
         toggleSwitch.rx.isOn
             .bind(to: toggleRelay)
             .disposed(by: disposeBag)

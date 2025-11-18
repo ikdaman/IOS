@@ -10,11 +10,6 @@ import RxSwift
 import RxCocoa
 import RxDataSources
 
-// [START] Interface
-struct MyViewModelActions {
-    let fetchUserInfo: () -> Void
-}
-
 struct MyViewModelInput {
     let viewDidLoad: Observable<Void>
     let alarmToggleChanged: Observable<Bool>
@@ -43,7 +38,16 @@ final class DefaultMyViewModel: MyViewModel {
     
     func transform(input: MyViewModelInput) -> MyViewModelOutput {
         input.viewDidLoad
-            .subscribe(onNext: setupTableView)
+            .subscribe(onNext: {
+                self.setupTableView()
+                
+                let isOn = UserDefaults.standard.bool(forKey: "alarmToggle")
+                if isOn {
+                    let hour = UserDefaults.standard.integer(forKey: "alarmHour")
+                    let minute = UserDefaults.standard.integer(forKey: "alarmMinute")
+                    UserNotificationService.shared.scheduleDailyNotification(hour: hour, minute: minute)
+                }
+            })
             .disposed(by: disposeBag)
         
         input.alarmToggleChanged
