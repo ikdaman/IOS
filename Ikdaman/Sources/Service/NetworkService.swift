@@ -59,6 +59,18 @@ extension NetworkProvider {
         return provider.rx.request(MultiTarget(target))
             .flatMap { [weak self] response -> Single<T> in
                 guard let self = self else { return .never() }
+                
+                if let token = response.response?.allHeaderFields.first(where: {
+                    "\($0.key)".lowercased() == "Authorization" ||
+                    "\($0.key)".lowercased() == "refresh-token"
+                })?.value as? String {
+                    let _ = KeychainService.shared.delete(forKey: .accessToken)
+                    let _ = KeychainService.shared.delete(forKey: .refreshToken)
+                    let _ = KeychainService.shared.save(token, forKey: .accessToken)
+                    let _ = KeychainService.shared.save(token, forKey: .refreshToken)
+                    print("🔐 토큰 저장됨: \(token)")
+                }
+
 
                 // ✅ 정상 응답
                 if (200...299).contains(response.statusCode) {

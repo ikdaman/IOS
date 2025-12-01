@@ -31,8 +31,3 @@ struct AddMyBook: Codable {
     let impression: String
     let createdAt: String
 }
-
-// TODO: 삭제 필요
-struct BookList: Codable {
-    
-}

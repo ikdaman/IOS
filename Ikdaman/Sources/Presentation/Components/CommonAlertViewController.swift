@@ -20,7 +20,7 @@ enum CommonAlertType {
         case .withdraw:
             return "읽다만에서\n탈퇴하시겠어요?"
         case .withdrawConfirm:
-            return "탈퇴 후 이전 기록은 재복구가 불가능해요.\n정말로 탈퇴하시겠어요?"
+            return "탈퇴 후 이전 기록은 재복구가 불가능해요.\n그래도 탈퇴하시겠어요?\n\n· 독서중인 책, 다 읽은 책\n· 책의 첫인상, 생각 기록\n· 내 책장"
         }
     }
 
@@ -44,11 +44,44 @@ final class CommonAlertViewController: UIViewController {
 
     private let dimmedView = UIView()
     private let containerView = UIView()
-    private let titleLabel = UILabel()
-    private let cancelButton = UIButton(type: .system)
-    private let confirmButton = UIButton(type: .system)
-    private let checkbox = UIButton(type: .custom)
-    private let checkboxLabel = UILabel()
+    private let titleLabel = UILabel().then {
+        $0.textColor = .black
+        $0.font = .pretendard(.semiBold, size: 14)
+        $0.textAlignment = .center
+        $0.numberOfLines = 0
+    }
+    
+    private let cancelButton = UIButton().then {
+        $0.setTitle("아니오", for: .normal)
+        $0.titleLabel?.font = .pretendard(.bold, size: 12)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = .black
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 5
+        $0.contentEdgeInsets = UIEdgeInsets(top: 5, left: 30, bottom: 5, right: 30)
+    }
+    
+    private let confirmButton = UIButton().then {
+        $0.setTitle("네", for: .normal)
+        $0.titleLabel?.font = .pretendard(.bold, size: 12)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = #colorLiteral(red: 0.5924944878, green: 0.5924944878, blue: 0.5924944878, alpha: 1)
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 5
+        $0.contentEdgeInsets = UIEdgeInsets(top: 5, left: 30, bottom: 5, right: 30)
+    }
+    
+    private let checkbox = UIButton(type: .custom).then {
+        $0.setImage(UIImage(systemName: "square"), for: .normal)
+        $0.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
+        $0.tintColor = .black
+        $0.layer.borderColor = #colorLiteral(red: 0.850980401, green: 0.850980401, blue: 0.850980401, alpha: 1)
+    }
+    private let checkboxLabel = UILabel().then {
+        $0.text = "네,탈퇴할게요"
+        $0.font = .pretendard(.semiBold, size: 14)
+        $0.textColor = .black
+    }
     private let checkboxContainer = UIStackView()
     private var isChecked = false
 
@@ -83,27 +116,41 @@ final class CommonAlertViewController: UIViewController {
         }
 
         titleLabel.text = type.title
-        titleLabel.textAlignment = .center
-        titleLabel.numberOfLines = 0
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-
-        cancelButton.setTitle("아니요", for: .normal)
-        confirmButton.setTitle("네", for: .normal)
-        cancelButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .regular)
-        confirmButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        if case .withdrawConfirm = type {
+            let fullText = type.title
+            let detailText = "· 독서중인 책, 다 읽은 책\n· 책의 첫인상, 생각 기록\n· 내 책장"
+            
+            let attributedString = NSMutableAttributedString(string: fullText)
+            
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+            
+            let defaultAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.pretendard(.semiBold, size: 14),
+                .foregroundColor: UIColor.black,
+                .paragraphStyle: paragraphStyle
+            ]
+            attributedString.addAttributes(defaultAttributes,
+                                           range: NSRange(location: 0, length: fullText.count))
+            
+            if let rangeOfDetail = fullText.range(of: detailText) {
+                let nsRange = NSRange(rangeOfDetail, in: fullText)
+                
+                let detailAttributes: [NSAttributedString.Key: Any] = [
+                    .foregroundColor: #colorLiteral(red: 0.4117647409, green: 0.4117647409, blue: 0.4117647409, alpha: 1),
+                    .font: UIFont.pretendard(.regular, size: 14)
+                ]
+                attributedString.addAttributes(detailAttributes, range: nsRange)
+            }
+            
+            titleLabel.attributedText = attributedString
+        }
 
         let buttonStack = UIStackView(arrangedSubviews: [cancelButton, confirmButton])
         buttonStack.axis = .horizontal
-        buttonStack.spacing = 12
-        buttonStack.distribution = .fillEqually
-
-        checkbox.setImage(UIImage(systemName: "square"), for: .normal)
-        checkbox.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
-        checkbox.tintColor = .black
-
-        checkboxLabel.text = "네,탈퇴할게요"
-        checkboxLabel.font = .systemFont(ofSize: 14)
-
+        buttonStack.spacing = 5
+        buttonStack.distribution = .equalCentering
+        
         checkboxContainer.axis = .horizontal
         checkboxContainer.spacing = 8
         checkboxContainer.alignment = .center
@@ -126,14 +173,14 @@ final class CommonAlertViewController: UIViewController {
 
         checkboxContainer.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.centerX.equalToSuperview()
         }
 
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(type.hasCheckbox ? checkboxContainer.snp.bottom : titleLabel.snp.bottom).offset(24)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.centerX.equalToSuperview()
             $0.bottom.equalToSuperview().inset(20)
-            $0.height.equalTo(44)
+            $0.height.equalTo(30)
         }
     }
 
@@ -149,6 +196,9 @@ final class CommonAlertViewController: UIViewController {
         confirmButton.rx.tap
             .bind { [weak self] in
                 guard let self = self else { return }
+                if case .withdrawConfirm = type {
+                    guard self.isChecked == true else { return }
+                }
                 self.dismiss(animated: true) {
                     self.onConfirm?(self.isChecked)
                 }

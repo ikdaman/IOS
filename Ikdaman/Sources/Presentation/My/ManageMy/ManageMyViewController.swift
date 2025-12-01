@@ -15,17 +15,22 @@ class ManageMyViewController: BaseViewController {
     var disposeBag = DisposeBag()
     private let viewModel: ManageMyViewModel
     
+    private let alertLogoutConfirmed = PublishRelay<Void>()
+    private let alertWithdrawConfirmed = PublishRelay<Void>()
+    
     // MARK: - UI Components
     let topBarView = CustomTopBarView()
     
     private let manageMyTitleLabel = UILabel().then {
         $0.text = "내 정보 관리"
         $0.font = .systemFont(ofSize: 26, weight: .bold)
+        $0.textColor = .black
     }
     
     private let nicknameTitleLabel = UILabel().then {
         $0.text = "* 닉네임"
         $0.font = UIFont.boldSystemFont(ofSize: 14)
+        $0.textColor = .black
     }
     
     private var nicknameTextField = UITextField().then {
@@ -47,6 +52,7 @@ class ManageMyViewController: BaseViewController {
     private let birthdateTitleLabel = UILabel().then {
         $0.text = "생년월일"
         $0.font = UIFont.boldSystemFont(ofSize: 16)
+        $0.textColor = .black
     }
     
     private let birthdateTextField = UITextField().then {
@@ -61,6 +67,7 @@ class ManageMyViewController: BaseViewController {
     private let genderTitleLabel = UILabel().then {
         $0.text = "성별"
         $0.font = UIFont.boldSystemFont(ofSize: 16)
+        $0.textColor = .black
     }
     
     private let maleButton = UIButton().then {
@@ -290,18 +297,32 @@ class ManageMyViewController: BaseViewController {
             }
             .share(replay: 1)
         
+        logoutButton.rx.tap
+                    .subscribe(onNext: { [weak self] in
+                        self?.presentAlert(type: .logout)
+                    })
+                    .disposed(by: disposeBag)
+                
+                // 회원탈퇴 버튼 탭 시 CommonAlertType.withdraw 알림 표시
+                withdrawButton.rx.tap
+                    .subscribe(onNext: { [weak self] in
+                        self?.presentAlert(type: .withdraw)
+                    })
+                    .disposed(by: disposeBag)
+        
         let input = ManageMyViewModelInput(
-            viewWillAppear: self.rx.methodInvoked(#selector(UIViewController.viewWillAppear(_:)))
-                    .map { _ in }
-                    .asObservable(),
-            nicknameChanged: nicknameTextField.rx.text.orEmpty.asObservable(),
-            birthdateChanged: birthdateTextField.rx.text.orEmpty.asObservable(),
-            genderSelected: genderSelected,
-            saveTapped: saveButton.rx.tap.asObservable(),
-            logoutTapped: logoutButton.rx.tap.asObservable(),
-            withdrawTapped: withdrawButton.rx.tap.asObservable(),
-            checkNicknameTapped: checkButton.rx.tap.asObservable()
-        )
+                    viewWillAppear: self.rx.methodInvoked(#selector(UIViewController.viewWillAppear(_:)))
+                        .map { _ in }
+                        .asObservable(),
+                    nicknameChanged: nicknameTextField.rx.text.orEmpty.asObservable(),
+                    birthdateChanged: birthdateTextField.rx.text.orEmpty.asObservable(),
+                    genderSelected: genderSelected,
+                    saveTapped: saveButton.rx.tap.asObservable(),
+                    logoutTapped: alertLogoutConfirmed.asObservable(),
+                    withdrawTapped: alertWithdrawConfirmed.asObservable(),
+                    
+                    checkNicknameTapped: checkButton.rx.tap.asObservable()
+                )
         
         let output = viewModel.transform(input: input)
         
@@ -381,4 +402,28 @@ class ManageMyViewController: BaseViewController {
         sceneDelegate.window?.rootViewController = nav
         sceneDelegate.window?.makeKeyAndVisible()
     }
-}
+    
+    private func presentAlert(type: CommonAlertType) {
+            let alertVC = CommonAlertViewController(type: type)
+            
+            alertVC.onConfirm = { [weak self] isChecked in
+                guard let self = self else { return }
+                
+                switch type {
+                case .logout:
+                    // 로그아웃 알림의 '확인' -> ViewModel로 이벤트를 전달
+                    self.alertLogoutConfirmed.accept(())
+                case .withdraw:
+                    // 탈퇴 알림의 '확인' -> withdrawConfirm 알림창 표시
+                    self.presentAlert(type: .withdrawConfirm(isChecked: isChecked))
+                case .withdrawConfirm:
+                    // 최종 탈퇴 확인 알림의 '확인'
+                    if isChecked {
+                        // 체크박스가 선택된 경우에만 ViewModel로 이벤트를 전달
+                        self.alertWithdrawConfirmed.accept(())
+                    }
+                }
+            }
+            
+            self.present(alertVC, animated: true, completion: nil)
+        }}
