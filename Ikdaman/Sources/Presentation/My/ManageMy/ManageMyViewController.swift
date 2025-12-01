@@ -422,6 +422,8 @@ class ManageMyViewController: BaseViewController {
                         // 체크박스가 선택된 경우에만 ViewModel로 이벤트를 전달
                         self.alertWithdrawConfirmed.accept(())
                     }
+                case .deleteBook:
+                    return
                 }
             }
             

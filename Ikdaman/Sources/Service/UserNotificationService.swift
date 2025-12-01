@@ -18,7 +18,7 @@ final class UserNotificationService {
 
         let content = UNMutableNotificationContent()
         content.title = "알림"
-        content.body = "설정하신 시간입니다!"
+        content.body = "읽다만 알림시간이에요."
         content.sound = .default
 
         var date = DateComponents()

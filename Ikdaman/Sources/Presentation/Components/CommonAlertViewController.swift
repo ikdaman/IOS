@@ -12,6 +12,7 @@ enum CommonAlertType {
     case logout
     case withdraw
     case withdrawConfirm(isChecked: Bool)
+    case deleteBook
 
     var title: String {
         switch self {
@@ -21,6 +22,8 @@ enum CommonAlertType {
             return "읽다만에서\n탈퇴하시겠어요?"
         case .withdrawConfirm:
             return "탈퇴 후 이전 기록은 재복구가 불가능해요.\n그래도 탈퇴하시겠어요?\n\n· 독서중인 책, 다 읽은 책\n· 책의 첫인상, 생각 기록\n· 내 책장"
+        case .deleteBook:
+            return "지금 이 책을 삭제하면 \n책과 기록을 영영 복구하지 못해요 😢\n그래도 삭제하시겠어요?"
         }
     }
 
@@ -52,7 +55,6 @@ final class CommonAlertViewController: UIViewController {
     }
     
     private let cancelButton = UIButton().then {
-        $0.setTitle("아니오", for: .normal)
         $0.titleLabel?.font = .pretendard(.bold, size: 12)
         $0.setTitleColor(.white, for: .normal)
         $0.backgroundColor = .black
@@ -62,7 +64,6 @@ final class CommonAlertViewController: UIViewController {
     }
     
     private let confirmButton = UIButton().then {
-        $0.setTitle("네", for: .normal)
         $0.titleLabel?.font = .pretendard(.bold, size: 12)
         $0.setTitleColor(.white, for: .normal)
         $0.backgroundColor = #colorLiteral(red: 0.5924944878, green: 0.5924944878, blue: 0.5924944878, alpha: 1)
@@ -85,8 +86,10 @@ final class CommonAlertViewController: UIViewController {
     private let checkboxContainer = UIStackView()
     private var isChecked = false
 
-    init(type: CommonAlertType) {
+    init(type: CommonAlertType, confirmTitle: String? = "네", cancelTitle: String? = "아니오") {
         self.type = type
+        self.confirmButton.setTitle(confirmTitle, for: .normal)
+        self.cancelButton.setTitle(cancelTitle, for: .normal)
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve

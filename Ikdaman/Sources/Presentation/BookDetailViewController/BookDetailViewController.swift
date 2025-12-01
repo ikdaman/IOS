@@ -21,6 +21,7 @@ final class BookDetailViewController: BaseViewController {
     private var currentBookInfo: MyBookInfo? // bookInfo 보관
     private let tapModifyLogSubject = PublishSubject<(String, Int)>()
     private let tapDeleteLogSubject = PublishSubject<Int>()
+    private let deleteBookRelay = PublishRelay<Void>()
 
     var tapModifyLog: Observable<(String, Int)> {
         return tapModifyLogSubject.asObservable()
@@ -64,7 +65,7 @@ final class BookDetailViewController: BaseViewController {
         let input = BookDetailViewModelInput(
             fetchBookInfo: Observable.just(()),
             fetchBookHistory: Observable.just(()),
-            tapDeleteBook: bookDetailView.topBarView.customButton?.rx.tap.asObservable() ?? .empty(),
+            tapDeleteBook: deleteBookRelay.asObservable(),
             tapModifyLog: tapModifyLogObservable,
             tapDeleteLog: tapDeleteLogObservable
         )
@@ -168,6 +169,21 @@ final class BookDetailViewController: BaseViewController {
                 self.navigationController?.pushViewController(vc, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        bookDetailView.topBarView.customButton?.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.deletePopup()
+            }).disposed(by: disposeBag)
+    }
+    
+    private func deletePopup() {
+        let alertVC = CommonAlertViewController(type: .deleteBook, confirmTitle: "삭제", cancelTitle: "취소")
+        
+        alertVC.onConfirm = { [weak self] isChecked in
+            self?.deleteBookRelay.accept(())
+        }
+        
+        self.present(alertVC, animated: true, completion: nil)
     }
     
     private func setupKeyboardHandling() {
