@@ -228,6 +228,7 @@ class SearchView: UIView {
                 cell.addBookContainerView.rx.tap
                     .subscribe(onNext: { [weak self] in
                         print("추가한 책 > \(book.title)")
+                        self?.actionTriggers.accept(.addBookBtnTapped(book))
                     })
                     .disposed(by: cell.disposeBag)
             }.disposed(by: disposeBag)

@@ -45,6 +45,14 @@ class SearchViewController: UIViewController {
                     let vc = BarcodeScannerViewController()
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true)
+                case .home:
+//                    self.navigationController?.popToRootViewController(animated: true) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        TabBarNavigator.shared.navigateToHome()
+                        NotificationCenter.default.post(name: .reloadBookList, object: nil)
+                    }
+                        
+//                    }
                 }
             })
             .disposed(by: disposeBag)

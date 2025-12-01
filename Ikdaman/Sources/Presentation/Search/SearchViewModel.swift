@@ -16,11 +16,18 @@ enum SearchTriggerType {
     case searchBtnTapped
     case selectBook(AladinBook)
     case loadMoreBooks
+    case addBookBtnTapped(AladinBook)
 }
 
 class SearchViewModel {
     typealias ViewModel = SearchViewModel
     private let disposeBag = DisposeBag()
+    
+    private let searchUseCase: SearchUseCase
+    
+    init(searchUseCase: SearchUseCase = DefaultSearchUseCase(searchRepository: SearchRepositoryImpl())) {
+        self.searchUseCase = searchUseCase
+    }
     
     /// 화면 모드
     private var searchModeRelay = BehaviorRelay<SearchMode>(value: .default)
@@ -35,6 +42,9 @@ class SearchViewModel {
     private var currentPage = 1
     private let pageSize = 10
     private var totalResults = 0
+    
+    /// 선택한 책 정보
+    private var bookRelay = BehaviorRelay<AladinBook>(value: .empty)
     
     private var outputRequest = PublishRelay<RequestDestinationVC>()
     
@@ -103,6 +113,36 @@ class SearchViewModel {
             
         case .loadMoreBooks:
             loadMoreBooks()
+        case .addBookBtnTapped(let book):
+            let dateString = Date.currentISO8601String
+            
+            let addMyBook = AddMyBook(title: book.title, writer: book.author, publisher: book.publisher,
+                                      isbn: book.isbn, page: book.subInfo?.itemPage ?? 0, coverImage: book.cover,
+                                      itemId: book.itemId, impression: "", createdAt: dateString)
+            
+            searchUseCase.addBook(book: addMyBook)
+                .flatMap { response -> Single<Void> in
+                    if response.statusCode == 201 {
+                        return .just(())
+                    } else {
+                        // 실패: 에러 반환
+                        return .error(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Add book failed with status: \(response.statusCode)"]))
+                    }
+                }
+                .asObservable()
+                .materialize()
+                .withUnretained(self)
+                .subscribe(onNext: { `self`, event in
+                    switch event {
+                    case .completed:
+                        print("책 추가 성공")
+                        self.outputRequest.accept(.home)
+                    case .error(let error):
+                        print("책 추가 실패 > \(error)")
+                    default: break
+                    }
+                })
+                .disposed(by: disposeBag)
         }
     }
 }
@@ -178,6 +218,7 @@ extension SearchViewModel {
     enum RequestDestinationVC {
         case detailBook(AladinBook)
         case barcodeScanner
+        case home
     }
 }
 
