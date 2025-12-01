@@ -114,35 +114,38 @@ class SearchViewModel {
         case .loadMoreBooks:
             loadMoreBooks()
         case .addBookBtnTapped(let book):
-            let dateString = Date.currentISO8601String
-            
-            let addMyBook = AddMyBook(title: book.title, writer: book.author, publisher: book.publisher,
-                                      isbn: book.isbn, page: book.subInfo?.itemPage ?? 0, coverImage: book.cover,
-                                      itemId: book.itemId, impression: "", createdAt: dateString)
-            
-            searchUseCase.addBook(book: addMyBook)
-                .flatMap { response -> Single<Void> in
-                    if response.statusCode == 201 {
-                        return .just(())
-                    } else {
-                        // 실패: 에러 반환
-                        return .error(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Add book failed with status: \(response.statusCode)"]))
+            getSearchedBook(book.isbn) { [weak self] aladinBook in
+                guard let self = self else { return }
+                
+                let dateString = Date.currentISO8601String
+                let addMyBook = AddMyBook(title: aladinBook.title, writer: aladinBook.author, publisher: aladinBook.publisher,
+                                          isbn: aladinBook.isbn, page: aladinBook.subInfo?.itemPage ?? 0, coverImage: aladinBook.cover,
+                                          itemId: aladinBook.itemId, impression: "", createdAt: dateString)
+                
+                self.searchUseCase.addBook(book: addMyBook)
+                    .flatMap { response -> Single<Void> in
+                        if response.statusCode == 201 {
+                            return .just(())
+                        } else {
+                            // 실패: 에러 반환
+                            return .error(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Add book failed with status: \(response.statusCode)"]))
+                        }
                     }
-                }
-                .asObservable()
-                .materialize()
-                .withUnretained(self)
-                .subscribe(onNext: { `self`, event in
-                    switch event {
-                    case .completed:
-                        print("책 추가 성공")
-                        self.outputRequest.accept(.home)
-                    case .error(let error):
-                        print("책 추가 실패 > \(error)")
-                    default: break
-                    }
-                })
-                .disposed(by: disposeBag)
+                    .asObservable()
+                    .materialize()
+                    .withUnretained(self)
+                    .subscribe(onNext: { `self`, event in
+                        switch event {
+                        case .completed:
+                            print("책 추가 성공")
+                            self.outputRequest.accept(.home)
+                        case .error(let error):
+                            print("책 추가 실패 > \(error)")
+                        default: break
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
+            }
         }
     }
 }
@@ -163,6 +166,24 @@ extension SearchViewModel {
         }
         
         loadBooks()
+    }
+    
+    private func getSearchedBook(_ isbn: String, _ completion: @escaping(AladinBook) -> Void) {
+        AladinAPIService.shared.searchBook(isbn: isbn) { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success(let response):
+                print("ISBN 책 응답 > \(response)")
+                guard let book = response.item.first else {
+                    print("책 정보 가져올 수 없음")
+                    return
+                }
+                
+                completion(book)
+            case .failure(let error):
+                print("검색 에러: \(error)")
+            }
+        }
     }
     
     func loadMoreBooks() {
