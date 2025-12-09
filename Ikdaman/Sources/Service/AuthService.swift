@@ -113,10 +113,15 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
         guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
         guard let tokenType = instance.tokenType else { return }
         guard let accessToken = instance.accessToken else { return }
-
-        let token = "\(tokenType) \(accessToken)"
-        self.loginType.accept(LoginType(token: accessToken, provider: "NAVER", providerId: instance.consumerKey))
         
+        NaverProfileAPI.requestProfile(accessToken: accessToken) { result in
+            switch result {
+            case .success(let profile):
+                self.loginType.accept(LoginType(token: accessToken, provider: "NAVER", providerId: profile.id))
+            case .failure(let error):
+                print("프로필 조회 실패:", error.localizedDescription)
+            }
+        }
     }
 
     // 접근 토큰 갱신
@@ -132,6 +137,7 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
     func oauth20Connection(_ oauthConnection: NaverThirdPartyLoginConnection!, didFailWithError error: Error!) {
         self.oauth20ConnectionDidFinishDeleteToken()
     }
+    
 }
 
 // MARK: Apple Login
@@ -202,5 +208,79 @@ extension AuthService {
             print("✅ userId: \(userId)")
             completion(idToken, userId)
         }
+    }
+}
+
+struct NaverProfileResponse: Decodable {
+    struct Response: Decodable {
+        let id: String?
+        let nickname: String?
+        let name: String?
+        let email: String?
+        let gender: String?
+        let age: String?
+        let birthday: String?
+        let birthyear: String?
+        let mobile: String?
+        let profile_image: String?
+    }
+    let resultcode: String
+    let message: String
+    let response: Response?
+}
+
+enum NaverAPIError: Error {
+    case invalidURL
+    case noData
+    case http(Int)
+}
+
+enum NaverProfile {
+    struct Model {
+        let id: String
+        let nickname: String?
+        let email: String?
+        let profileImage: String?
+    }
+}
+
+enum NaverProfileAPI {
+    static func requestProfile(accessToken: String, completion: @escaping (Result<NaverProfile.Model, Error>) -> Void) {
+        guard let url = URL(string: "https://openapi.naver.com/v1/nid/me") else {
+            completion(.failure(NaverAPIError.invalidURL))
+            return
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let task = URLSession.shared.dataTask(with: req) { data, resp, error in
+            if let error = error {
+                completion(.failure(error)); return
+            }
+            guard let http = resp as? HTTPURLResponse else {
+                completion(.failure(NaverAPIError.noData)); return
+            }
+            guard (200...299).contains(http.statusCode) else {
+                completion(.failure(NaverAPIError.http(http.statusCode))); return
+            }
+            guard let data = data else {
+                completion(.failure(NaverAPIError.noData)); return
+            }
+            do {
+                let decoded = try JSONDecoder().decode(NaverProfileResponse.self, from: data)
+                let r = decoded.response
+                let model = NaverProfile.Model(
+                    id: r?.id ?? "",
+                    nickname: r?.nickname,
+                    email: r?.email,
+                    profileImage: r?.profile_image
+                )
+                completion(.success(model))
+            } catch {
+                completion(.failure(error))
+            }
+        }
+        task.resume()
     }
 }
