@@ -30,6 +30,7 @@ class AuthService: NSObject {
         
         let _ = KeychainService.shared.delete(forKey: .accessToken)
         let _ = KeychainService.shared.delete(forKey: .refreshToken)
+        self.oauth20ConnectionDidFinishDeleteToken()
     }
     
     // 로그인 여부 확인

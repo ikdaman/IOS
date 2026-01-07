@@ -113,10 +113,18 @@ extension SignUpViewController {
     private func setupViews() {
         view.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         
-        view.addSubview(loginContainerView)
-        loginContainerView.snp.makeConstraints {
+        let scrollView = UIScrollView()
+        view.addSubview(scrollView)
+        scrollView.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
+        
+        scrollView.addSubview(loginContainerView)
+        loginContainerView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+            $0.width.equalTo(scrollView)
+        }
+        
         loginContainerView.addSubview(loginBookImage)
         loginBookImage.snp.makeConstraints {
             $0.top.equalToSuperview().offset(158)
@@ -168,20 +176,7 @@ extension SignUpViewController {
             $0.top.equalTo(kakaoLoginButton.snp.bottom).offset(10)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(50)
-        }
-        
-        view.addSubview(completeContainerView)
-        completeContainerView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
-        
-        let completeImageView = UIImageView().then {
-            $0.image = UIImage(named: "CompleteLogin")
-        }
-        completeContainerView.addSubview(completeImageView)
-        completeImageView.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.top.equalToSuperview().offset(250)
+            $0.bottom.equalToSuperview().offset(-40)
         }
     }
     
