@@ -7,7 +7,6 @@
 
 struct LoginType {
     var token: String?
-    var provider: String
+    var provider: SnsProvider
     var providerId: String
 }
-

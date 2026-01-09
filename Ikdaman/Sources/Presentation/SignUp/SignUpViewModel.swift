@@ -14,6 +14,39 @@ enum SnsType {
     case naver
     case kakao
     case apple
+    
+    var rawValue: String {
+        switch self {
+        case .google:
+            return "GOOGLE"
+        case .naver:
+            return "NAVER"
+        case .kakao:
+            return "KAKAO"
+        case .apple:
+            return "APPLE"
+        }
+    }
+    
+    var provider: SnsProvider {
+        switch self {
+        case .google:
+            return .google
+        case .naver:
+            return .naver
+        case .kakao:
+            return .kakao
+        case .apple:
+            return .apple
+        }
+    }
+}
+
+enum SnsProvider: String, Codable {
+    case google = "GOOGLE"
+    case naver = "NAVER"
+    case kakao = "KAKAO"
+    case apple = "APPLE"
 }
 
 struct SignUpViewModelInput {
@@ -50,7 +83,7 @@ final class DefaultSignUpViewModel: SignUpViewModel {
         signUpRepository: SignUpRepositoryImpl()
     )) {
         self.signUpUseCase = signUpUseCase
-        bindAuthToken()
+//        bindAuthToken()
     }
     
     // MARK: - Methods
@@ -64,37 +97,28 @@ final class DefaultSignUpViewModel: SignUpViewModel {
     // MARK: - Private Methods
     
     private func handleSnsSignUp(type: SnsType) {
-        switch type {
-        case .google(let viewController):
-            AuthService.shared.googleLogin(viewController: viewController) { _,_ in }
-        case .naver:
-            AuthService.shared.getInstance()
-        case .kakao:
-            AuthService.shared.kakaoLogin()
-        case .apple:
-            AuthService.shared.requestAppleIdProvider()
-        }
+//        AuthService.logout(type: type)
     }
     
-    private func bindAuthToken() {
-        AuthService.shared.loginType
-            .compactMap { $0 } // nil 거르고
-            .flatMapLatest { [weak self] loginType -> Observable<Profile> in
-                guard let self else { return .empty() }
-                return self.signUpUseCase.login(type: LoginType(provider: loginType.provider, providerId: loginType.providerId)).asObservable()
-            }
-            .subscribe(
-                onNext: { [weak self] loginInfo in
-                    print("로그인 성공: \(loginInfo)")
-                    UserDefaults.standard.nickName = loginInfo.nickname
-                    self?.loginSuccess()
-                },
-                onError: { error in
-                    print("로그인 실패: \(error)")
-                }
-            )
-            .disposed(by: disposeBag)
-    }
+//    private func bindAuthToken() {
+//        AuthService.shared.loginType
+//            .compactMap { $0 } // nil 거르고
+//            .flatMapLatest { [weak self] loginType -> Observable<Profile> in
+//                guard let self else { return .empty() }
+//                return self.signUpUseCase.login(type: LoginType(provider: loginType.provider, providerId: loginType.providerId)).asObservable()
+//            }
+//            .subscribe(
+//                onNext: { [weak self] loginInfo in
+//                    print("로그인 성공: \(loginInfo)")
+//                    UserDefaults.standard.nickName = loginInfo.nickname
+//                    self?.loginSuccess()
+//                },
+//                onError: { error in
+//                    print("로그인 실패: \(error)")
+//                }
+//            )
+//            .disposed(by: disposeBag)
+//    }
     
     func loginSuccess() {
             // 메인 화면으로 이동

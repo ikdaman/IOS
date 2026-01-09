@@ -1,13 +1,29 @@
 //
-//  BookAPI.swift
+//  APIEndpoints.swift
 //  Ikdaman
 //
-//  Created by Soo on 4/21/25.
+//  Created by Soo on 1/7/26.
 //
 
 import Foundation
 
-enum BookAPI {
+// MARK: - API Endpoint Protocol
+protocol APIEndpoint {
+    var baseURL: String { get }
+    var path: String { get }
+    var method: HTTPMethod { get }
+    var headers: [String: String]? { get }
+    var queryParameters: [String: String]? { get }
+    var body: Data? { get }
+}
+
+// MARK: - Base Configuration
+enum APIConfiguration {
+    static let baseURL = "https://ikdaman.shop"
+}
+
+// MARK: - Book API Endpoints
+enum BookEndpoint: APIEndpoint {
     /// access token 재발급
     case reissueToken
     /// 로그인
@@ -54,63 +70,46 @@ enum BookAPI {
     case noticeDetail(noticeId: Int)
     /// 공지사항 생성
     case addNotice
-}
 
-extension BookAPI: TargetType {
-    var baseURL: URL { URL(string: "https://ikdaman.shop")! }
-
+    
+    var baseURL: String {
+        return APIConfiguration.baseURL
+    }
+    
     var path: String {
         switch self {
-        case .reissueToken:
-            "/auth/reissue"
-        case .login:
-            "/auth/login"
-        case .logout:
-            "/auth/logout"
-        case .modifyProfile:
-            "/members/me"
-        case .getProfile:
-            "/members/me"
-        case .checkNickname:
-            "/members/check"
-        case .withDrawal:
-            "/members/me"
-        case .bookHistory(let bookId, _, _):
-            "/mybooks/\(bookId)/booklog"
-        case .bookList(_, _, _, _):
-            "/mybooks"
-        case .deleteBook(let bookId):
-            "/mybooks/\(bookId)"
-        case .book(let bookId):
-            "/mybooks/\(bookId)"
-        case .addBook:
-            "/mybooks"
+        case .bookList:
+            return "/books"
         case .bookListReading:
-            "/mybooks/in-progress"
-        case .deleteThink(let bookId, let bookLodId):
-            "/mybooks/\(bookId)/booklog/\(bookLodId)"
-        case .modifyThink(let bookId, _, let bookLodId):
-            "/mybooks/\(bookId)/booklog/\(bookLodId)"
-        case .addThink(let bookId, _, _, _):
-            "/mybooks/\(bookId)/booklog"
-        case .addCompleteRead(let bookId, _, _):
-            "/mybooks/\(bookId)/completed"
-        case .deleteCompleteRead(let bookId, let bookLogId):
-            "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
-        case .modifyCompleteRead(let bookId, let bookLogId):
-            "/mybooks/\(bookId)/booklog/\(bookLogId)/completed"
+            return "/books/reading"
+        case .book(let bookId):
+            return "/books/\(bookId)"
+        case .addBook:
+            return "/books"
+        case .deleteBook(let bookId):
+            return "/books/\(bookId)"
+        case .bookHistory(let bookId, _, _):
+            return "/books/\(bookId)/history"
         case .firstImpression(let bookId, _, _):
-            "/mybooks/\(bookId)/impression"
-        case .noticeList(_, _):
-            "/notices"
-        case .noticeDetail(let noticeId):
-            "/notices/\(noticeId)"
-        case .addNotice:
-            "/notices"
+            return "/books/\(bookId)/impression"
+        case .addThink(let bookId, _, _, _):
+            return "/books/\(bookId)/thinks"
+        case .modifyThink(let bookId, _, let bookLogId):
+            return "/books/\(bookId)/thinks/\(bookLogId)"
+        case .deleteThink(let bookId, let bookLogId):
+            return "/books/\(bookId)/thinks/\(bookLogId)"
+        case .addCompleteRead(let bookId, _, _):
+            return "/books/\(bookId)/complete"
+        case .deleteCompleteRead(let bookId, let bookLogId):
+            return "/books/\(bookId)/complete/\(bookLogId)"
+        case .reissueToken:
+            return "/auth/reissue"
+        case .login:
+            return "/auth/login"
         }
     }
     
-    var method: Moya.Method {
+    var method: HTTPMethod {
         switch self {
         case .reissueToken, .login, .addBook(_), .addThink(_, _, _, _), .addCompleteRead(_, _, _), .firstImpression(_, _, _), .addNotice:
             return .post
@@ -124,7 +123,28 @@ extension BookAPI: TargetType {
         }
     }
     
-    var task: Task {
+    var headers: [String: String]? {
+        var defaultHeaders = ["Content-Type": "application/json"]
+        let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
+        let socialToken = AuthService.shared.loginType?.token
+        
+        switch self {
+        case .reissueToken:
+            let refreshToken = KeychainService.shared.load(forKey: .refreshToken)
+            defaultHeaders["Authorization"] = accessToken
+            defaultHeaders["refresh-token"] = refreshToken
+        case .login(_):
+            defaultHeaders["social-token"] = socialToken
+        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead, .bookList, .noticeDetail, .bookListReading, .deleteBook:
+            defaultHeaders["Authorization"] = accessToken
+        default:
+            break
+        }
+        
+        return defaultHeaders
+    }
+    
+    var queryParameters: [String: String]? {
         var param: [String: Any] = [:]
         switch self {
         case .login(let type):
@@ -174,28 +194,48 @@ extension BookAPI: TargetType {
             return .requestPlain
         }
         return .requestParameters(parameters: param, encoding: JSONEncoding.default)
-        
     }
-
-    var headers: [String: String]? {
-        var defaultHeaders = ["Content-Type": "application/json"]
-        let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
-        let socialToken = AuthService.shared.loginType?.token
-        
+    
+    var body: Data? {
         switch self {
-        case .reissueToken:
-            let refreshToken = KeychainService.shared.load(forKey: .refreshToken)
-            defaultHeaders["Authorization"] = accessToken
-            defaultHeaders["refresh-token"] = refreshToken
-        case .login(_):
-            defaultHeaders["social-token"] = socialToken
-        case .logout, .getProfile, .withDrawal, .modifyProfile, .noticeList, .addBook, .book, .bookHistory, .firstImpression, .addThink, .modifyThink, .deleteThink, .addCompleteRead, .bookList, .noticeDetail, .bookListReading, .deleteBook:
-            defaultHeaders["Authorization"] = accessToken
+        case .addBook(let book):
+            return try? book.toJSONData()
+            
+        case .firstImpression(_, let impression, let createdAt):
+            let body = FirstImpressionRequest(
+                impression: impression,
+                createdAt: createdAt
+            )
+            return try? body.toJSONData()
+            
+        case .addThink(_, let content, let page, let createdAt):
+            let body = AddThinkRequest(
+                content: content,
+                page: page,
+                createdAt: createdAt
+            )
+            return try? body.toJSONData()
+            
+        case .modifyThink(_, let content, _):
+            let body = ModifyThinkRequest(content: content)
+            return try? body.toJSONData()
+            
+        case .addCompleteRead(_, let review, let createdAt):
+            let body = CompleteReadRequest(
+                review: review,
+                createdAt: createdAt
+            )
+            return try? body.toJSONData()
+            
+        case .login(let type):
+            return ["type": type]
+            
+        case .modifyProfile(let user):
+            let body = UpdateProfileRequest(nickname: nickname)
+            return try? body.toJSONData()
+            
         default:
-            break
+            return nil
         }
-        
-        return defaultHeaders
     }
 }
-

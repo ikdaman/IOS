@@ -6,94 +6,135 @@
 //
 
 import Foundation
-import RxSwift
+import Combine
+import SwiftUI
 import KakaoSDKAuth
 import KakaoSDKUser
 import NaverThirdPartyLogin
 import AuthenticationServices
 import GoogleSignIn
-import RxRelay
 
-class AuthService: NSObject {
-    // 싱글톤 인스턴스
+@MainActor
+class AuthService: NSObject, ObservableObject {
+    // Shared instance
     static let shared = AuthService()
     
-    let disposeBag = DisposeBag()
-    
     // 현재 로그인된 사용자 정보 (옵셔널)
-    private(set) var loginType = BehaviorRelay<LoginType?>(value: nil)
+    @Published private(set) var loginType: LoginType? = nil
+    
+    // 현재 로그인 여부
+    var isLogin: Bool {
+        loginType?.token != nil
+    }
+    
+    override init() {
+        super.init()
+    }
+    
+    func login(type: SnsType) async {
+        switch type {
+        case .google(let viewController):
+            _ = try? await googleLogin(viewController: viewController)
+        case .naver:
+            naverLogin()
+        case .kakao:
+            _ = try? await kakaoLogin()
+        case .apple:
+            requestAppleIdProvider()
+        }
+    }
         
     // 로그아웃 메서드
-    func logout() {
-        loginType.accept(nil)
+    func logout() async {
+        switch loginType?.provider {
+        case .google:
+            googleLogout()
+        case .naver:
+            oauth20ConnectionDidFinishDeleteToken()
+        case .kakao:
+            try? await kakaoUnlink()
+        case .apple, .none:
+            break
+        }
+        
+        loginType = nil
         UserDefaults.standard.nickName = nil
         
         let _ = KeychainService.shared.delete(forKey: .accessToken)
         let _ = KeychainService.shared.delete(forKey: .refreshToken)
-        self.oauth20ConnectionDidFinishDeleteToken()
-    }
-    
-    // 로그인 여부 확인
-    func isLoggedIn() -> Bool {
-        return loginType.value?.token != nil
     }
 }
 
 // MARK: - KakaoLogin
 extension AuthService {
     /// 카카오 로그인 세션 생성 및 로그인 요청
-    func kakaoLogin() {
+    func kakaoLogin() async throws {
         if UserApi.isKakaoTalkLoginAvailable() {
-            UserApi.shared.loginWithKakaoTalk { [weak self] oauthToken, error in
-                guard let `self` = self else { return }
-                if error == nil {
-                    if AuthApi.hasToken() {
-                        // 로그인 성공시 유저정보 조회
-                        print("hasToken success")
-                        self.getKakaoUser()
+            _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<OAuthToken, Error>) in
+                UserApi.shared.loginWithKakaoTalk { oauthToken, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let token = oauthToken {
+                        continuation.resume(returning: token)
                     } else {
-                        print("hasToken fail")
+                        continuation.resume(throwing: NSError(domain: "KakaoLogin", code: -1))
                     }
-                } else {
-                    print("로그인 실패")
                 }
             }
         } else {
-            UserApi.shared.loginWithKakaoAccount { oauthToken, error in
+            _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<OAuthToken, Error>) in
+                UserApi.shared.loginWithKakaoAccount { oauthToken, error in
                     if let error = error {
-                        print("loginWithKakaoAccount fail")
+                        continuation.resume(throwing: error)
+                    } else if let token = oauthToken {
+                        continuation.resume(returning: token)
                     } else {
-                        print("loginWithKakaoAccount success")
-                        self.getKakaoUser()
+                        continuation.resume(throwing: NSError(domain: "KakaoLogin", code: -1))
                     }
+                }
             }
+        }
+        
+        if AuthApi.hasToken() {
+            print("hasToken success")
+            try await getKakaoUser()
+        } else {
+            print("hasToken fail")
+            throw NSError(domain: "KakaoLogin", code: -2, userInfo: [NSLocalizedDescriptionKey: "No token available"])
         }
     }
 
     /// 카카오 유저정보 조회
-    func getKakaoUser() {
-        UserApi.shared.me { [weak self] userInfo, error in
-            guard let `self` = self else { return }
-            if error != nil {
-                print("UserApi.shared.me fail")
-            } else {
-                if let uid = userInfo?.id {
-                    let token = TokenManager().getToken()?.accessToken
-                    self.loginType.accept(LoginType(token: token, provider: "KAKAO", providerId: String(uid)))
-                    print("UserApi.shared.me success")
+    private func getKakaoUser() async throws {
+        let userInfo = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<KakaoSDKUser.User, Error>) in
+            UserApi.shared.me { userInfo, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else if let user = userInfo {
+                    continuation.resume(returning: user)
+                } else {
+                    continuation.resume(throwing: NSError(domain: "KakaoLogin", code: -3))
                 }
             }
+        }
+        
+        if let uid = userInfo.id {
+            let token = TokenManager().getToken()?.accessToken
+            self.loginType = LoginType(token: token, provider: .kakao, providerId: String(uid))
+            print("UserApi.shared.me success")
         }
     }
 
     /// 카카오 로그아웃
-    func kakaoUnlink() {
-        UserApi.shared.logout { error in
-            if let error = error {
-                print(error)
-            } else {
-                print("kakaoUnlink() success")
-                self.logout()
+    func kakaoUnlink() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            UserApi.shared.logout { error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    print("kakaoUnlink() success")
+                    continuation.resume()
+                }
             }
         }
     }
@@ -102,40 +143,41 @@ extension AuthService {
 // MARK: - NaverLogin
 extension AuthService: NaverThirdPartyLoginConnectionDelegate {
     // 네이버 로그인 instance 생성 및 로그인시작
-    func getInstance() {
+    func naverLogin() {
         guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
         instance.delegate = self
         instance.requestThirdPartyLogin()
     }
 
     // 로그인에 성공했을 경우 호출
-    func oauth20ConnectionDidFinishRequestACTokenWithAuthCode() {
-        // 토큰값 배출
-        guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
-        guard let tokenType = instance.tokenType else { return }
-        guard let accessToken = instance.accessToken else { return }
-        
-        NaverProfileAPI.requestProfile(accessToken: accessToken) { result in
-            switch result {
-            case .success(let profile):
-                self.loginType.accept(LoginType(token: accessToken, provider: "NAVER", providerId: profile.id))
-            case .failure(let error):
+    nonisolated func oauth20ConnectionDidFinishRequestACTokenWithAuthCode() {
+        Task { @MainActor in
+            // 토큰값 배출
+            guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
+            guard let accessToken = instance.accessToken else { return }
+            
+            do {
+                let profile = try await NaverProfileAPI.requestProfile(accessToken: accessToken)
+                self.loginType = LoginType(token: accessToken, provider: .naver, providerId: profile.id)
+            } catch {
                 print("프로필 조회 실패:", error.localizedDescription)
             }
         }
     }
 
     // 접근 토큰 갱신
-    func oauth20ConnectionDidFinishRequestACTokenWithRefreshToken() { }
+    nonisolated func oauth20ConnectionDidFinishRequestACTokenWithRefreshToken() { }
 
     // 로그아웃 할 경우 호출(토큰 삭제)
-    public func oauth20ConnectionDidFinishDeleteToken() {
-        guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
-        instance.resetToken()
+    nonisolated public func oauth20ConnectionDidFinishDeleteToken() {
+        Task { @MainActor in
+            guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
+            instance.resetToken()
+        }
     }
 
     // 로그인에 실패했을 경우 호출, 모든 Error
-    func oauth20Connection(_ oauthConnection: NaverThirdPartyLoginConnection!, didFailWithError error: Error!) {
+    nonisolated func oauth20Connection(_ oauthConnection: NaverThirdPartyLoginConnection!, didFailWithError error: Error!) {
         self.oauth20ConnectionDidFinishDeleteToken()
     }
     
@@ -164,51 +206,59 @@ extension AuthService: ASAuthorizationControllerDelegate {
         authorizationController.performRequests()
     }
     
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        Task { @MainActor in
             if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-
-                // 🛑 여기서 ID Token 가져옴
                 if let identityToken = appleIDCredential.identityToken,
                    let tokenString = String(data: identityToken, encoding: .utf8) {
                     print("Apple ID Token: \(tokenString)")
-                    self.loginType.accept(LoginType(token: tokenString, provider: "APPLE", providerId: appleIDCredential.user))
-                    // 👉 서버에 토큰 보내거나 저장하거나 등등
+                    self.loginType = LoginType(token: tokenString, provider: .apple, providerId: appleIDCredential.user)
                 } else {
                     print("Unable to fetch identity token")
                 }
             }
         }
+    }
 
     /// 요청에 실패했을때 에러처리
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         print("##AppleLogin## -> Error: \(String(describing: error))")
     }
 }
 
 // MARK: Google Login
 extension AuthService {
-    func googleLogin(viewController: UIViewController, completion: @escaping (String?, String?) -> Void) {
-        GIDSignIn.sharedInstance.signIn(withPresenting: viewController) { result, error in
-            if let error = error {
-                print("❌ 로그인 실패: \(error.localizedDescription)")
-                completion(nil, nil)
-                return
+    func googleLogin(viewController: UIViewController) async throws -> (String, String) {
+        return try await withCheckedThrowingContinuation { continuation in
+            GIDSignIn.sharedInstance.signIn(withPresenting: viewController) { result, error in
+                if let error = error {
+                    print("구글 로그인 실패: \(error.localizedDescription)")
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let user = result?.user,
+                      let idToken = user.idToken?.tokenString,
+                      let userId = user.userID
+                else {
+                    print("구글 토큰 가져오기 실패")
+                    continuation.resume(throwing: NSError(domain: "GoogleLogin", code: -1))
+                    return
+                }
+                
+                Task { @MainActor in
+                    self.loginType = LoginType(token: idToken, provider: .google, providerId: userId)
+                }
+                
+                print("구글 idToken: \(idToken)")
+                print("구글 userId: \(userId)")
+                continuation.resume(returning: (idToken, userId))
             }
-            
-            guard let user = result?.user,
-                  let idToken = user.idToken?.tokenString,
-                  let userId = user.userID
-            else {
-                print("❌ 토큰 가져오기 실패")
-                completion(nil, nil)
-                return
-            }
-            self.loginType.accept(LoginType(token: idToken, provider: "GOOGLE", providerId: userId))
-
-            print("✅ idToken: \(idToken)")
-            print("✅ userId: \(userId)")
-            completion(idToken, userId)
         }
+    }
+    
+    func googleLogout() {
+        GIDSignIn.sharedInstance.signOut()
     }
 }
 
@@ -246,42 +296,32 @@ enum NaverProfile {
 }
 
 enum NaverProfileAPI {
-    static func requestProfile(accessToken: String, completion: @escaping (Result<NaverProfile.Model, Error>) -> Void) {
+    static func requestProfile(accessToken: String) async throws -> NaverProfile.Model {
         guard let url = URL(string: "https://openapi.naver.com/v1/nid/me") else {
-            completion(.failure(NaverAPIError.invalidURL))
-            return
+            throw NaverAPIError.invalidURL
         }
+        
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
         req.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-
-        let task = URLSession.shared.dataTask(with: req) { data, resp, error in
-            if let error = error {
-                completion(.failure(error)); return
-            }
-            guard let http = resp as? HTTPURLResponse else {
-                completion(.failure(NaverAPIError.noData)); return
-            }
-            guard (200...299).contains(http.statusCode) else {
-                completion(.failure(NaverAPIError.http(http.statusCode))); return
-            }
-            guard let data = data else {
-                completion(.failure(NaverAPIError.noData)); return
-            }
-            do {
-                let decoded = try JSONDecoder().decode(NaverProfileResponse.self, from: data)
-                let r = decoded.response
-                let model = NaverProfile.Model(
-                    id: r?.id ?? "",
-                    nickname: r?.nickname,
-                    email: r?.email,
-                    profileImage: r?.profile_image
-                )
-                completion(.success(model))
-            } catch {
-                completion(.failure(error))
-            }
+        
+        let (data, response) = try await URLSession.shared.data(for: req)
+        
+        guard let http = response as? HTTPURLResponse else {
+            throw NaverAPIError.noData
         }
-        task.resume()
+        
+        guard (200...299).contains(http.statusCode) else {
+            throw NaverAPIError.http(http.statusCode)
+        }
+        
+        let decoded = try JSONDecoder().decode(NaverProfileResponse.self, from: data)
+        let r = decoded.response
+        return NaverProfile.Model(
+            id: r?.id ?? "",
+            nickname: r?.nickname,
+            email: r?.email,
+            profileImage: r?.profile_image
+        )
     }
 }

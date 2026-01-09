@@ -7,14 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2B9BE4612D5AE57200D1F06E /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2B9BE4602D5AE57200D1F06E /* RxSwift */; };
-		2B9BE5152D5B0A3D00D1F06E /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 2B9BE5142D5B0A3D00D1F06E /* RxCocoa */; };
-		2B9BE5172D5B0A3D00D1F06E /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = 2B9BE5162D5B0A3D00D1F06E /* RxRelay */; };
-		2B9BE5212D5B0D3D00D1F06E /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2B9BE5202D5B0D3D00D1F06E /* SnapKit */; };
-		EB51B5F72D62B71000A14560 /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = EB51B5F62D62B71000A14560 /* Then */; };
-		EB9014332DB60A8F00BE5CDE /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = EB9014322DB60A8F00BE5CDE /* Moya */; };
-		EB9014352DB60A8F00BE5CDE /* ReactiveMoya in Frameworks */ = {isa = PBXBuildFile; productRef = EB9014342DB60A8F00BE5CDE /* ReactiveMoya */; };
-		EB9014372DB60A8F00BE5CDE /* RxMoya in Frameworks */ = {isa = PBXBuildFile; productRef = EB9014362DB60A8F00BE5CDE /* RxMoya */; };
 		EB9015BC2DB77F6D00BE5CDE /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015BB2DB77F6D00BE5CDE /* GoogleSignIn */; };
 		EB9015BE2DB77F6D00BE5CDE /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015BD2DB77F6D00BE5CDE /* GoogleSignInSwift */; };
 		EB9015C12DB7805100BE5CDE /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C02DB7805100BE5CDE /* KakaoSDK */; };
@@ -22,9 +14,6 @@
 		EB9015C52DB7805100BE5CDE /* KakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */; };
 		EB9015C72DB7805100BE5CDE /* KakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015C62DB7805100BE5CDE /* KakaoSDKUser */; };
 		EB9015CF2DB7818B00BE5CDE /* NaverThirdPartyLogin in Frameworks */ = {isa = PBXBuildFile; productRef = EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */; };
-		EBE10FF92E4323390071D856 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = EBE10FF82E4323390071D856 /* Kingfisher */; };
-		FB0D6E962D86B274002A5D42 /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = FB0D6E952D86B274002A5D42 /* Differentiator */; };
-		FB0D6E982D86B274002A5D42 /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = FB0D6E972D86B274002A5D42 /* RxDataSources */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +56,7 @@
 		2B9BE4092D5AD8DC00D1F06E /* Exceptions for "Ikdaman" folder in "Ikdaman" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				RefactoringSource/Sources/Core/Network/NetworkService.swift,
 				Resources/Info.plist,
 			);
 			target = 2B9BE3E02D5AD8DB00D1F06E /* Ikdaman */;
@@ -89,24 +79,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EB9014372DB60A8F00BE5CDE /* RxMoya in Frameworks */,
 				EB9015C12DB7805100BE5CDE /* KakaoSDK in Frameworks */,
-				EB51B5F72D62B71000A14560 /* Then in Frameworks */,
 				EB9015BC2DB77F6D00BE5CDE /* GoogleSignIn in Frameworks */,
 				EB9015C72DB7805100BE5CDE /* KakaoSDKUser in Frameworks */,
 				EB9015BE2DB77F6D00BE5CDE /* GoogleSignInSwift in Frameworks */,
-				2B9BE5152D5B0A3D00D1F06E /* RxCocoa in Frameworks */,
-				EB9014332DB60A8F00BE5CDE /* Moya in Frameworks */,
 				EB9015C32DB7805100BE5CDE /* KakaoSDKAuth in Frameworks */,
-				2B9BE5212D5B0D3D00D1F06E /* SnapKit in Frameworks */,
-				2B9BE5172D5B0A3D00D1F06E /* RxRelay in Frameworks */,
-				EB9014352DB60A8F00BE5CDE /* ReactiveMoya in Frameworks */,
-				EBE10FF92E4323390071D856 /* Kingfisher in Frameworks */,
 				EB9015CF2DB7818B00BE5CDE /* NaverThirdPartyLogin in Frameworks */,
-				FB0D6E982D86B274002A5D42 /* RxDataSources in Frameworks */,
-				FB0D6E962D86B274002A5D42 /* Differentiator in Frameworks */,
 				EB9015C52DB7805100BE5CDE /* KakaoSDKCommon in Frameworks */,
-				2B9BE4612D5AE57200D1F06E /* RxSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -175,16 +154,6 @@
 			);
 			name = Ikdaman;
 			packageProductDependencies = (
-				2B9BE4602D5AE57200D1F06E /* RxSwift */,
-				2B9BE5142D5B0A3D00D1F06E /* RxCocoa */,
-				2B9BE5162D5B0A3D00D1F06E /* RxRelay */,
-				2B9BE5202D5B0D3D00D1F06E /* SnapKit */,
-				EB51B5F62D62B71000A14560 /* Then */,
-				FB0D6E952D86B274002A5D42 /* Differentiator */,
-				FB0D6E972D86B274002A5D42 /* RxDataSources */,
-				EB9014322DB60A8F00BE5CDE /* Moya */,
-				EB9014342DB60A8F00BE5CDE /* ReactiveMoya */,
-				EB9014362DB60A8F00BE5CDE /* RxMoya */,
 				EB9015BB2DB77F6D00BE5CDE /* GoogleSignIn */,
 				EB9015BD2DB77F6D00BE5CDE /* GoogleSignInSwift */,
 				EB9015C02DB7805100BE5CDE /* KakaoSDK */,
@@ -192,7 +161,6 @@
 				EB9015C42DB7805100BE5CDE /* KakaoSDKCommon */,
 				EB9015C62DB7805100BE5CDE /* KakaoSDKUser */,
 				EB9015CE2DB7818B00BE5CDE /* NaverThirdPartyLogin */,
-				EBE10FF82E4323390071D856 /* Kingfisher */,
 			);
 			productName = Ikdaman;
 			productReference = 2B9BE3E12D5AD8DB00D1F06E /* Ikdaman.app */;
@@ -271,16 +239,10 @@
 			mainGroup = 2B9BE3D82D5AD8DB00D1F06E;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				2B9BE45E2D5AE55300D1F06E /* XCRemoteSwiftPackageReference "RxSwift" */,
-				2B9BE51F2D5B0D3D00D1F06E /* XCRemoteSwiftPackageReference "SnapKit" */,
-				EB51B5F52D62B71000A14560 /* XCRemoteSwiftPackageReference "Then" */,
 				2B46A7F22D66C7200071562F /* XCRemoteSwiftPackageReference "SwiftLint" */,
-				FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */,
-				EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */,
 				EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				EB9015BF2DB7805100BE5CDE /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */,
-				EBE10FF72E4323390071D856 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B9BE3E22D5AD8DB00D1F06E /* Products */;
@@ -397,7 +359,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "바코드 스캔을 위해 카메라 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 16;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -438,7 +400,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "바코드 스캔을 위해 카메라 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 16;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -713,38 +675,6 @@
 				minimumVersion = 0.58.2;
 			};
 		};
-		2B9BE45E2D5AE55300D1F06E /* XCRemoteSwiftPackageReference "RxSwift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.8.0;
-			};
-		};
-		2B9BE51F2D5B0D3D00D1F06E /* XCRemoteSwiftPackageReference "SnapKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.7.1;
-			};
-		};
-		EB51B5F52D62B71000A14560 /* XCRemoteSwiftPackageReference "Then" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/devxoul/Then.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.0.0;
-			};
-		};
-		EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Moya/Moya.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 15.0.3;
-			};
-		};
 		EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
@@ -769,65 +699,9 @@
 				kind = branch;
 			};
 		};
-		EBE10FF72E4323390071D856 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.5.0;
-			};
-		};
-		FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.2;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		2B9BE4602D5AE57200D1F06E /* RxSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B9BE45E2D5AE55300D1F06E /* XCRemoteSwiftPackageReference "RxSwift" */;
-			productName = RxSwift;
-		};
-		2B9BE5142D5B0A3D00D1F06E /* RxCocoa */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B9BE45E2D5AE55300D1F06E /* XCRemoteSwiftPackageReference "RxSwift" */;
-			productName = RxCocoa;
-		};
-		2B9BE5162D5B0A3D00D1F06E /* RxRelay */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B9BE45E2D5AE55300D1F06E /* XCRemoteSwiftPackageReference "RxSwift" */;
-			productName = RxRelay;
-		};
-		2B9BE5202D5B0D3D00D1F06E /* SnapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B9BE51F2D5B0D3D00D1F06E /* XCRemoteSwiftPackageReference "SnapKit" */;
-			productName = SnapKit;
-		};
-		EB51B5F62D62B71000A14560 /* Then */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EB51B5F52D62B71000A14560 /* XCRemoteSwiftPackageReference "Then" */;
-			productName = Then;
-		};
-		EB9014322DB60A8F00BE5CDE /* Moya */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */;
-			productName = Moya;
-		};
-		EB9014342DB60A8F00BE5CDE /* ReactiveMoya */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */;
-			productName = ReactiveMoya;
-		};
-		EB9014362DB60A8F00BE5CDE /* RxMoya */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EB9014312DB60A8F00BE5CDE /* XCRemoteSwiftPackageReference "Moya" */;
-			productName = RxMoya;
-		};
 		EB9015BB2DB77F6D00BE5CDE /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EB9015BA2DB77F6D00BE5CDE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
@@ -862,21 +736,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EB9015CD2DB7818B00BE5CDE /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */;
 			productName = NaverThirdPartyLogin;
-		};
-		EBE10FF82E4323390071D856 /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EBE10FF72E4323390071D856 /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
-		FB0D6E952D86B274002A5D42 /* Differentiator */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */;
-			productName = Differentiator;
-		};
-		FB0D6E972D86B274002A5D42 /* RxDataSources */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FB0D6E942D86B274002A5D42 /* XCRemoteSwiftPackageReference "RxDataSources" */;
-			productName = RxDataSources;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
