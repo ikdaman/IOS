@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BarcodeScanView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel = BarcodeScanViewModel()
     
     var body: some View {
         VStack(spacing: 0) {

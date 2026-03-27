@@ -23,11 +23,7 @@ struct MyLibraryView: View {
                     // MARK: - Custom Header
                     CustomHeader(title: "", showBackButton: false) {
                         Button(action: {
-                            if AuthService.shared.authState == .loggedIn {
-                                navigationPath.append("SettingView")
-                            } else {
-                                navigationPath.append("LoginView")
-                            }
+                            viewModel.headerButtonTapped()
                         }) {
                             Image("Cog")
                         }
@@ -83,8 +79,12 @@ struct MyLibraryView: View {
             }
         }
         .task {
-            if AuthService.shared.authState == .loggedIn {
-                await viewModel.fetchBookList(refresh: true)
+//            await viewModel.onAppear()
+        }
+        .onChange(of: viewModel.shouldNavigateToSettings) { _, value in
+            if value {
+                navigationPath.append("SettingView")
+                viewModel.shouldNavigateToSettings = false
             }
         }
         .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
@@ -239,7 +239,7 @@ struct BookRowView: View {
                         .padding(.vertical, 6)
                     
                     // 책 설명
-                    Text(book.bookInfo.description)
+                    Text(book.bookInfo.description ?? "")
                         .font(.customRegular(size: 10))
                         .foregroundColor(Color.customLb)
                         .lineSpacing(4)

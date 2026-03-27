@@ -143,16 +143,18 @@ extension BookEndpoint: APIEndpoint {
         case .bookList(let keyword, let page, let limit):
             var params: [String: String] = [:]
             if let keyword = keyword, !keyword.isEmpty {
-                params["keyword"] = keyword
+                
             }
 //            if let page = page {
 //                params["page"] = "\(page)"
 //            }
-////            if let limit = limit {
-////                
-////            }
+//            if let limit = limit {
+//                
+//            }
+//            params["page"] = "0"
 //            params["limit"] = "10"
-//            params["sort"] = "createdAt"
+            params["size"] = "2"
+            params["page"] = "0"
             return params.isEmpty ? nil : params
 
         default:
@@ -194,34 +196,38 @@ extension BookEndpoint: APIEndpoint {
             return try? encoder.encode(modifyBook)
             
         case .addBook(let bookInfo, let historyInfo, let reason):
-            if let historyInfo = historyInfo {
-                do {
-                    let bookInfoData = try encoder.encode(bookInfo)
-                    let bookInfoDict = try JSONSerialization.jsonObject(with: bookInfoData, options: []) as? [String: Any] ?? [:]
-                    params.merge(bookInfoDict, uniquingKeysWith: { $1 })
-                    
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            dateFormatter.timeZone = TimeZone(identifier: "Asia/Seoul")
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            encoder.dateEncodingStrategy = .formatted(dateFormatter)
+            
+            do {
+                var params: [String: Any] = [:]
+                
+                // bookInfo를 중첩 객체로
+                let bookInfoData = try encoder.encode(bookInfo)
+                let bookInfoDict = try JSONSerialization.jsonObject(with: bookInfoData, options: []) as? [String: Any] ?? [:]
+                params["bookInfo"] = bookInfoDict
+                
+                // historyInfo를 중첩 객체로 (있는 경우)
+                if let historyInfo = historyInfo {
                     let historyInfoData = try encoder.encode(historyInfo)
                     let historyInfoDict = try JSONSerialization.jsonObject(with: historyInfoData, options: []) as? [String: Any] ?? [:]
-                    params.merge(historyInfoDict, uniquingKeysWith: { $1 })
-                    
-                    params["reason"] = reason
-                    
-                } catch {
-                    print("Error encoding data for addBook: \(error)")
-                    return nil
+                    params["historyInfo"] = historyInfoDict
                 }
-            } else {
-                do {
-                    let bookInfoData = try encoder.encode(bookInfo)
-                    let bookInfoDict = try JSONSerialization.jsonObject(with: bookInfoData, options: []) as? [String: Any] ?? [:]
-                    params.merge(bookInfoDict, uniquingKeysWith: { $1 })
-                    params["reason"] = reason
-                } catch {
-                    print("Error encoding data for addBook (no history): \(error)")
-                    return nil
-                }
+                
+                // reason은 최상위 레벨
+                params["reason"] = reason
+                
+                return try JSONSerialization.data(withJSONObject: params)
+            } catch {
+                print("Error encoding data for addBook: \(error)")
+                return nil
             }
-            return try? JSONSerialization.data(withJSONObject: params)
             
         default:
             return nil

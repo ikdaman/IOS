@@ -11,7 +11,7 @@ struct AladinBook: Decodable {
     let link: String
     let author: String
     let publisher: String
-    let pubDate: String
+    let pubDate: Date
     let cover: String
     let isbn: String
     let itemId: Int
@@ -21,19 +21,19 @@ struct AladinBook: Decodable {
 }
 
 extension AladinBook {
-    static let empty = AladinBook(
-        title: "",
-        link: "",
-        author: "",
-        publisher: "",
-        pubDate: "",
-        cover: "",
-        isbn: "",
-        itemId: 0,
-        priceStandard: 0,
-        description: nil,
-        subInfo: nil
-    )
+//    static let empty = AladinBook(
+//        title: "",
+//        link: "",
+//        author: "",
+//        publisher: "",
+//        pubDate: "",
+//        cover: "",
+//        isbn: "",
+//        itemId: 0,
+//        priceStandard: 0,
+//        description: nil,
+//        subInfo: nil
+//    )
 }
 
 struct AladinBookItem: Decodable {

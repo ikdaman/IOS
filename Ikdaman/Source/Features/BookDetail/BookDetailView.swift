@@ -8,17 +8,18 @@
 import SwiftUI
 
 struct BookDetailView: View {
-    @State private var bookData: Books
-    
-//    init(bookData: Book) {
-//        _bookData = State(initialValue: bookData)
-//    }
-    
+    @StateObject private var viewModel: BookDetailViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    init(book: Books) {
+        _viewModel = StateObject(wrappedValue: BookDetailViewModel(book: book))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             CustomHeader(title: "", showBackButton: true) {
                 Button("삭제") {
-                    
+                    Task { await viewModel.deleteBook() }
                 }
                 .font(.customDungGeunMo(size: 16))
                 .foregroundColor(.black)
@@ -49,14 +50,14 @@ struct BookDetailView: View {
                             .padding(.vertical, 4)
                             .background(Color.blue)
                         
-                        Text(bookData.bookInfo.title)
+                        Text(viewModel.book.bookInfo.title)
                             .font(.customSemiBold(size: 18))
                             .lineLimit(3)
                         
-                        Text(bookData.bookInfo.author.first ?? "''")
+                        Text(viewModel.book.bookInfo.author ?? "''")
                             .font(.customRegular(size: 14))
                         
-                        Text(bookData.bookInfo.publisher ?? "")
+                        Text(viewModel.book.bookInfo.publisher ?? "")
                             .font(.customRegular(size: 14))
                     }
                     .padding(.top, 2)
@@ -88,16 +89,16 @@ struct BookDetailView: View {
                     }
                     
                     // 상세 제원 (페이지, 출간일, ISBN)
-//                    InfoField(label: "페이지 수", value: "\($bookData.totalPages)")
+//                    InfoField(label: "페이지 수", value: "\($viewModel.book.totalPages)")
                     InfoField(label: "출간일", value: "2020 - 04 - 20")
-                    InfoField(label: "ISBN", value: bookData.bookInfo.ISBN ?? "")
+                    InfoField(label: "ISBN", value: viewModel.book.bookInfo.isbn ?? "")
                     
                     // 책 소개
                     VStack(alignment: .leading, spacing: 6) {
                         Text("책 소개")
                             .font(.customDungGeunMo(size: 14))
                         
-                        Text(bookData.bookInfo.description)
+                        Text(viewModel.book.bookInfo.description ?? "")
                             .font(.customSansRegular(size: 16))
                             .padding(.horizontal, 20)
                             .padding(.vertical, 12)
@@ -125,8 +126,16 @@ struct BookDetailView: View {
             }
         }
         .background(Color.customBg)
+        .onChange(of: viewModel.shouldDismiss) { _, value in
+            if value { dismiss() }
+        }
+        .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("확인") { viewModel.errorMessage = nil }
+        } message: {
+            if let msg = viewModel.errorMessage { Text(msg) }
+        }
     }
-    
+
     private func historyRow(label: String, value: String) -> some View {
         HStack(spacing: 10) {
             Text(label)

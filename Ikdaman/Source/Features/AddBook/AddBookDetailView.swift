@@ -10,37 +10,26 @@ import SwiftUI
 // MARK: - Add Book View
 struct AddBookDetailView: View {
     @Environment(\.dismiss) var dismiss
-    @State private var bookData: Books?
-    @State private var isManualEntry: Bool = false
-    
-    // 입력 필드
-    @State private var title: String = ""
-    @State private var author: String = ""
-    @State private var publisher: String = ""
-    @State private var publishDate: String = ""
-    @State private var isbn: String = ""
-    @State private var pageCount: String = ""
-    @State private var description: String = ""
-    
-    // 초기화 함수 추가
+    @StateObject private var viewModel: AddBookDetailViewModel
+
     init(bookData: Books? = nil) {
-        _bookData = State(initialValue: bookData)
+        _viewModel = StateObject(wrappedValue: AddBookDetailViewModel(bookData: bookData))
     }
     
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                CustomHeader(title: bookData == nil ? "직접 입력" : "책 추가하기", showBackButton: true) {
+                CustomHeader(title: viewModel.isManualEntry ? "직접 입력" : "책 추가하기", showBackButton: true) {
                     Button(action: {
-                        saveBook()
+                        Task { await viewModel.saveBook() }
                     }) {
                         Text("저장")
                             .font(.customDungGeunMo(size: 16))
                             .foregroundStyle(Color.customLb)
                     }
                 }
-                
-                if let book = bookData {
+
+                if let book = viewModel.bookData {
                     bookDataContent(book: book)
                 } else {
                     manualEntryContent
@@ -49,24 +38,13 @@ struct AddBookDetailView: View {
         }
         .background(Color.customBg)
         .navigationBarHidden(true)
-        .onAppear {
-            loadBookData()
+        .onChange(of: viewModel.shouldDismiss) { _, value in
+            if value { dismiss() }
         }
-    }
-    
-    // MARK: - Load Book Data
-    private func loadBookData() {
-        if let book = bookData {
-            isManualEntry = false
-            title = book.bookInfo.title
-            author = book.bookInfo.author.first ?? ""
-            publisher = book.bookInfo.publisher ?? ""
-            publishDate = book.bookInfo.publishDate ?? ""
-            isbn = book.bookInfo.ISBN ?? ""
-            pageCount = "\(book.bookInfo.totalPage)"
-            description = book.bookInfo.description
-        } else {
-            isManualEntry = true
+        .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("확인") { viewModel.errorMessage = nil }
+        } message: {
+            if let msg = viewModel.errorMessage { Text(msg) }
         }
     }
     
@@ -89,7 +67,7 @@ struct AddBookDetailView: View {
                 Text("제목(필수)")
                     .font(.customDungGeunMo(size: 14))
                 
-                TextField("", text: $title)
+                TextField("", text: $viewModel.title)
                     .font(.customSansRegular(size: 16))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -106,7 +84,7 @@ struct AddBookDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("작가(필수)")
                     .font(.customDungGeunMo(size: 14))
-                TextField("", text: $author)
+                TextField("", text: $viewModel.author)
                     .font(.customSansRegular(size: 16))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -123,7 +101,7 @@ struct AddBookDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("출판사")
                     .font(.customDungGeunMo(size: 14))
-                TextField("", text: $publisher)
+                TextField("", text: $viewModel.publisher)
                     .font(.customSansRegular(size: 16))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -140,7 +118,7 @@ struct AddBookDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("출간일")
                     .font(.customDungGeunMo(size: 14))
-                TextField("", text: $publishDate)
+                TextField("", text: $viewModel.publishDate)
                     .font(.customSansRegular(size: 16))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -157,7 +135,7 @@ struct AddBookDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("ISBN")
                     .font(.customDungGeunMo(size: 14))
-                TextField("", text: $isbn)
+                TextField("", text: $viewModel.isbn)
                     .font(.customSansRegular(size: 16))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -174,7 +152,7 @@ struct AddBookDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("페이지 수")
                     .font(.customDungGeunMo(size: 14))
-                TextField("", text: $pageCount)
+                TextField("", text: $viewModel.pageCount)
                     .font(.customSansRegular(size: 16))
                     .keyboardType(.numberPad)
                     .padding(.horizontal, 20)
@@ -216,19 +194,19 @@ struct AddBookDetailView: View {
                
             
             // 책 제목
-            Text(title)
+            Text(viewModel.title)
                 .font(.customSansSemiBold(size: 20))
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 8)
-            
+
             // 저자 정보
             VStack(spacing: 8) {
-                Text(author)
+                Text(viewModel.author)
                     .font(.customSansRegular(size: 16))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(publisher)
+                Text(viewModel.publisher)
                     .font(.customSansRegular(size: 16))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -239,7 +217,7 @@ struct AddBookDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("페이지 수")
                         .font(.customDungGeunMo(size: 14))
-                    TextField("", text: $pageCount)
+                    TextField("", text: $viewModel.pageCount)
                         .font(.customSansRegular(size: 16))
                         .keyboardType(.numberPad)
                         .padding(.horizontal, 20)
@@ -257,7 +235,7 @@ struct AddBookDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("출간일")
                         .font(.customDungGeunMo(size: 14))
-                    TextField("", text: $publishDate)
+                    TextField("", text: $viewModel.publishDate)
                         .font(.customSansRegular(size: 16))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
@@ -274,7 +252,7 @@ struct AddBookDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ISBN")
                         .font(.customDungGeunMo(size: 14))
-                    TextField("", text: $isbn)
+                    TextField("", text: $viewModel.isbn)
                         .font(.customSansRegular(size: 16))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
@@ -291,7 +269,7 @@ struct AddBookDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("책 소개")
                         .font(.customDungGeunMo(size: 14))
-                    Text(description)
+                    Text(viewModel.description)
                         .font(.customSansRegular(size: 16))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
@@ -331,16 +309,4 @@ struct AddBookDetailView: View {
         .padding(.horizontal, 16)
     }
     
-    // MARK: - Save Book
-    private func saveBook() {
-        // 필수 입력 항목 검증
-        guard !title.isEmpty, !author.isEmpty else {
-            print("제목과 작가는 필수 입력 항목입니다.")
-            return
-        }
-        
-        // 책 저장 로직 (ViewModel 또는 Service를 통해 서버에 저장)
-        print("책 저장: \(title) by \(author)")
-        dismiss()
-    }
 }

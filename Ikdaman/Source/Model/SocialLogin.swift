@@ -5,6 +5,8 @@
 //  Created by Soo on 3/16/26.
 //
 
+import Foundation
+
 struct SocialLogin: Codable {
     var provider: String
     var providerId: String
@@ -21,17 +23,19 @@ struct ModifyBook: Codable {
 
 struct HistoryInfo: Codable {
     var startedDate: String?
-    var endedDate: String?
+    var finishedDate: String?
 }
 
 struct BookInfo: Codable {
+    var source: String
+    var aladinId: Int
+    var isbn: String
     var title: String
-    var author: [String]
-    var coverImage: String
-    var description: String
-    var ISBN: String?
-    var totalPage: Int?
+    var author: String
     var publisher: String?
-    var publishDate: String?
+    var description: String?
+    var totalPage: Int
+    var publishDate: Date?
+    var coverImage: String
     var link: String?
 }

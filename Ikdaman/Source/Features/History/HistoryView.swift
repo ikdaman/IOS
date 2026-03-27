@@ -13,20 +13,7 @@ enum DisplayMode {
 }
 
 struct HistoryView: View {
-    @State private var displayMode: DisplayMode = .list
-    @State private var sortOption: String = "최신순"
-    
-    // 샘플 데이터
-    let historyItems = [
-        HistoryBook(start: "251010", finish: "", title: "프로덕트 오너"),
-        HistoryBook(start: "250921", finish: "250930", title: "논리의 기술"),
-        HistoryBook(start: "251010", finish: "251025", title: "지적 대화를 위한 넓고 얕은 지식..."),
-        HistoryBook(start: "251010", finish: "251025", title: "파브르 식물기"),
-        HistoryBook(start: "251010", finish: "251012", title: "더 좋은 삶을 위한 철학"),
-        HistoryBook(start: "250921", finish: "250930", title: "논리의 기술"),
-        HistoryBook(start: "250921", finish: "250930", title: "논리의 기술"),
-        HistoryBook(start: "250921", finish: "250930", title: "논리의 기술")
-    ]
+    @StateObject private var viewModel = HistoryViewModel()
 
     var body: some View {
         VStack(spacing: 4) {
@@ -37,16 +24,16 @@ struct HistoryView: View {
             HStack {
                 // 왼쪽: 리스트/그리드 전환 버튼
                 HStack(spacing: 4) {
-                    Button(action: { displayMode = .list }) {
+                    Button(action: { viewModel.displayMode = .list }) {
                         Image(systemName: "list.bullet")
                             .frame(width: 36, height: 36)
-                            .background(displayMode == .list ? Color.gray.opacity(0.3) : Color.clear)
+                            .background(viewModel.displayMode == .list ? Color.gray.opacity(0.3) : Color.clear)
                             .border(Color.black, width: 1)
                     }
-                    Button(action: { displayMode = .grid }) {
+                    Button(action: { viewModel.displayMode = .grid }) {
                         Image(systemName: "square.grid.2x2.fill")
                             .frame(width: 36, height: 36)
-                            .background(displayMode == .grid ? Color.gray.opacity(0.3) : Color.clear)
+                            .background(viewModel.displayMode == .grid ? Color.gray.opacity(0.3) : Color.clear)
                             .border(Color.black, width: 1)
                     }
                 }
@@ -56,7 +43,7 @@ struct HistoryView: View {
                 
                 // 오른쪽: 정렬 및 검색
                 HStack(spacing: 8) {
-                    Text(displayMode == .list ? "최신순" : "오래된순")
+                    Text(viewModel.displayMode == .list ? "최신순" : "오래된순")
                     Image(systemName: "chevron.down")
                     Image("search")
                 }
@@ -68,7 +55,7 @@ struct HistoryView: View {
 
             // 3. 메인 콘텐츠 (전환 영역)
             ScrollView {
-                if displayMode == .list {
+                if viewModel.displayMode == .list {
                     historyListView
                 } else {
                     historyGridView
@@ -94,7 +81,7 @@ struct HistoryView: View {
             .border(Color.black, width: 0.5)
             
             // 리스트 항목
-            ForEach(Array(historyItems.enumerated()), id: \.offset) { index, item in
+            ForEach(Array(viewModel.historyItems.enumerated()), id: \.offset) { index, item in
                 HStack(spacing: 0) {
                     Text(item.start).frame(width: 70, alignment: .leading)
                     Text(item.finish).frame(width: 70, alignment: .leading)

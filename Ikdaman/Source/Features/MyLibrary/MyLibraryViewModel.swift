@@ -25,7 +25,8 @@ final class MyLibraryViewModel: ObservableObject {
     @Published var selectedBook: Books?
     @Published var showBookDetail: Bool = false
     @Published var showSettings: Bool = false
-    
+    @Published var shouldNavigateToSettings: Bool = false
+
     // MARK: - Private Properties
     private let repository: BookRepositoryProtocol
     private var currentPage: Int = 1
@@ -139,6 +140,16 @@ final class MyLibraryViewModel: ObservableObject {
         isLoading = false
     }
     
+    /// 뷰 등장 시 호출
+    func onAppear() async {
+        await fetchBookList(refresh: true)
+    }
+
+    /// 헤더 설정 버튼 탭
+    func headerButtonTapped() {
+        shouldNavigateToSettings = true
+    }
+
     /// 설정 버튼 누르기
     func openSettings() {
         showSettings = true

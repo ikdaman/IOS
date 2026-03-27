@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var nickname: String = "수진"
+    @StateObject private var viewModel = SettingViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -20,7 +20,7 @@ struct SettingsView: View {
                     
                     // 2. 인사말 섹션
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("\(nickname)님,")
+                        Text("\(viewModel.nickname)님,")
                         Text("안녕하세요!")
                     }
                     .font(.customDungGeunMo(size: 24))
@@ -34,7 +34,7 @@ struct SettingsView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 8)
                         
-                        TextField("", text: $nickname)
+                        TextField("", text: $viewModel.nickname)
                             .font(.customSansRegular(size: 16))
                             .padding(.horizontal, 16)
                             .frame(height: 45)
@@ -43,13 +43,15 @@ struct SettingsView: View {
                                 Rectangle()
                                     .stroke(Color.black, lineWidth: 1)
                             )
-                        
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("중복된 닉네임이에요.")
-                            Text("닉네임을 다시 확인해주세요.")
+                            .onSubmit {
+                                Task { await viewModel.updateNickname() }
+                            }
+
+                        if let nicknameError = viewModel.nicknameError {
+                            Text(nicknameError)
+                                .font(.customDungGeunMo(size: 12))
+                                .foregroundColor(Color.customBlue)
                         }
-                        .font(.customDungGeunMo(size: 12))
-                        .foregroundColor(Color.customBlue)
                     }
                     
                     VStack(alignment: .leading, spacing: 24) {

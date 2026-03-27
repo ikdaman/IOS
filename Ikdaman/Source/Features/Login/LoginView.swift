@@ -9,9 +9,8 @@ import SwiftUI
 import AuthenticationServices
 
 struct LoginView: View {
-    @ObservedObject var authService = AuthService.shared
+    @StateObject private var viewModel = LoginViewModel()
     @Environment(\.dismiss) private var dismiss
-    @State private var showSignup = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -39,7 +38,7 @@ struct LoginView: View {
             VStack(spacing: 12) {
                 // 구글
                 Button {
-                    Task { await authService.login(type: .google) }
+                    viewModel.login(type: .google)
                 } label: {
                     Text("구글 로그인")
                         .frame(maxWidth: .infinity)
@@ -50,7 +49,7 @@ struct LoginView: View {
                 
                 // 네이버
                 Button {
-                    Task { await authService.login(type: .naver) }
+                    viewModel.login(type: .naver)
                 } label: {
                     Text("네이버 로그인")
                         .frame(maxWidth: .infinity)
@@ -61,7 +60,7 @@ struct LoginView: View {
                 
                 // 카카오
                 Button {
-                    Task { await authService.login(type: .kakao) }
+                    viewModel.login(type: .kakao)
                 } label: {
                     Text("카카오 로그인")
                         .frame(maxWidth: .infinity)
@@ -76,60 +75,28 @@ struct LoginView: View {
                         request.requestedScopes = [.fullName, .email]
                     },
                     onCompletion: { result in
-                        Task { @MainActor in
-                            switch result {
-                            case .success(let authorization):
-                                if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
-                                   let identityToken = appleIDCredential.identityToken,
-                                   let tokenString = String(data: identityToken, encoding: .utf8) {
-                                    authService.loginType = LoginType(
-                                        token: tokenString,
-                                        provider: .apple,
-                                        providerId: appleIDCredential.user
-                                    )
-                                    await authService.authenticateWithServer()
-                                }
-                            case .failure(let error):
-                                authService.errorMessage = error.localizedDescription
-                            }
-                        }
+                        viewModel.handleAppleSignIn(result: result)
                     }
                 )
                 .frame(height: 50)
                 .cornerRadius(8)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 40)
             
             // 디버깅용 상태 표시
-            Text("현재 상태: \(authStateDescription)")
+            Text("현재 상태: \(viewModel.authStateDescription)")
                 .font(.system(size: 10))
                 .foregroundColor(.gray)
                 .padding(.bottom, 10)
         }
         .background(Color.customBg)
-        .navigationBarHidden(true)
         .toolbar(.hidden, for: .tabBar)
-        .navigationDestination(isPresented: $showSignup) {
+        .navigationDestination(isPresented: $viewModel.showSignup) {
             SignupView()
         }
-        .onChange(of: authService.authState) { oldState, newState in
-            print("🔄 [LoginView] AuthState changed from \(oldState) to \(newState)")
-            
-            if newState == .needsSignup {
-                showSignup = true
-            } else if newState == .loggedIn {
+        .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss {
                 dismiss()
             }
-        }
-    }
-    
-    private var authStateDescription: String {
-        switch authService.authState {
-        case .loggedOut: return "로그아웃"
-        case .needsSignup: return "회원가입 필요"
-        case .loggedIn: return "로그인 완료"
         }
     }
     

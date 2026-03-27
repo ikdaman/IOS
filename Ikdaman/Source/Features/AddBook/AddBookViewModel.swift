@@ -65,15 +65,17 @@ class AddBookViewModel: ObservableObject {
             createdDate: ISO8601DateFormatter().string(from: Date()),
             reason: "",
             bookInfo: BookInfo(
+                source: "ALADIN",
+                aladinId: aladinBook.itemId,
+                isbn: aladinBook.isbn,
                 title: aladinBook.title,
-                author: [aladinBook.author],
-                coverImage: aladinBook.cover,
-                description: aladinBook.description ?? "",
-                ISBN: aladinBook.isbn,
+                author: aladinBook.author,
                 publisher: aladinBook.publisher,
+                description: aladinBook.description ?? "",
+                totalPage: Int(aladinBook.subInfo?.itemPage ?? 0),
                 publishDate: aladinBook.pubDate,
+                coverImage: aladinBook.cover ?? "",
                 link: aladinBook.link
-                
             )
         )
     }

@@ -28,7 +28,6 @@ enum SnsType: String {
 
 enum AuthState {
     case loggedOut           // 로그아웃 상태
-    case needsSignup         // 회원가입 필요
     case loggedIn            // 로그인 완료
 }
 
@@ -39,6 +38,7 @@ class AuthService: NSObject, ObservableObject {
     @Published var loginType: LoginType? = nil
     @Published var errorMessage: String? = nil
     @Published var authState: AuthState = .loggedOut
+    @Published var requestSignup: Bool = false
     
     private let repository: BookRepositoryProtocol
     
@@ -50,6 +50,7 @@ class AuthService: NSObject, ObservableObject {
         self.repository = BookRepository()
         super.init()
         checkLoginStatus()
+        APIClient.shared.authService = self
     }
     
     /// 앱 시작 시 로그인 상태 확인
@@ -96,23 +97,17 @@ class AuthService: NSObject, ObservableObject {
             )
             
             let nickname: String
-            // 구글, 애플은 login2 사용
-            if loginType.provider == .google || loginType.provider == .apple {
-                nickname = try await repository.login2(type: socialLogin)
-            } else {
-                nickname = try await repository.login(type: socialLogin)
-            }
+            // 통합된 login 메서드 사용 (login2 제거)
+            nickname = try await repository.login(type: socialLogin)
             UserDefaults.standard.set(nickname, forKey: "nickname")
             
-            // 성공하면 로그인 완료
-            print("🔄 [Auth] 201 Created - Moving to signup screen")
-            authState = .needsSignup
-            errorMessage = nil
+            // 성공 시 회원가입 화면으로 이동 트리거
+            moveToSignup()
             
         } catch let error as NetworkError {
             // 401 또는 회원가입 필요한 경우
             if error == .unauthorized {
-//                authState = .needsSignup
+                requestSignup = true
             } else {
                 errorMessage = error.errorDescription
                 authState = .loggedOut
@@ -123,6 +118,14 @@ class AuthService: NSObject, ObservableObject {
             authState = .loggedOut
             self.loginType = nil
         }
+    }
+    
+    /// 회원가입 화면 전환을 위한 상태 업데이트
+    private func moveToSignup() {
+        print("🔄 [Auth] Moving to signup screen")
+        requestSignup = true
+        authState = .loggedOut // 로그인 완료 전이므로 loggedOut 유지
+        errorMessage = nil
     }
     
     /// 회원가입
@@ -144,6 +147,7 @@ class AuthService: NSObject, ObservableObject {
             
             // 회원가입 성공 후 자동 로그인
             authState = .loggedIn
+            requestSignup = false
             errorMessage = nil
             
         } catch {
@@ -158,7 +162,8 @@ class AuthService: NSObject, ObservableObject {
         case .google:
             googleLogout()
         case .naver:
-            oauth20ConnectionDidFinishDeleteToken()
+            // 델리게이트 메서드 직접 호출 대신 SDK 메서드 호출
+            NaverThirdPartyLoginConnection.getSharedInstance()?.requestDeleteToken()
         case .kakao:
             try? await kakaoUnlink()
         case .apple, .none:
@@ -167,6 +172,7 @@ class AuthService: NSObject, ObservableObject {
         
         loginType = nil
         authState = .loggedOut
+        requestSignup = false
         
         let _ = KeychainService.shared.delete(forKey: .accessToken)
         let _ = KeychainService.shared.delete(forKey: .refreshToken)
