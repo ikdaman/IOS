@@ -41,9 +41,9 @@ enum BookEndpoint {
     /// 나의 책 추가
     case addBook(bookInfo: BookInfo, historyInfo: HistoryInfo?, reason: String)
     /// 내 서점 책 목록 조회
-    case bookList(keyword: String?, page: Int?, limit: Int?)
+    case bookList(keyword: String?, page: Int?, limit: Int?, sort: String?)
     /// 히스토리 목록 조회
-    case history(bookId: Int, page: Int, limit: Int)
+    case history(page: Int, limit: Int)
     /// 나의 책 검색
     case searchMyBook(query: String)
     
@@ -87,8 +87,8 @@ extension BookEndpoint: APIEndpoint {
             return "/mybooks"
         case .bookList:
             return "/mybooks/store"
-        case .history(_, _, _):
-            return "mybooks/history"
+        case .history:
+            return "/mybooks/history"
 
 //        case .noticeList:
 //            return "/notices"
@@ -114,23 +114,23 @@ extension BookEndpoint: APIEndpoint {
     
     var headers: [String: String]? {
         var headers = ["Content-Type": "application/json"]
-        
+
         switch self {
         case .reissueToken:
             let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
             let refreshToken = KeychainService.shared.load(forKey: .refreshToken) ?? ""
             headers["Authorization"] = accessToken
             headers["refresh-token"] = refreshToken
-            
+
         case .login, .login2, .signup:
             // social-token은 APIClient에서 주입됨
             break
-            
+
         case .addBook, .logout, .withdrawal, .deleteBook, .modifyProfile, .startRead, .modifyMyBook, .getProfile, .checkNickname, .myBook, .bookList, .history, .searchMyBook:
             let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
             headers["Authorization"] = accessToken
         }
-        
+
         return headers
     }
     
@@ -140,22 +140,21 @@ extension BookEndpoint: APIEndpoint {
             return ["nickname": nickname]
         case .searchMyBook(let query):
             return ["query": query]
-        case .bookList(let keyword, let page, let limit):
+        case .bookList(let keyword, let page, let limit, let sort):
             var params: [String: String] = [:]
             if let keyword = keyword, !keyword.isEmpty {
-                
+                params["keyword"] = keyword
             }
-//            if let page = page {
-//                params["page"] = "\(page)"
-//            }
-//            if let limit = limit {
-//                
-//            }
-//            params["page"] = "0"
-//            params["limit"] = "10"
-            params["size"] = "2"
-            params["page"] = "0"
-            return params.isEmpty ? nil : params
+            params["page"] = "\(page ?? 0)"
+            params["size"] = "\(limit ?? 20)"
+            params["sort"] = sort ?? "createdAt,desc"
+            return params
+
+        case .history(let page, let limit):
+            return [
+                "page": "\(page)",
+                "size": "\(limit)"
+            ]
 
         default:
             return nil

@@ -11,7 +11,7 @@ struct AladinBook: Decodable {
     let link: String
     let author: String
     let publisher: String
-    let pubDate: Date
+    let pubDate: String
     let cover: String
     let isbn: String
     let itemId: Int

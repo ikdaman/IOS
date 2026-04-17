@@ -43,18 +43,18 @@ struct BookDetailView: View {
                     .padding(.top, 30)
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("읽고 싶은 책")
+                        Text(viewModel.shelfType.isEmpty ? "읽고 싶은 책" : viewModel.shelfType)
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(.white)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(Color.blue)
-                        
+
                         Text(viewModel.book.bookInfo.title)
                             .font(.customSemiBold(size: 18))
                             .lineLimit(3)
-                        
-                        Text(viewModel.book.bookInfo.author ?? "''")
+
+                        Text(viewModel.book.bookInfo.author)
                             .font(.customRegular(size: 14))
                         
                         Text(viewModel.book.bookInfo.publisher ?? "")
@@ -67,9 +67,9 @@ struct BookDetailView: View {
                     VStack(spacing: 0) {
                         SectionHeader(title: "독서 이력")
                         VStack(alignment: .leading, spacing: 8) {
-                            historyRow(label: "SAVE", value: "2025 - 01 - 25")
-                            historyRow(label: "START", value: "")
-                            historyRow(label: "FINISH", value: "")
+                            historyRow(label: "SAVE", value: viewModel.savedDate)
+                            historyRow(label: "START", value: viewModel.startedDate)
+                            historyRow(label: "FINISH", value: viewModel.finishedDate)
                         }
                         .padding(15)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,7 +80,7 @@ struct BookDetailView: View {
                     // 읽고 싶었던 이유
                     VStack(spacing: 0) {
                         SectionHeader(title: "읽고 싶었던 이유")
-                        Text("나는 왜냐하면 이 책을 읽고 싶었기 때문이다. 나는 왜냐하면 이 책을 읽고 싶었기 때문이다.")
+                        Text(viewModel.book.reason.isEmpty ? "이유를 입력해주세요" : viewModel.book.reason)
                             .font(.customRegular(size: 14))
                             .padding(15)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,6 +126,9 @@ struct BookDetailView: View {
             }
         }
         .background(Color.customBg)
+        .task {
+            await viewModel.onAppear()
+        }
         .onChange(of: viewModel.shouldDismiss) { _, value in
             if value { dismiss() }
         }

@@ -87,26 +87,32 @@ class AuthService: NSObject, ObservableObject {
             errorMessage = "로그인 정보가 없습니다."
             return
         }
-        
+
         do {
-            // 서버에 로그인 요청
             let socialLogin = SocialLogin(
                 provider: loginType.provider.rawValue,
                 providerId: loginType.providerId,
                 socialToken: loginType.token
             )
-            
-            let nickname: String
-            // 통합된 login 메서드 사용 (login2 제거)
-            nickname = try await repository.login(type: socialLogin)
-            UserDefaults.standard.set(nickname, forKey: "nickname")
-            
-            // 성공 시 회원가입 화면으로 이동 트리거
-            moveToSignup()
-            
+
+            let response = try await repository.login(type: socialLogin)
+            // 토큰 저장
+            if let accessToken = response.authorization {
+                let _ = KeychainService.shared.save(accessToken, forKey: .accessToken)
+            }
+            if let refreshToken = response.refreshToken {
+                let _ = KeychainService.shared.save(refreshToken, forKey: .refreshToken)
+            }
+            if let nickname = response.nickname {
+                UserDefaults.standard.set(nickname, forKey: "nickname")
+            }
+            // 기존 회원 → 바로 로그인 완료
+            authState = .loggedIn
+            errorMessage = nil
+
         } catch let error as NetworkError {
-            // 401 또는 회원가입 필요한 경우
-            if error == .unauthorized {
+            // 404 = 미가입 회원 → 회원가입 화면
+            if case .httpError(let code) = error, code == 404 {
                 requestSignup = true
             } else {
                 errorMessage = error.errorDescription
@@ -120,21 +126,13 @@ class AuthService: NSObject, ObservableObject {
         }
     }
     
-    /// 회원가입 화면 전환을 위한 상태 업데이트
-    private func moveToSignup() {
-        print("🔄 [Auth] Moving to signup screen")
-        requestSignup = true
-        authState = .loggedOut // 로그인 완료 전이므로 loggedOut 유지
-        errorMessage = nil
-    }
-    
     /// 회원가입
     func signup(nickname: String) async {
         guard let loginType = loginType else {
             errorMessage = "로그인 정보가 없습니다."
             return
         }
-        
+
         do {
             var socialLogin = SocialLogin(
                 provider: loginType.provider.rawValue,
@@ -142,14 +140,23 @@ class AuthService: NSObject, ObservableObject {
                 socialToken: loginType.token
             )
             socialLogin.nickname = nickname
-            
-            try await repository.signup(type: socialLogin)
-            
-            // 회원가입 성공 후 자동 로그인
+
+            let response = try await repository.signup(type: socialLogin)
+            // 토큰 저장
+            if let accessToken = response.authorization {
+                let _ = KeychainService.shared.save(accessToken, forKey: .accessToken)
+            }
+            if let refreshToken = response.refreshToken {
+                let _ = KeychainService.shared.save(refreshToken, forKey: .refreshToken)
+            }
+            if let nick = response.nickname {
+                UserDefaults.standard.set(nick, forKey: "nickname")
+            }
+
             authState = .loggedIn
             requestSignup = false
             errorMessage = nil
-            
+
         } catch {
             errorMessage = "회원가입에 실패했습니다."
             print("회원가입 실패: \(error)")

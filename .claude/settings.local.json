@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat *)",
+      "Read(//Users/soo/android-new/remote/**)",
+      "Read(//Users/soo/android-new/domain/src/main/java/project/side/domain/usecase/mybook/**)",
+      "Read(//Users/soo/android-new/presentation/src/main/java/project/side/presentation/viewmodel/**)",
+      "Bash(python3 -c \"import datetime; print\\(datetime.datetime.fromtimestamp\\(1776319476\\)\\)\")"
+    ]
+  }
+}

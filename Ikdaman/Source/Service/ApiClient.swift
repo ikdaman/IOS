@@ -101,19 +101,26 @@ final class APIClient: ObservableObject {
         
         do {
             let (data, response) = try await session.data(for: urlRequest)
-            
+
+            logResponse(response, data: data)  // 에러 응답도 항상 로깅
+
             try handleResponse(response)
-            logResponse(response, data: data)
-            
+
             // 헤더에서 토큰 추출 및 저장
             if let httpResponse = response as? HTTPURLResponse {
                 saveTokensFromHeaders(httpResponse)
             }
-            
+
+            guard !data.isEmpty else {
+                throw NetworkError.noData
+            }
+
             do {
                 let decoded = try JSONDecoder().decode(T.self, from: data)
                 return decoded
             } catch {
+                let rawResponse = String(data: data, encoding: .utf8) ?? "(non-UTF8 data, \(data.count) bytes)"
+                print("❌ Decoding failed. Raw response: \(rawResponse)")
                 throw NetworkError.decodingError(error.localizedDescription)
             }
         } catch let error as NetworkError where error == .unauthorized {
@@ -138,10 +145,11 @@ final class APIClient: ObservableObject {
         
         do {
             let (data, response) = try await session.data(for: urlRequest)
-            
+
+            logResponse(response, data: data)  // 에러 응답도 항상 로깅
+
             try handleResponse(response)
-            logResponse(response, data: data)
-            
+
             // 헤더에서 토큰 추출 및 저장
             if let httpResponse = response as? HTTPURLResponse {
                 saveTokensFromHeaders(httpResponse)
@@ -166,9 +174,16 @@ final class APIClient: ObservableObject {
         var urlString = endpoint.baseURL + endpoint.path
         
         // Query parameters 추가
+        // URLQueryItem은 쉼표를 %2C로 인코딩해 Spring Boot Pageable의 sort 파라미터가 깨지므로
+        // percentEncodedQuery로 직접 조합 (Android의 @Query(encoded = true)와 동일한 동작)
         if let queryParameters = endpoint.queryParameters, !queryParameters.isEmpty {
             var components = URLComponents(string: urlString)
-            components?.queryItems = queryParameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+            let queryString = queryParameters.map { key, value -> String in
+                let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
+                let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+                return "\(encodedKey)=\(encodedValue)"
+            }.joined(separator: "&")
+            components?.percentEncodedQuery = queryString
             urlString = components?.url?.absoluteString ?? urlString
         }
         
@@ -296,7 +311,9 @@ final class APIClient: ObservableObject {
             print("📥 [\(httpResponse.statusCode)] \(httpResponse.url?.absoluteString ?? "")")
         }
         if let jsonString = String(data: data, encoding: .utf8) {
-            print("📦 Response: \(jsonString)")
+            print("📦 Response (\(data.count) bytes): \(jsonString)")
+        } else {
+            print("📦 Response (\(data.count) bytes): (non-UTF8)")
         }
     }
 }

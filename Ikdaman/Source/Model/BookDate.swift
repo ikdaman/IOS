@@ -1,7 +1,6 @@
-//
-//  BookDate.swift
-//  Ikdaman
-//
-//  Created by Soo on 3/16/26.
-//
+import Foundation
 
+struct BookDate: Codable {
+    let startDate: String
+    let finishedDate: String?
+}

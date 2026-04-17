@@ -1,10 +1,3 @@
-//
-//  SocialLogin.swift
-//  Ikdaman
-//
-//  Created by Soo on 3/16/26.
-//
-
 import Foundation
 
 struct SocialLogin: Codable {
@@ -14,12 +7,30 @@ struct SocialLogin: Codable {
     var nickname: String?
 }
 
-struct ModifyBook: Codable {
-    var shelfType: String
-    var reason: String
-    var historyInfo: HistoryInfo
-    var bookInfo: BookInfo
+// MARK: - 책 수정 요청 (PATCH /mybooks/{id})
+
+struct ModifyBook: Encodable {
+    var shelfType: String?
+    var reason: String?
+    var historyInfo: HistoryInfo?
+    var bookInfo: BookInfoRequest?
 }
+
+struct BookInfoRequest: Encodable {
+    var title: String?
+    var author: String?
+    var publisher: String?
+    var publishDate: String?
+    var isbn: String?
+    var totalPage: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case title, author, publisher, publishDate, totalPage
+        case isbn = "ISBN"
+    }
+}
+
+// MARK: - 공통 모델
 
 struct HistoryInfo: Codable {
     var startedDate: String?
@@ -35,7 +46,7 @@ struct BookInfo: Codable {
     var publisher: String?
     var description: String?
     var totalPage: Int
-    var publishDate: Date?
+    var publishDate: String?   // ISO8601 문자열 (Date? → String? 변경)
     var coverImage: String
     var link: String?
 }

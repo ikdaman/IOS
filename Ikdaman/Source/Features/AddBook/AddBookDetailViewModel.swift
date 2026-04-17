@@ -47,7 +47,7 @@ final class AddBookDetailViewModel: ObservableObject {
         title = book.bookInfo.title
         author = book.bookInfo.author
         publisher = book.bookInfo.publisher ?? ""
-        publishDate = "\(book.bookInfo.publishDate)"
+        publishDate = book.bookInfo.publishDate ?? ""
         isbn = book.bookInfo.isbn
         pageCount = String(book.bookInfo.totalPage)
         description = book.bookInfo.description ?? ""
@@ -72,10 +72,10 @@ final class AddBookDetailViewModel: ObservableObject {
                 author: author,
                 publisher: publisher.isEmpty ? nil : publisher,
                 totalPage: 100,
-                publishDate: Date(),
+                publishDate: Date().toString(),
                 coverImage: bookData?.bookInfo.coverImage ?? ""
             )
-            let historyInfo = HistoryInfo(startedDate: Date().toISO8601String(), finishedDate: Date().toISO8601String())
+            let historyInfo = HistoryInfo(startedDate: nil, finishedDate: nil)
             try await repository.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: "테스트")
             shouldDismiss = true
         } catch {
@@ -91,5 +91,10 @@ extension Date {
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter.string(from: self)
+    }
+
+    /// "yyyy-MM-dd'T'HH:mm:ss'Z'" 형식 (서버 전송용)
+    func toString() -> String {
+        toISO8601String()
     }
 }

@@ -11,6 +11,7 @@ import SwiftUI
 struct AddBookDetailView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel: AddBookDetailViewModel
+    @State private var showLogin = false
 
     init(bookData: Books? = nil) {
         _viewModel = StateObject(wrappedValue: AddBookDetailViewModel(bookData: bookData))
@@ -21,7 +22,11 @@ struct AddBookDetailView: View {
             VStack(spacing: 0) {
                 CustomHeader(title: viewModel.isManualEntry ? "직접 입력" : "책 추가하기", showBackButton: true) {
                     Button(action: {
-                        Task { await viewModel.saveBook() }
+                        if AuthService.shared.isLogin {
+                            Task { await viewModel.saveBook() }
+                        } else {
+                            showLogin = true
+                        }
                     }) {
                         Text("저장")
                             .font(.customDungGeunMo(size: 16))
@@ -40,6 +45,11 @@ struct AddBookDetailView: View {
         .navigationBarHidden(true)
         .onChange(of: viewModel.shouldDismiss) { _, value in
             if value { dismiss() }
+        }
+        .fullScreenCover(isPresented: $showLogin) {
+            NavigationStack {
+                LoginView()
+            }
         }
         .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("확인") { viewModel.errorMessage = nil }
