@@ -23,6 +23,8 @@ final class AddBookDetailViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var shouldDismiss: Bool = false
+    @Published var showAddPopup: Bool = false
+    @Published var showDuplicatePopup: Bool = false
 
     let bookData: Books?
     private let repository: BookRepositoryProtocol
@@ -54,7 +56,7 @@ final class AddBookDetailViewModel: ObservableObject {
     }
 
     // MARK: - Save
-    func saveBook() async {
+    func saveBook(reason: String, startDate: String? = nil, finishDate: String? = nil) async {
         guard isValid else {
             errorMessage = "제목과 작가는 필수 입력 항목입니다."
             return
@@ -75,9 +77,12 @@ final class AddBookDetailViewModel: ObservableObject {
                 publishDate: Date().toString(),
                 coverImage: bookData?.bookInfo.coverImage ?? ""
             )
-            let historyInfo = HistoryInfo(startedDate: nil, finishedDate: nil)
-            try await repository.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: "테스트")
+            let historyInfo = HistoryInfo(startedDate: startDate, finishedDate: finishDate)
+            try await repository.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: reason)
             shouldDismiss = true
+        } catch NetworkError.httpError(statusCode: 409) {
+            showAddPopup = false
+            showDuplicatePopup = true
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -23,7 +23,7 @@ struct AddBookDetailView: View {
                 CustomHeader(title: viewModel.isManualEntry ? "직접 입력" : "책 추가하기", showBackButton: true) {
                     Button(action: {
                         if AuthService.shared.isLogin {
-                            Task { await viewModel.saveBook() }
+                            viewModel.showAddPopup = true
                         } else {
                             showLogin = true
                         }
@@ -51,10 +51,27 @@ struct AddBookDetailView: View {
                 LoginView()
             }
         }
-        .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("확인") { viewModel.errorMessage = nil }
-        } message: {
-            if let msg = viewModel.errorMessage { Text(msg) }
+        .overlay {
+            if viewModel.showAddPopup {
+                AddBookPopupView(
+                    onConfirm: { reason, startDate, finishDate in
+                        Task { await viewModel.saveBook(reason: reason, startDate: startDate, finishDate: finishDate) }
+                    },
+                    onCancel: {
+                        viewModel.showAddPopup = false
+                    }
+                )
+            } else if viewModel.showDuplicatePopup {
+                DuplicateBookPopupView(
+                    onConfirm: {
+                        viewModel.showDuplicatePopup = false
+                        dismiss()
+                    },
+                    onCancel: {
+                        viewModel.showDuplicatePopup = false
+                    }
+                )
+            }
         }
     }
     
@@ -318,5 +335,224 @@ struct AddBookDetailView: View {
         }
         .padding(.horizontal, 16)
     }
-    
+
+}
+
+// MARK: - Add Book Popup View
+struct AddBookPopupView: View {
+    let onConfirm: (String, String?, String?) -> Void
+    let onCancel: () -> Void
+
+    @State private var selectedTab = 0
+    @State private var reason: String = ""
+    @State private var startDate: Date = Date()
+    @State private var finishDate: Date = Date()
+
+    private let maxReasonLength = 400
+
+    private func dateString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // 타이틀 바
+                HStack {
+                    Spacer()
+                    Button("X") { onCancel() }
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.customBt)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("책 추가")
+                        .font(.customDungGeunMo(size: 20))
+                        .foregroundColor(Color.customLb)
+
+                    // 탭 선택
+                    HStack(spacing: 0) {
+                        Button(action: { selectedTab = 0 }) {
+                            Text("내 서점")
+                                .font(.customDungGeunMo(size: 12))
+                                .foregroundColor(Color.customLb)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedTab == 0 ? Color.white : Color.customBt)
+                                .overlay(
+                                    Rectangle().stroke(Color.customLb, lineWidth: 0.7)
+                                )
+                        }
+                        Button(action: { selectedTab = 1 }) {
+                            Text("히스토리")
+                                .font(.customDungGeunMo(size: 12))
+                                .foregroundColor(Color.customLb)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedTab == 1 ? Color.white : Color.customBt)
+                                .overlay(
+                                    Rectangle().stroke(Color.customLb, lineWidth: 0.7)
+                                )
+                        }
+                    }
+
+                    if selectedTab == 0 {
+                        // 내 서점 탭
+                        Text("*읽고 싶은 책이에요.")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+
+                        ZStack(alignment: .bottomTrailing) {
+                            TextEditor(text: Binding(
+                                get: { reason },
+                                set: { reason = String($0.prefix(maxReasonLength)) }
+                            ))
+                            .font(.customSansRegular(size: 12))
+                            .frame(height: 140)
+                            .padding(8)
+                            .background(Color(red: 235/255, green: 235/255, blue: 245/255))
+                            .scrollContentBackground(.hidden)
+
+                            Text("\(reason.count)/\(maxReasonLength)")
+                                .font(.customSansRegular(size: 10))
+                                .foregroundColor(.gray)
+                                .padding(.trailing, 8)
+                                .padding(.bottom, 8)
+                        }
+                    } else {
+                        // 히스토리 탭
+                        Text("*독서 중이거나 완독한 책이에요.")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+
+                        HStack {
+                            Text("START")
+                                .font(.customDungGeunMo(size: 12))
+                                .foregroundColor(Color.customLb)
+                                .frame(width: 60, alignment: .leading)
+                            DatePicker("", selection: $startDate, displayedComponents: .date)
+                                .labelsHidden()
+                        }
+
+                        HStack {
+                            Text("FINISH")
+                                .font(.customDungGeunMo(size: 12))
+                                .foregroundColor(Color.customLb)
+                                .frame(width: 60, alignment: .leading)
+                            DatePicker("", selection: $finishDate, displayedComponents: .date)
+                                .labelsHidden()
+                        }
+                    }
+                }
+                .padding(16)
+                .background(Color.white)
+
+                // NO / YES 버튼
+                HStack(spacing: 0) {
+                    Button("NO") { onCancel() }
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.customBt)
+
+                    Rectangle()
+                        .frame(width: 1)
+                        .foregroundColor(Color.customLb.opacity(0.3))
+
+                    Button("YES") {
+                        if selectedTab == 0 {
+                            onConfirm(reason, nil, nil)
+                        } else {
+                            onConfirm("히스토리", dateString(startDate), dateString(finishDate))
+                        }
+                    }
+                    .font(.customDungGeunMo(size: 12))
+                    .foregroundColor(Color.customLb)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.customBt)
+                }
+            }
+            .frame(width: 300)
+            .overlay(
+                RoundedRectangle(cornerRadius: 0)
+                    .stroke(Color.customLb, lineWidth: 1)
+            )
+        }
+    }
+}
+
+// MARK: - Duplicate Book Popup View
+struct DuplicateBookPopupView: View {
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // 타이틀 바
+                HStack {
+                    Spacer()
+                    Button("X") { onCancel() }
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.customBt)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("중복된 책")
+                        .font(.customDungGeunMo(size: 20))
+                        .foregroundColor(Color.customLb)
+
+                    Text("이미 저장한 책이에요.\n이 책 정보로 이동하시겠어요?")
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                        .lineSpacing(4)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white)
+
+                // NO / YES 버튼
+                HStack(spacing: 0) {
+                    Button("NO") { onCancel() }
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.customBt)
+
+                    Rectangle()
+                        .frame(width: 1)
+                        .foregroundColor(Color.customLb.opacity(0.3))
+
+                    Button("YES") { onConfirm() }
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.customBt)
+                }
+            }
+            .frame(width: 280)
+            .overlay(
+                RoundedRectangle(cornerRadius: 0)
+                    .stroke(Color.customLb, lineWidth: 1)
+            )
+        }
+    }
 }
