@@ -39,7 +39,7 @@ enum BookEndpoint {
     /// 나의 책 상세 조회
     case myBook(bookId: Int)
     /// 나의 책 추가
-    case addBook(bookInfo: BookInfo, historyInfo: HistoryInfo?, reason: String)
+    case addBook(bookInfo: BookInfo, historyInfo: HistoryInfo?, reason: String?)
     /// 내 서점 책 목록 조회
     case bookList(keyword: String?, page: Int?, limit: Int?, sort: String?)
     /// 히스토리 목록 조회
@@ -129,6 +129,10 @@ extension BookEndpoint: APIEndpoint {
         case .addBook, .logout, .withdrawal, .deleteBook, .modifyProfile, .startRead, .modifyMyBook, .getProfile, .checkNickname, .myBook, .bookList, .history, .searchMyBook:
             let accessToken = "Bearer " + (KeychainService.shared.load(forKey: .accessToken) ?? "")
             headers["Authorization"] = accessToken
+            // addBook은 한글 body를 포함하므로 charset 명시 (Android Retrofit 동작과 동일)
+            if case .addBook = self {
+                headers["Content-Type"] = "application/json; charset=UTF-8"
+            }
         }
 
         return headers
@@ -195,43 +199,45 @@ extension BookEndpoint: APIEndpoint {
             return try? encoder.encode(modifyBook)
             
         case .addBook(let bookInfo, let historyInfo, let reason):
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            dateFormatter.timeZone = TimeZone(identifier: "Asia/Seoul")
-            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-            encoder.dateEncodingStrategy = .formatted(dateFormatter)
-            
-            do {
-                var params: [String: Any] = [:]
-                
-                // bookInfo를 중첩 객체로
-                let bookInfoData = try encoder.encode(bookInfo)
-                let bookInfoDict = try JSONSerialization.jsonObject(with: bookInfoData, options: []) as? [String: Any] ?? [:]
-                params["bookInfo"] = bookInfoDict
-                
-                // historyInfo를 중첩 객체로 (있는 경우)
-                if let historyInfo = historyInfo {
-                    let historyInfoData = try encoder.encode(historyInfo)
-                    let historyInfoDict = try JSONSerialization.jsonObject(with: historyInfoData, options: []) as? [String: Any] ?? [:]
-                    params["historyInfo"] = historyInfoDict
-                }
-                
-                // reason은 최상위 레벨
-                params["reason"] = reason
-                
-                return try JSONSerialization.data(withJSONObject: params)
-            } catch {
-                print("Error encoding data for addBook: \(error)")
-                return nil
+            // ✅ 딕셔너리 직접 구성 - null이 구조적으로 포함될 수 없음
+            var bookInfoDict: [String: Any] = [
+                "source":      bookInfo.source,
+                "title":       bookInfo.title,
+                "author":      bookInfo.author,
+                "publisher":   bookInfo.publisher,
+                "totalPage":   max(bookInfo.totalPage, 1),  // 0이면 1로 폴백
+                "publishDate": bookInfo.publishDate          // "yyyy-MM-dd"
+            ]
+            // Optional 필드 - nil이면 키 자체를 추가하지 않음
+            if let aladinId   = bookInfo.aladinId    { bookInfoDict["aladinId"]    = aladinId }
+            if let isbn       = bookInfo.isbn         { bookInfoDict["isbn"]        = isbn }
+            if let coverImage = bookInfo.coverImage   { bookInfoDict["coverImage"] = coverImage }
+            // description: 서버 스펙 "2차 때 반영" → 현재 미구현, 전송 제외
+            // if let desc = bookInfo.description { bookInfoDict["description"] = desc }
+
+            var params: [String: Any] = ["bookInfo": bookInfoDict]
+
+            // historyInfo – Optional
+            if let historyInfo = historyInfo {
+                var historyDict: [String: Any] = [:]
+                if let started  = historyInfo.startedDate  { historyDict["startedDate"]  = started }
+                if let finished = historyInfo.finishedDate { historyDict["finishedDate"] = finished }
+                if !historyDict.isEmpty { params["historyInfo"] = historyDict }
             }
-            
+
+            // reason – Optional
+            if let reason = reason, !reason.isEmpty { params["reason"] = reason }
+
+            // 🔍 디버그: 실제 전송 Body 확인
+            print("📋 [addBook DEBUG] body = \(params)")
+
+            return try? JSONSerialization.data(withJSONObject: params)
+
         default:
             return nil
         }
-        
+
+
         if !params.isEmpty {
              return try? JSONSerialization.data(withJSONObject: params)
         } else {

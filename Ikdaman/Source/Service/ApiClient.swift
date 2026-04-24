@@ -234,8 +234,11 @@ final class APIClient: ObservableObject {
     }
     
     private func saveTokensFromHeaders(_ response: HTTPURLResponse) {
-        if let accessToken = response.value(forHTTPHeaderField: "Authorization") {
-            let _ = KeychainService.shared.save(accessToken, forKey: .accessToken)
+        if let rawToken = response.value(forHTTPHeaderField: "Authorization") {
+            // 서버가 "Bearer eyJ..." 형태로 내려주므로 접두사를 제거하고 순수 토큰만 저장
+            // BookEndpoint에서 "Bearer " + token 으로 조합하기 때문
+            let tokenValue = rawToken.hasPrefix("Bearer ") ? String(rawToken.dropFirst(7)) : rawToken
+            let _ = KeychainService.shared.save(tokenValue, forKey: .accessToken)
             print("🔐 Access Token 저장됨")
         }
         

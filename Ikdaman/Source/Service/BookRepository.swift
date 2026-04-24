@@ -19,7 +19,7 @@ protocol BookRepositoryProtocol {
     // MARK: - Books
     func getBookList(keyword: String?, page: Int?, limit: Int?, sort: String?) async throws -> StoreBookResponse
     func getBookDetail(bookId: Int) async throws -> MyBookDetailResponse
-    func addBook(bookInfo: BookInfo, historyInfo: HistoryInfo?, reason: String) async throws
+    func addBook(bookInfo: BookInfo, historyInfo: HistoryInfo?, reason: String?) async throws
     func deleteBook(bookId: Int) async throws
     func modifyBook(bookId: Int, modifyBook: ModifyBook) async throws
     func searchMyBook(query: String) async throws -> MyBookSearchResponse
@@ -99,7 +99,7 @@ final class BookRepository: BookRepositoryProtocol {
         )
     }
 
-    func addBook(bookInfo: BookInfo, historyInfo: HistoryInfo? = nil, reason: String) async throws {
+    func addBook(bookInfo: BookInfo, historyInfo: HistoryInfo? = nil, reason: String? = nil) async throws {
         try await apiClient.requestRaw(
             BookEndpoint.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: reason)
         )

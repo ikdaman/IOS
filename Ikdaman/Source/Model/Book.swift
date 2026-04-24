@@ -23,15 +23,15 @@ extension Books {
         self.reason = item.reason ?? ""
         self.bookInfo = BookInfo(
             source: "",
-            aladinId: 0,
-            isbn: "",
+            aladinId: nil,
+            isbn: nil,
             title: item.bookInfo.title,
             author: item.bookInfo.author.joined(separator: ", "),
-            publisher: nil,
+            publisher: "",
             description: item.bookInfo.description,
             totalPage: 0,
-            publishDate: nil,
-            coverImage: item.bookInfo.coverImage ?? "",
+            publishDate: "",
+            coverImage: item.bookInfo.coverImage,
             link: nil
         )
     }
@@ -43,15 +43,15 @@ extension Books {
         self.reason = detail.reason ?? ""
         self.bookInfo = BookInfo(
             source: detail.bookInfo.source,
-            aladinId: Int(detail.bookInfo.aladinId ?? "0") ?? 0,
-            isbn: detail.bookInfo.isbn ?? "",
+            aladinId: Int(detail.bookInfo.aladinId ?? ""),
+            isbn: detail.bookInfo.isbn,
             title: detail.bookInfo.title,
             author: detail.bookInfo.author,
-            publisher: detail.bookInfo.publisher,
+            publisher: detail.bookInfo.publisher ?? "",
             description: detail.bookInfo.description,
             totalPage: detail.bookInfo.totalPage ?? 0,
-            publishDate: detail.bookInfo.publishDate,
-            coverImage: detail.bookInfo.coverImage ?? "",
+            publishDate: detail.bookInfo.publishDate ?? "",
+            coverImage: detail.bookInfo.coverImage,
             link: nil
         )
     }
@@ -63,15 +63,15 @@ extension Books {
         self.reason = ""
         self.bookInfo = BookInfo(
             source: "",
-            aladinId: 0,
-            isbn: "",
+            aladinId: nil,
+            isbn: nil,
             title: item.bookInfo.title,
             author: item.bookInfo.author.joined(separator: ", "),
-            publisher: nil,
+            publisher: "",
             description: item.bookInfo.description,
             totalPage: 0,
-            publishDate: nil,
-            coverImage: item.bookInfo.coverImage ?? "",
+            publishDate: "",
+            coverImage: item.bookInfo.coverImage,
             link: nil
         )
     }
