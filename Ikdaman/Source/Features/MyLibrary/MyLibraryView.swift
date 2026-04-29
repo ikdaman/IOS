@@ -221,7 +221,7 @@ struct BookRowView: View {
                 // 책 표지
                 VStack {
 //                    if let coverImage = book.bookInfo.coverImage {
-                        Image(book.bookInfo.coverImage)
+                        Image(book.bookInfo.coverImage ?? "")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 81, height: 114)

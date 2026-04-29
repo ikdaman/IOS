@@ -182,7 +182,7 @@ struct BookSearchResultRow: View {
         }) {
             HStack(alignment: .top, spacing: 18) {
                 // 책 표지
-                AsyncImage(url: URL(string: book.bookInfo.coverImage)) { image in
+                AsyncImage(url: URL(string: book.bookInfo.coverImage ?? "")) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -208,13 +208,11 @@ struct BookSearchResultRow: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                     
-                    if let publisher = book.bookInfo.publisher {
-                        Text(publisher)
-                            .font(.customSansRegular(size: 12))
-                            .foregroundColor(.gray)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                    }
+                    Text(book.bookInfo.publisher)
+                        .font(.customSansRegular(size: 12))
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 

@@ -66,15 +66,15 @@ class AddBookViewModel: ObservableObject {
             reason: "",
             bookInfo: BookInfo(
                 source: "ALADIN",
-                aladinId: aladinBook.itemId,
-                isbn: aladinBook.isbn,
+                aladinId: aladinBook.itemId,           // Int?
+                isbn: [aladinBook.isbn13, aladinBook.isbn].compactMap { $0 }.first { !$0.isEmpty }, // String?
                 title: aladinBook.title,
                 author: aladinBook.author,
-                publisher: aladinBook.publisher,
-                description: aladinBook.description ?? "",
+                publisher: aladinBook.publisher,       // String (required)
+                description: aladinBook.description,
                 totalPage: Int(aladinBook.subInfo?.itemPage ?? 0),
-                publishDate: aladinBook.pubDate,
-                coverImage: aladinBook.cover ?? "",
+                publishDate: aladinBook.pubDate,       // "yyyy-MM-dd" → saveBook에서 변환
+                coverImage: aladinBook.cover,          // String?
                 link: aladinBook.link
             )
         )

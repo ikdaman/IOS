@@ -204,7 +204,7 @@ struct AddBookDetailView: View {
             HStack(alignment: .center) {
                 Spacer()
                 
-                AsyncImage(url: URL(string: book.bookInfo.coverImage)) { image in
+                AsyncImage(url: URL(string: book.bookInfo.coverImage ?? "")) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
