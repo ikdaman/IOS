@@ -109,15 +109,6 @@ struct MyLibraryView: View {
                 viewModel.shouldNavigateToSettings = false
             }
         }
-        .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("확인") {
-                viewModel.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-            }
-        }
     }
     
     // MARK: - Empty State Content

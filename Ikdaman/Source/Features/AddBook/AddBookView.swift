@@ -51,15 +51,6 @@ struct AddBookView: View {
         .fullScreenCover(item: $selectedBook) { book in
             AddBookDetailView(bookData: book)
         }
-        .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("확인") {
-                viewModel.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-            }
-        }
     }
     
     // MARK: - Search Bar

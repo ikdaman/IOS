@@ -87,47 +87,67 @@ struct HistoryView: View {
             .frame(height: 30)
             .background(Color(r: 210, g: 215, b: 220))
             .border(Color.black, width: 0.5)
-            
-            // 리스트 항목
-            ForEach(Array(viewModel.historyItems.enumerated()), id: \.offset) { index, item in
-                HStack(spacing: 0) {
-                    Text(item.start).frame(width: 70, alignment: .leading)
-                    Text(item.finish).frame(width: 70, alignment: .leading)
-                    Text(item.title)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+
+            if viewModel.historyItems.isEmpty {
+                Text("읽고 있는 책을 추가해주세요.")
+                    .font(.customSansRegular(size: 14))
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+            } else {
+                // 리스트 항목
+                ForEach(Array(viewModel.historyItems.enumerated()), id: \.offset) { index, item in
+                    HStack(spacing: 0) {
+                        Text(item.start).frame(width: 70, alignment: .leading)
+                        Text(item.finish).frame(width: 70, alignment: .leading)
+                        Text(item.title)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .font(.customDungGeunMo(size: 13))
+                    .padding(.horizontal, 15)
+                    .frame(height: 35)
+                    .background(index % 2 == 0 ? Color.white : Color(r: 242, g: 244, b: 248))
                 }
-                .font(.customDungGeunMo(size: 13))
-                .padding(.horizontal, 15)
-                .frame(height: 35)
-                // 짝수(0, 2, 4...)일 때는 흰색, 홀수(1, 3, 5...)일 때는 연한 회색 배경
-                .background(index % 2 == 0 ? Color.white : Color(r: 242, g: 244, b: 248))
             }
         }
         .padding(.horizontal, 15)
     }
-    
+
     // MARK: - 그리드(썸네일) 뷰 레이아웃
     private var historyGridView: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-            ForEach(viewModel.historyItems) { item in
-                VStack(spacing: 4) {
-                    Rectangle()
-                        .fill(Color(r: 210, g: 210, b: 210))
-                        .overlay(
-                            Text("표지")
-                                .font(.customDungGeunMo(size: 12))
-                                .foregroundColor(.gray)
-                        )
-                        .aspectRatio(0.7, contentMode: .fit)
-                        .border(Color.black, width: 1)
-                    Text(item.title)
-                        .font(.customDungGeunMo(size: 10))
-                        .lineLimit(1)
+        Group {
+            if viewModel.historyItems.isEmpty {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
+                    ForEach(0..<12, id: \.self) { _ in
+                        Rectangle()
+                            .fill(Color(r: 210, g: 210, b: 210))
+                            .aspectRatio(0.7, contentMode: .fit)
+                    }
                 }
+                .padding(20)
+            } else {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
+                    ForEach(viewModel.historyItems) { item in
+                        VStack(spacing: 4) {
+                            Rectangle()
+                                .fill(Color(r: 210, g: 210, b: 210))
+                                .overlay(
+                                    Text("표지")
+                                        .font(.customDungGeunMo(size: 12))
+                                        .foregroundColor(.gray)
+                                )
+                                .aspectRatio(0.7, contentMode: .fit)
+                                .border(Color.black, width: 1)
+                            Text(item.title)
+                                .font(.customDungGeunMo(size: 10))
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                .padding(20)
             }
         }
-        .padding(20)
     }
 }
 
