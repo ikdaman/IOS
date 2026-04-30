@@ -58,7 +58,7 @@ enum BookEndpoint {
 
 extension BookEndpoint: APIEndpoint {
     var baseURL: String {
-        return "https://ikdaman.shop"
+        return "https://moabook.shop"
     }
     
     var path: String {
@@ -190,11 +190,9 @@ extension BookEndpoint: APIEndpoint {
             ]
         case .startRead(_, let bookDate):
             params = [
-                "startedDate": bookDate.startDate
+                "startedDate": bookDate.startDate,
+                "finishedDate": bookDate.finishedDate ?? nil
             ]
-            if let finishedDate = bookDate.finishedDate {
-                params["finishedDate"] = finishedDate
-            }
         case .modifyMyBook(_, let modifyBook):
             return try? encoder.encode(modifyBook)
             
@@ -212,8 +210,7 @@ extension BookEndpoint: APIEndpoint {
             if let aladinId   = bookInfo.aladinId    { bookInfoDict["aladinId"]    = aladinId }
             if let isbn       = bookInfo.isbn         { bookInfoDict["isbn"]        = isbn }
             if let coverImage = bookInfo.coverImage   { bookInfoDict["coverImage"] = coverImage }
-            // description: 서버 스펙 "2차 때 반영" → 현재 미구현, 전송 제외
-            // if let desc = bookInfo.description { bookInfoDict["description"] = desc }
+            if let desc = bookInfo.description, !desc.isEmpty { bookInfoDict["description"] = desc }
 
             var params: [String: Any] = ["bookInfo": bookInfoDict]
 

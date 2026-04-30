@@ -60,7 +60,7 @@ struct ContentView: View {
                 AddBookView()
                     .tag(CustomTabBar.Tab.addBook)
                 
-                HistoryView()
+                HistoryView(hideTabBar: $hideTabBar)
                     .tag(CustomTabBar.Tab.history)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))

@@ -11,18 +11,18 @@ struct MyLibraryView: View {
     @Binding var selectedTab: CustomTabBar.Tab
     @Binding var hideTabBar: Bool
     @State private var navigationPath = NavigationPath()
-    @State private var sortOption = "최신순"
     @StateObject private var viewModel = MyLibraryViewModel()
     @State private var showStartReadingPopup = false
     @State private var selectedBookForReading: Books?
 
-    let sortOptions = ["최신순", "오래된순", "제목순"]
+    let sortOptions: [(label: String, type: BookSortType)] = [("최신순", .latest), ("오래된순", .oldest)]
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(spacing: 0) {
                     // MARK: - Custom Header
+
                     CustomHeader(title: "", showBackButton: false) {
                         Button(action: {
                             viewModel.headerButtonTapped()
@@ -60,6 +60,7 @@ struct MyLibraryView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
+                    .padding(.bottom, 56)
                 }
             }
             .background(Color.customBg)
@@ -73,7 +74,16 @@ struct MyLibraryView: View {
                     LoginView()
                         .onAppear { hideTabBar = true }
                         .onDisappear { hideTabBar = false }
+                } else if value == "SearchView" {
+                    MyBookSearchView()
+                        .onAppear { hideTabBar = true }
+                        .onDisappear { hideTabBar = false }
                 }
+            }
+            .navigationDestination(for: Int.self) { myBookId in
+                BookDetailView(book: Books(myBookId: myBookId))
+                    .onAppear { hideTabBar = true }
+                    .onDisappear { hideTabBar = false }
             }
         }
         .task {
@@ -141,13 +151,13 @@ struct MyLibraryView: View {
             Spacer()
             
             Menu {
-                ForEach(sortOptions, id: \.self) { option in
+                ForEach(sortOptions, id: \.label) { option in
                     Button(action: {
-                        sortOption = option
+                        viewModel.changeSortType(to: option.type)
                     }) {
                         HStack {
-                            Text(option)
-                            if sortOption == option {
+                            Text(option.label)
+                            if viewModel.sortType == option.type {
                                 Image(systemName: "checkmark")
                             }
                         }
@@ -155,7 +165,7 @@ struct MyLibraryView: View {
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Text(sortOption)
+                    Text(sortOptions.first { $0.type == viewModel.sortType }?.label ?? "최신순")
                         .font(.customDungGeunMo(size: 10))
                         .foregroundColor(Color.customLb)
                     Image("arrowDropDown")
@@ -163,7 +173,7 @@ struct MyLibraryView: View {
             }
             
             Button(action: {
-//                showSearch.toggle()
+                navigationPath.append("SearchView")
             }) {
                 Image("search")
             }
@@ -180,7 +190,18 @@ struct BookRowView: View {
     let onStartReading: () -> Void
     let onDelete: () -> Void
 
-    
+    private func formattedDate(_ raw: String) -> String {
+        let input = DateFormatter()
+        input.locale = Locale(identifier: "en_US_POSIX")
+        let output = DateFormatter()
+        output.dateFormat = "yyyy.MM.dd"
+        for fmt in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd"] {
+            input.dateFormat = fmt
+            if let date = input.date(from: raw) { return output.string(from: date) }
+        }
+        return raw
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
@@ -189,7 +210,7 @@ struct BookRowView: View {
                     .frame(maxWidth: .infinity, maxHeight: 1)
                 
                 HStack {
-                    Text("NO.\(book.myBookId) (\(book.createdDate))")
+                    Text("NO.\(book.myBookId) (\(formattedDate(book.createdDate)))")
                         .font(.customDungGeunMo(size: 12))
                         .foregroundColor(Color.customLb)
                         .padding(.leading, 8)
@@ -220,21 +241,23 @@ struct BookRowView: View {
             HStack(alignment: .top, spacing: 0) {
                 // 책 표지
                 VStack {
-//                    if let coverImage = book.bookInfo.coverImage {
-                        Image(book.bookInfo.coverImage ?? "")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 81, height: 114)
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-//                    } else {
-//                        Rectangle()
-//                            .fill(Color.gray.opacity(0.3))
-//                            .frame(width: 81, height: 114)
-//                            .overlay(
-//                                Image(systemName: "book.fill")
-//                                    .foregroundColor(.gray)
-//                            )
-//                    }
+                    AsyncImage(url: URL(string: book.bookInfo.coverImage ?? "")) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 81, height: 114)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        case .failure, .empty:
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 81, height: 114)
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .frame(width: 81, height: 114)
                 }
                 .padding(.horizontal, 14.5)
                 
@@ -280,123 +303,163 @@ struct StartReadingPopupView: View {
 
     @State private var startDate: Date = Date()
     @State private var finishDate: Date? = nil
+    @State private var showStartPicker = false
+    @State private var showFinishPicker = false
 
     private func dateString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    private func displayString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy.MM.dd"
+        return f.string(from: date)
     }
 
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // 타이틀 바
-                HStack {
-                    Text("팝업 – 책 시작하기")
-                        .font(.customDungGeunMo(size: 12))
-                        .foregroundColor(Color.customLb)
-                    Spacer()
-                    Button("X") {
-                        onCancel()
-                    }
-                    .font(.customDungGeunMo(size: 12))
-                    .foregroundColor(Color.customLb)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.customBt)
-
-                VStack(alignment: .leading, spacing: 16) {
-                    // 섹션 헤더
-                    Text("책 시작하기")
-                        .font(.customDungGeunMo(size: 14))
-                        .foregroundColor(Color.customLb)
-
-                    // 책 제목
-                    Text(book.bookInfo.title)
-                        .font(.customRegular(size: 10))
-                        .foregroundColor(Color.customLb)
-                        .lineLimit(2)
-
-                    // START 날짜
+        Color.black.opacity(0.4)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 0) {
+                    // 타이틀 바
                     HStack {
-                        Text("START")
+                        Text("팝업 – 책 시작하기")
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(Color.customLb)
-                            .frame(width: 60, alignment: .leading)
-
-                        DatePicker("", selection: $startDate, displayedComponents: .date)
-                            .labelsHidden()
+                        Spacer()
+                        Button("X") { onCancel() }
                             .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.customBt)
 
-                    // FINISH 날짜
-                    HStack {
-                        Text("FINISH")
-                            .font(.customDungGeunMo(size: 12))
+                    // 본문
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("책 시작하기")
+                            .font(.customDungGeunMo(size: 14))
                             .foregroundColor(Color.customLb)
-                            .frame(width: 60, alignment: .leading)
 
-                        if let finish = finishDate {
-                            DatePicker("", selection: Binding(
-                                get: { finish },
-                                set: { finishDate = $0 }
-                            ), displayedComponents: .date)
-                            .labelsHidden()
-                            .font(.customDungGeunMo(size: 12))
+                        Text(book.bookInfo.title)
+                            .font(.customRegular(size: 10))
+                            .foregroundColor(Color.customLb)
+                            .lineLimit(2)
 
-                            Button("X") {
-                                finishDate = nil
+                        // START
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 12) {
+                                Text("START")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .frame(width: 50, alignment: .leading)
+
+                                Button(action: {
+                                    showStartPicker.toggle()
+                                    if showStartPicker { showFinishPicker = false }
+                                }) {
+                                    HStack {
+                                        Text(displayString(startDate))
+                                            .font(.customDungGeunMo(size: 12))
+                                            .foregroundColor(Color.customLb)
+                                        Spacer()
+                                        Text("▼")
+                                            .font(.customDungGeunMo(size: 10))
+                                            .foregroundColor(Color.customLb)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 6)
+                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                                }
                             }
-                            .font(.customDungGeunMo(size: 10))
-                            .foregroundColor(Color.customLb)
-                        } else {
-                            Button("읽는 중  ▼") {
-                                finishDate = Date()
+
+                            if showStartPicker {
+                                DatePicker("", selection: $startDate, displayedComponents: .date)
+                                    .datePickerStyle(.graphical)
+                                    .labelsHidden()
+                                    .tint(Color.customLb)
                             }
-                            .font(.customDungGeunMo(size: 12))
-                            .foregroundColor(Color.customLb)
+                        }
+
+                        // FINISH
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 12) {
+                                Text("FINISH")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .frame(width: 50, alignment: .leading)
+
+                                Button(action: {
+                                    if finishDate == nil { finishDate = Date() }
+                                    showFinishPicker.toggle()
+                                    if showFinishPicker { showStartPicker = false }
+                                }) {
+                                    HStack {
+                                        Text(finishDate.map { displayString($0) } ?? "읽는 중")
+                                            .font(.customDungGeunMo(size: 12))
+                                            .foregroundColor(Color.customLb)
+                                        Spacer()
+                                        Text("▼")
+                                            .font(.customDungGeunMo(size: 10))
+                                            .foregroundColor(Color.customLb)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 6)
+                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                                }
+                            }
+
+                            if showFinishPicker, let finish = finishDate {
+                                DatePicker("", selection: Binding(
+                                    get: { finish },
+                                    set: { finishDate = $0 }
+                                ), displayedComponents: .date)
+                                .datePickerStyle(.graphical)
+                                .labelsHidden()
+                                .tint(Color.customLb)
+
+                                Button("읽는 중으로 변경") {
+                                    finishDate = nil
+                                    showFinishPicker = false
+                                }
+                                .font(.customDungGeunMo(size: 10))
+                                .foregroundColor(Color.customLb.opacity(0.6))
+                            }
                         }
                     }
-                }
-                .padding(16)
-                .background(Color.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(Color.white)
 
-                // NO / YES 버튼
-                HStack(spacing: 0) {
-                    Button("NO") {
-                        onCancel()
+                    // NO / YES
+                    HStack(spacing: 0) {
+                        Button("NO") { onCancel() }
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.customBt)
+
+                        Color.customLb.opacity(0.3)
+                            .frame(width: 1)
+
+                        Button("YES") {
+                            onConfirm(dateString(startDate), finishDate.map { dateString($0) })
+                        }
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.customBt)
                     }
-                    .font(.customDungGeunMo(size: 12))
-                    .foregroundColor(Color.customLb)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.customBt)
-
-                    Rectangle()
-                        .frame(width: 1)
-                        .foregroundColor(Color.customLb.opacity(0.3))
-
-                    Button("YES") {
-                        let finish = finishDate.map { dateString($0) }
-                        onConfirm(dateString(startDate), finish)
-                    }
-                    .font(.customDungGeunMo(size: 12))
-                    .foregroundColor(Color.customLb)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.customBt)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(width: 280)
+                .border(Color.customLb, width: 1)
             }
-            .frame(width: 280)
-            .overlay(
-                RoundedRectangle(cornerRadius: 0)
-                    .stroke(Color.customLb, lineWidth: 1)
-            )
-        }
     }
 }
 

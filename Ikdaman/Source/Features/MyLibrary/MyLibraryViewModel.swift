@@ -40,6 +40,7 @@ final class MyLibraryViewModel: ObservableObject {
     // MARK: - Public Methods
 
     func onAppear() async {
+        guard AuthService.shared.isLogin else { return }
         await fetchBookList(refresh: true)
     }
 
@@ -139,10 +140,11 @@ final class MyLibraryViewModel: ObservableObject {
         Task { await fetchBookDetail(bookId: book.myBookId) }
     }
 
-    /// 정렬 방식 변경
+    /// 정렬 방식 변경 → API 재호출
     func changeSortType(to newSort: BookSortType) {
+        guard sortType != newSort else { return }
         sortType = newSort
-        applySorting()
+        Task { await fetchBookList(refresh: true) }
     }
 
     /// 헤더 설정 버튼

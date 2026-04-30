@@ -31,12 +31,22 @@ struct BookDetailView: View {
                     HStack(alignment: .top) {
                         Spacer()
                         
-                        // 책 이미지
-                        Image("book_cover") // 실제 이미지 에셋 이름
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 201, height: 272)
-                            .border(Color.black, width: 1)
+                        AsyncImage(url: URL(string: viewModel.book.bookInfo.coverImage ?? "")) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 201, height: 272)
+                                    .clipped()
+                            default:
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 201, height: 272)
+                            }
+                        }
+                        .frame(width: 201, height: 272)
+                        .border(Color.black, width: 1)
                         
                         Spacer()
                     }
@@ -74,7 +84,7 @@ struct BookDetailView: View {
                         .padding(15)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.white)
-                        .border(Color.black, width: 1)
+                        .pixelBorder()
                     }
                     
                     // 읽고 싶었던 이유
@@ -85,7 +95,7 @@ struct BookDetailView: View {
                             .padding(15)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.white)
-                            .border(Color.black, width: 1)
+                            .pixelBorder()
                     }
                     
                     // 상세 제원 (페이지, 출간일, ISBN)
@@ -104,7 +114,7 @@ struct BookDetailView: View {
                             .padding(.vertical, 12)
                             .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
                             .background(Color.white)
-                            .border(Color.black, width: 1)
+                            .pixelBorder()
                     }
                     .frame(maxWidth: .infinity)
                     
@@ -116,7 +126,7 @@ struct BookDetailView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 46)
                             .background(Color.white)
-                            .border(Color.black, width: 1)
+                            .pixelBorder()
                             .font(.customSansRegular(size: 16))
                             .foregroundColor(.black)
                     }
@@ -126,6 +136,7 @@ struct BookDetailView: View {
             }
         }
         .background(Color.customBg)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await viewModel.onAppear()
         }
@@ -180,19 +191,31 @@ struct SectionHeader: View {
 struct InfoField: View {
     let label: String
     let value: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.customDungGeunMo(size: 14))
-            
+
             Text(value)
                 .font(.customSansRegular(size: 16))
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
                 .background(Color.white)
-                .border(Color.black, width: 1)
+                .pixelBorder()
         }
+    }
+}
+
+extension View {
+    func pixelBorder() -> some View {
+        self
+            .overlay(alignment: .trailing) {
+                Rectangle().fill(Color.black).frame(width: 1).padding(.top, 1)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Color.black).frame(height: 1).padding(.leading, 1)
+            }
     }
 }
 

@@ -13,63 +13,69 @@ enum DisplayMode {
 }
 
 struct HistoryView: View {
+    @Binding var hideTabBar: Bool
     @StateObject private var viewModel = HistoryViewModel()
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        VStack(spacing: 4) {
-            // 상단 타이틀
-            CustomHeader(title: "히스토리", showBackButton: false)
-            
-            // 컨트롤바 (뷰 전환 버튼 & 정렬)
-            HStack {
-                // 왼쪽: 리스트/그리드 전환 버튼
-                HStack(spacing: 4) {
-                    Button(action: { viewModel.toggleViewType() }) {
-                        Image(systemName: "list.bullet")
-                            .frame(width: 36, height: 36)
-                            .background(viewModel.displayMode == .list ? Color.gray.opacity(0.3) : Color.clear)
-                            .border(Color.black, width: 1)
-                    }
-                    Button(action: { viewModel.toggleViewType() }) {
-                        Image(systemName: "square.grid.2x2.fill")
-                            .frame(width: 36, height: 36)
-                            .background(viewModel.displayMode == .grid ? Color.gray.opacity(0.3) : Color.clear)
-                            .border(Color.black, width: 1)
-                    }
-                }
-                .foregroundColor(.black)
+        NavigationStack(path: $navigationPath) {
+            VStack(spacing: 4) {
+                CustomHeader(title: "히스토리", showBackButton: false)
 
-                Spacer()
-
-                // 오른쪽: 정렬 및 검색
-                HStack(spacing: 8) {
-                    Button(action: { viewModel.toggleSort() }) {
-                        HStack(spacing: 2) {
-                            Text(viewModel.sortDescending ? "최신순" : "오래된순")
-                            Image(systemName: "chevron.down")
+                HStack {
+                    HStack(spacing: 4) {
+                        Button(action: { viewModel.toggleViewType() }) {
+                            Image(systemName: "list.bullet")
+                                .frame(width: 36, height: 36)
+                                .background(viewModel.displayMode == .list ? Color.gray.opacity(0.3) : Color.clear)
+                                .border(Color.black, width: 1)
+                        }
+                        Button(action: { viewModel.toggleViewType() }) {
+                            Image(systemName: "square.grid.2x2.fill")
+                                .frame(width: 36, height: 36)
+                                .background(viewModel.displayMode == .grid ? Color.gray.opacity(0.3) : Color.clear)
+                                .border(Color.black, width: 1)
                         }
                     }
                     .foregroundColor(.black)
-                    Image("search")
-                }
-                .font(.customDungGeunMo(size: 14))
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 30)
-            .padding(.top, 10)
 
-            // 3. 메인 콘텐츠 (전환 영역)
-            ScrollView {
-                if viewModel.displayMode == .list {
-                    historyListView
-                } else {
-                    historyGridView
+                    Spacer()
+
+                    HStack(spacing: 8) {
+                        Button(action: { viewModel.toggleSort() }) {
+                            HStack(spacing: 2) {
+                                Text(viewModel.sortDescending ? "최신순" : "오래된순")
+                                Image(systemName: "chevron.down")
+                            }
+                        }
+                        .foregroundColor(.black)
+                        Image("search")
+                    }
+                    .font(.customDungGeunMo(size: 14))
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 30)
+                .padding(.top, 10)
+
+                ScrollView {
+                    if viewModel.displayMode == .list {
+                        historyListView
+                    } else {
+                        historyGridView
+                    }
+                }
+                .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 56) }
             }
-        }
-        .background(Color(r: 235, g: 238, b: 245).ignoresSafeArea())
-        .task {
-            await viewModel.onAppear()
+            .background(Color(r: 235, g: 238, b: 245).ignoresSafeArea())
+            .navigationBarHidden(true)
+            .navigationDestination(for: Int.self) { myBookId in
+                BookDetailView(book: Books(myBookId: myBookId))
+                    .onAppear { hideTabBar = true }
+                    .onDisappear { hideTabBar = false }
+            }
+            .task {
+                await viewModel.onAppear()
+            }
         }
     }
     
@@ -108,6 +114,7 @@ struct HistoryView: View {
                     .padding(.horizontal, 15)
                     .frame(height: 35)
                     .background(index % 2 == 0 ? Color.white : Color(r: 242, g: 244, b: 248))
+                    .onTapGesture { navigationPath.append(item.myBookId) }
                 }
             }
         }
@@ -116,37 +123,50 @@ struct HistoryView: View {
 
     // MARK: - 그리드(썸네일) 뷰 레이아웃
     private var historyGridView: some View {
-        Group {
-            if viewModel.historyItems.isEmpty {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-                    ForEach(0..<12, id: \.self) { _ in
-                        Rectangle()
-                            .fill(Color(r: 210, g: 210, b: 210))
-                            .aspectRatio(0.7, contentMode: .fit)
-                    }
-                }
-                .padding(20)
-            } else {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-                    ForEach(viewModel.historyItems) { item in
-                        VStack(spacing: 4) {
-                            Rectangle()
-                                .fill(Color(r: 210, g: 210, b: 210))
-                                .overlay(
-                                    Text("표지")
-                                        .font(.customDungGeunMo(size: 12))
-                                        .foregroundColor(.gray)
-                                )
-                                .aspectRatio(0.7, contentMode: .fit)
-                                .border(Color.black, width: 1)
-                            Text(item.title)
-                                .font(.customDungGeunMo(size: 10))
-                                .lineLimit(1)
-                        }
-                    }
-                }
-                .padding(20)
+        let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+        let placeholderCount = max(0, 12 - viewModel.historyItems.count)
+
+        return LazyVGrid(columns: columns, spacing: 15) {
+            ForEach(viewModel.historyItems) { item in
+                coverCell(url: item.coverImage)
+                    .onTapGesture { navigationPath.append(item.myBookId) }
             }
+            ForEach(0..<placeholderCount, id: \.self) { _ in
+                coverCell(url: nil)
+            }
+        }
+        .padding(20)
+    }
+
+    @ViewBuilder
+    private func coverCell(url: String?) -> some View {
+        ZStack {
+            Color(r: 210, g: 210, b: 210)
+
+            if let urlString = url, let imageURL = URL(string: urlString) {
+                AsyncImage(url: imageURL) { phase in
+                    if case .success(let image) = phase {
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 18)
+                    }
+                }
+            }
+        }
+        .aspectRatio(0.7, contentMode: .fit)
+        .overlay(alignment: .trailing) {
+            Rectangle()
+                .fill(Color.black)
+                .frame(width: 1)
+                .padding(.top, 1)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.black)
+                .frame(height: 1)
+                .padding(.leading, 1)
         }
     }
 }
@@ -154,11 +174,11 @@ struct HistoryView: View {
 // 데이터 모델
 struct HistoryBook: Identifiable {
     let id = UUID()
+    let myBookId: Int
     let start: String
     let finish: String
     let title: String
+    let coverImage: String?
 }
 
-#Preview {
-    HistoryView()
-}
+

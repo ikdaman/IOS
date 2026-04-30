@@ -16,6 +16,20 @@ struct Books: Codable, Identifiable {
 // MARK: - Factory Inits (서버 응답 → 표시 모델 변환)
 
 extension Books {
+    init(myBookId: Int) {
+        self.myBookId = myBookId
+        self.createdDate = ""
+        self.reason = ""
+        self.bookInfo = BookInfo(
+            source: "", aladinId: nil, isbn: nil,
+            title: "", author: "", publisher: "",
+            description: nil, totalPage: 0,
+            publishDate: "", coverImage: nil, link: nil
+        )
+    }
+}
+
+extension Books {
     /// 서재 목록 응답 (GET /mybooks/store)
     init(from item: StoreBookItemResponse) {
         self.myBookId = item.mybookId

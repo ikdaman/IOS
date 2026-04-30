@@ -40,9 +40,9 @@ final class BookDetailViewModel: ObservableObject {
             book = Books(from: response)
             readingStatus = response.readingStatus
             shelfType = response.shelfType
-            savedDate = response.createdDate
-            startedDate = response.historyInfo.startedDate ?? ""
-            finishedDate = response.historyInfo.finishedDate ?? ""
+            savedDate = formatDate(response.createdDate)
+            startedDate = formatDate(response.historyInfo.startedDate ?? "")
+            finishedDate = formatDate(response.historyInfo.finishedDate ?? "")
         } catch {
             handleError(error)
         }
@@ -108,6 +108,19 @@ final class BookDetailViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    private func formatDate(_ raw: String) -> String {
+        guard !raw.isEmpty else { return "" }
+        let input = DateFormatter()
+        input.locale = Locale(identifier: "en_US_POSIX")
+        let output = DateFormatter()
+        output.dateFormat = "yyyy - MM - dd"
+        for fmt in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd"] {
+            input.dateFormat = fmt
+            if let date = input.date(from: raw) { return output.string(from: date) }
+        }
+        return raw
+    }
 
     private func handleError(_ error: Error) {
         if let networkError = error as? NetworkError {

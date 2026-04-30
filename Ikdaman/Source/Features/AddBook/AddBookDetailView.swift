@@ -250,14 +250,9 @@ struct AddBookDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(.black),
-                            alignment: .bottom
-                        )
+                        .pixelBorder()
                 }
-                
+
                 // 출간일
                 VStack(alignment: .leading, spacing: 8) {
                     Text("출간일")
@@ -267,14 +262,9 @@ struct AddBookDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(.black),
-                            alignment: .bottom
-                        )
+                        .pixelBorder()
                 }
-                
+
                 // ISBN
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ISBN")
@@ -284,14 +274,9 @@ struct AddBookDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(.black),
-                            alignment: .bottom
-                        )
+                        .pixelBorder()
                 }
-                
+
                 // 책 소개
                 VStack(alignment: .leading, spacing: 8) {
                     Text("책 소개")
@@ -302,16 +287,10 @@ struct AddBookDetailView: View {
                         .padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.white)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(.black),
-                            alignment: .bottom
-                        )
+                        .pixelBorder()
                 }
-                
+
                 Button(action: {
-                    // 알라딘 페이지 열기
                     if let url = URL(string: book.bookInfo.link ?? "") {
                         #if os(iOS)
                         UIApplication.shared.open(url)
@@ -324,12 +303,7 @@ struct AddBookDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(.black),
-                            alignment: .bottom
-                        )
+                        .pixelBorder()
                 }
             }
         }
@@ -387,9 +361,7 @@ struct AddBookPopupView: View {
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(selectedTab == 0 ? Color.white : Color.customBt)
-                                .overlay(
-                                    Rectangle().stroke(Color.customLb, lineWidth: 0.7)
-                                )
+                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 0.7))
                         }
                         Button(action: { selectedTab = 1 }) {
                             Text("히스토리")
@@ -398,14 +370,11 @@ struct AddBookPopupView: View {
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(selectedTab == 1 ? Color.white : Color.customBt)
-                                .overlay(
-                                    Rectangle().stroke(Color.customLb, lineWidth: 0.7)
-                                )
+                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 0.7))
                         }
                     }
 
                     if selectedTab == 0 {
-                        // 내 서점 탭
                         Text("*읽고 싶은 책이에요.")
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(Color.customLb)
@@ -428,7 +397,6 @@ struct AddBookPopupView: View {
                                 .padding(.bottom, 8)
                         }
                     } else {
-                        // 히스토리 탭
                         Text("*독서 중이거나 완독한 책이에요.")
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(Color.customLb)
@@ -483,11 +451,10 @@ struct AddBookPopupView: View {
                 }
             }
             .frame(width: 300)
-            .overlay(
-                RoundedRectangle(cornerRadius: 0)
-                    .stroke(Color.customLb, lineWidth: 1)
-            )
+            .border(Color.customLb, width: 1)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 }
 
@@ -549,10 +516,9 @@ struct DuplicateBookPopupView: View {
                 }
             }
             .frame(width: 280)
-            .overlay(
-                RoundedRectangle(cornerRadius: 0)
-                    .stroke(Color.customLb, lineWidth: 1)
-            )
+            .border(Color.customLb, width: 1)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 }

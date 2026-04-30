@@ -21,6 +21,24 @@ final class HistoryViewModel: ObservableObject {
 
     private let repository: BookRepositoryProtocol
 
+    private func formatDate(_ dateString: String) -> String {
+        let output = DateFormatter()
+        output.dateFormat = "yyMMdd"
+
+        let input = DateFormatter()
+        input.locale = Locale(identifier: "en_US_POSIX")
+
+        for fmt in ["yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.SSSZ"] {
+            input.dateFormat = fmt
+            if let date = input.date(from: dateString) {
+                return output.string(from: date)
+            }
+        }
+
+        print("⚠️ formatDate 파싱 실패 - 원본값: \(dateString)")
+        return dateString
+    }
+
     init(repository: BookRepositoryProtocol = BookRepository()) {
         self.repository = repository
     }
@@ -51,9 +69,11 @@ final class HistoryViewModel: ObservableObject {
 
             let newItems = response.books.map { item in
                 HistoryBook(
-                    start: item.startedDate,
-                    finish: item.finishedDate ?? "",
-                    title: item.bookInfo.title
+                    myBookId: item.mybookId,
+                    start: formatDate(item.startedDate),
+                    finish: item.finishedDate.map { formatDate($0) } ?? "",
+                    title: item.bookInfo.title,
+                    coverImage: item.bookInfo.coverImage
                 )
             }
 
