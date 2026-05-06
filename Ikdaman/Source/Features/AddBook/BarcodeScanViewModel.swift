@@ -13,6 +13,7 @@ final class BarcodeScanViewModel: ObservableObject {
     @Published var isScanning: Bool = false
     @Published var errorMessage: String?
     @Published var foundBook: Books?
+    @Published var pageCount: String = ""
 
     private let apiService = AladinAPIService()
 
@@ -21,18 +22,25 @@ final class BarcodeScanViewModel: ObservableObject {
         scannedISBN = code
         do {
             let aladinBook = try await apiService.getBook(isbn: code)
+            if let itemPage = aladinBook.subInfo?.itemPage, itemPage > 0 {
+                self.pageCount = String(itemPage)
+            }
+            
             foundBook = Books(
                 myBookId: aladinBook.itemId,
                 createdDate: ISO8601DateFormatter().string(from: Date()),
                 reason: "",
                 bookInfo: BookInfo(
+                    source: "ALADIN",
+                    aladinId: aladinBook.itemId,
+                    isbn: aladinBook.isbn,
                     title: aladinBook.title,
-                    author: [aladinBook.author],
-                    coverImage: aladinBook.cover,
-                    description: aladinBook.description ?? "",
-                    ISBN: aladinBook.isbn,
+                    author: aladinBook.author,
                     publisher: aladinBook.publisher,
+                    description: aladinBook.description ?? "",
+                    totalPage: Int(pageCount) ?? aladinBook.subInfo?.itemPage ?? 0,
                     publishDate: aladinBook.pubDate,
+                    coverImage: aladinBook.cover,
                     link: aladinBook.link
                 )
             )

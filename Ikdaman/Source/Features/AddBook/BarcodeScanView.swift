@@ -21,9 +21,40 @@ struct BarcodeScanView: View {
             }
             .ignoresSafeArea()
             
+            // 2. 바코드 영역 제외한 나머지 영역 #333333 덮기 (가운데 구멍 뚫기)
+            ZStack {
+                Color(hex: "333333")
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    CustomHeader(title: "", showBackButton: true)
+                        .hidden() // 위치 계산용 가짜 헤더
+                    
+                    VStack(spacing: 10) {
+                        Text("책의 바코드 영역을 맞춰주세요.")
+                            .font(.customDungGeunMo(size: 20))
+                            .hidden()
+                        
+                        Image("arrowDown")
+                            .hidden()
+                        
+                        Rectangle()
+                            .fill(Color.black)
+                            .frame(height: 189)
+                            .padding(.top, 7)
+                            .blendMode(.destinationOut) // 이 부분만 투명하게 구멍을 뚫음
+                    }
+                    .padding(.horizontal, 44)
+                    .padding(.top, 150)
+                    
+                    Spacer()
+                }
+            }
+            .compositingGroup()
+            
+            // 3. 실제 UI 그리기 (텍스트, 테두리 등)
             VStack(spacing: 0) {
                 CustomHeader(title: "", showBackButton: true)
-                    .background(Color.black.opacity(0.8)) // 헤더 뒷배경 살짝 어둡게
                     .overlay(
                         Rectangle()
                              .frame(height: 1)
@@ -61,8 +92,8 @@ struct BarcodeScanView: View {
             }
         }
         .background(.black)
-        .onChange(of: viewModel.foundBook) { _, newValue in
-            if newValue != nil {
+        .onChange(of: viewModel.foundBook?.id) { _, newId in
+            if newId != nil {
                 dismiss() // 바코드 인식 후 결과를 찾으면 화면 닫기 (원하는 동작으로 추후 수정 가능)
             }
         }
