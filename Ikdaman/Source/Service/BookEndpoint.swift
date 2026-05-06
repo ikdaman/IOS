@@ -58,7 +58,7 @@ enum BookEndpoint {
 
 extension BookEndpoint: APIEndpoint {
     var baseURL: String {
-        return "https://ikdaman.shop"
+        return "https://moabook.shop"
     }
     
     var path: String {

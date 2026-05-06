@@ -51,8 +51,23 @@ final class AddBookDetailViewModel: ObservableObject {
         publisher = book.bookInfo.publisher ?? ""
         publishDate = book.bookInfo.publishDate ?? ""
         isbn = book.bookInfo.isbn ?? ""
-        pageCount = String(book.bookInfo.totalPage)
+        pageCount = book.bookInfo.totalPage == 0 ? "" : String(book.bookInfo.totalPage)
         description = book.bookInfo.description ?? ""
+        
+        // 검색 결과(ItemSearch)에는 totalPage가 없으므로 ISBN으로 상세 정보(ItemLookUp)를 비동기로 조회하여 보완
+        if book.bookInfo.totalPage == 0, let validIsbn = book.bookInfo.isbn, !validIsbn.isEmpty {
+            Task {
+                do {
+                    let apiService = AladinAPIService()
+                    let aladinBook = try await apiService.getBook(isbn: validIsbn)
+                    if let itemPage = aladinBook.subInfo?.itemPage, itemPage > 0 {
+                        self.pageCount = String(itemPage)
+                    }
+                } catch {
+                    print("❌ 추가 도서 상세 정보(totalPage) 조회 실패: \(error)")
+                }
+            }
+        }
     }
 
     // MARK: - Save
@@ -73,7 +88,7 @@ final class AddBookDetailViewModel: ObservableObject {
                 title: title,
                 author: author,
                 publisher: publisher,
-                totalPage: 100,
+                totalPage: Int(pageCount) ?? bookData?.bookInfo.totalPage ?? 0,
                 publishDate: Date().toString(),
                 coverImage: bookData?.bookInfo.coverImage ?? ""
             )
