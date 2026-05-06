@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 // MARK: - Add Book View
 struct AddBookView: View {
@@ -83,7 +84,7 @@ struct AddBookView: View {
             
             // 바코드 스캔 버튼
             Button(action: {
-                showBarcodEntry = true
+                checkCameraPermission()
             }) {
                 Image("camera")
             }
@@ -166,6 +167,27 @@ struct AddBookView: View {
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Camera Permission
+    private func checkCameraPermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .authorized:
+            showBarcodEntry = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        showBarcodEntry = true
+                    }
+                }
+            }
+        case .denied, .restricted:
+            break
+        @unknown default:
+            break
         }
     }
 }

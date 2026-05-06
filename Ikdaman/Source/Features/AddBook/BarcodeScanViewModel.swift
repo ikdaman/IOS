@@ -19,26 +19,26 @@ final class BarcodeScanViewModel: ObservableObject {
     func handleScannedCode(_ code: String) async {
         isScanning = true
         scannedISBN = code
-//        do {
-//            let aladinBook = try await apiService.getBook(isbn: code)
-//            foundBook = Books(
-//                myBookId: aladinBook.itemId,
-//                createdDate: ISO8601DateFormatter().string(from: Date()),
-//                reason: "",
-//                bookInfo: BookInfo(
-//                    title: aladinBook.title,
-//                    author: [aladinBook.author],
-//                    coverImage: aladinBook.cover,
-//                    description: aladinBook.description ?? "",
-//                    ISBN: aladinBook.isbn,
-//                    publisher: aladinBook.publisher,
-//                    publishDate: aladinBook.pubDate,
-//                    link: aladinBook.link
-//                )
-//            )
-//        } catch {
-//            errorMessage = "바코드에 해당하는 도서를 찾을 수 없습니다."
-//        }
+        do {
+            let aladinBook = try await apiService.getBook(isbn: code)
+            foundBook = Books(
+                myBookId: aladinBook.itemId,
+                createdDate: ISO8601DateFormatter().string(from: Date()),
+                reason: "",
+                bookInfo: BookInfo(
+                    title: aladinBook.title,
+                    author: [aladinBook.author],
+                    coverImage: aladinBook.cover,
+                    description: aladinBook.description ?? "",
+                    ISBN: aladinBook.isbn,
+                    publisher: aladinBook.publisher,
+                    publishDate: aladinBook.pubDate,
+                    link: aladinBook.link
+                )
+            )
+        } catch {
+            errorMessage = "바코드에 해당하는 도서를 찾을 수 없습니다."
+        }
         isScanning = false
     }
 }

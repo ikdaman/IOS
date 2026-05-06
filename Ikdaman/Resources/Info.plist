@@ -63,5 +63,7 @@
 		<string>WantedSans-Regular.ttf</string>
 		<string>WantedSans-SemiBold.ttf</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>모아북에서 사진을 촬형하고 동영상을 녹화하도록 허용하시겠습니까?</string>
 </dict>
 </plist>

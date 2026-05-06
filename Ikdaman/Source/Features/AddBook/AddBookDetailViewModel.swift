@@ -81,25 +81,19 @@ final class AddBookDetailViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            // publishDate: aladin pubDate 값을 "yyyy-MM-dd" 형식 그대로 전송
-            let resolvedPublishDate = publishDate.isEmpty
-                ? Date().toDateOnlyString()
-                : publishDate
-
             let bookInfo = BookInfo(
-                source: bookData != nil ? "ALADIN" : "CUSTOM",
-                aladinId: bookData?.bookInfo.aladinId,
-                isbn: isbn.isEmpty ? nil : isbn,
+                source: "ALADIN",
+                aladinId: bookData?.bookInfo.aladinId ?? 0,
+                isbn: isbn,
                 title: title,
                 author: author,
                 publisher: publisher,
-                description: description.isEmpty ? nil : description,
                 totalPage: Int(pageCount) ?? bookData?.bookInfo.totalPage ?? 0,
-                publishDate: resolvedPublishDate,
-                coverImage: bookData?.bookInfo.coverImage,
-                link: bookData?.bookInfo.link
+                publishDate: Date().toString(),
+                coverImage: bookData?.bookInfo.coverImage ?? ""
             )
-            try await repository.addBook(bookInfo: bookInfo, historyInfo: nil, reason: nil)
+            let historyInfo = HistoryInfo(startedDate: startDate, finishedDate: finishDate)
+            try await repository.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: reason)
             shouldDismiss = true
         } catch NetworkError.httpError(statusCode: 409) {
             showAddPopup = false
@@ -113,32 +107,14 @@ final class AddBookDetailViewModel: ObservableObject {
 }
 
 extension Date {
-    /// ISO8601 UTC "yyyy-MM-dd'T'HH:mm:ss'Z'" 형식
     func toISO8601String() -> String {
         let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter.string(from: self)
     }
-}
 
-extension String {
-    /// "yyyy-MM-dd" 형식 여부 확인
-    func isYearMonthDayFormat() -> Bool {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter.date(from: self) != nil
-    }
-}
-
-extension Date {
-    /// "오늘 날짜"를 "yyyy-MM-dd" 형식으로 반환 (publishDate fallback용)
-    func toDateOnlyString() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter.string(from: self)
+    /// "yyyy-MM-dd'T'HH:mm:ss'Z'" 형식 (서버 전송용)
+    func toString() -> String {
+        toISO8601String()
     }
 }

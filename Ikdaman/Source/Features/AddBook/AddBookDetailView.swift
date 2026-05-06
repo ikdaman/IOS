@@ -73,6 +73,16 @@ struct AddBookDetailView: View {
                 )
             }
         }
+        .alert("오류", isPresented: Binding<Bool>(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("확인", role: .cancel) { }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+            }
+        }
     }
     
     // MARK: - Manual Entry Content
@@ -250,9 +260,14 @@ struct AddBookDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .pixelBorder()
+                        .overlay(
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundColor(.black),
+                            alignment: .bottom
+                        )
                 }
-
+                
                 // 출간일
                 VStack(alignment: .leading, spacing: 8) {
                     Text("출간일")
@@ -262,9 +277,14 @@ struct AddBookDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .pixelBorder()
+                        .overlay(
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundColor(.black),
+                            alignment: .bottom
+                        )
                 }
-
+                
                 // ISBN
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ISBN")
@@ -274,9 +294,14 @@ struct AddBookDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .pixelBorder()
+                        .overlay(
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundColor(.black),
+                            alignment: .bottom
+                        )
                 }
-
+                
                 // 책 소개
                 VStack(alignment: .leading, spacing: 8) {
                     Text("책 소개")
@@ -287,10 +312,16 @@ struct AddBookDetailView: View {
                         .padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.white)
-                        .pixelBorder()
+                        .overlay(
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundColor(.black),
+                            alignment: .bottom
+                        )
                 }
-
+                
                 Button(action: {
+                    // 알라딘 페이지 열기
                     if let url = URL(string: book.bookInfo.link ?? "") {
                         #if os(iOS)
                         UIApplication.shared.open(url)
@@ -303,7 +334,12 @@ struct AddBookDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(Color.white)
-                        .pixelBorder()
+                        .overlay(
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundColor(.black),
+                            alignment: .bottom
+                        )
                 }
             }
         }
@@ -337,20 +373,30 @@ struct AddBookPopupView: View {
 
             VStack(spacing: 0) {
                 // 타이틀 바
-                HStack {
+                HStack(spacing: 0) {
                     Spacer()
-                    Button("X") { onCancel() }
-                        .font(.customDungGeunMo(size: 12))
+                    Rectangle()
+                        .frame(width: 1)
                         .foregroundColor(Color.customLb)
+                    Button(action: { onCancel() }) {
+                        Text("X")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 30, height: 30)
+                    }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .frame(height: 30)
                 .background(Color.customBt)
+                .overlay(
+                    Rectangle().frame(height: 1).foregroundColor(Color.customLb),
+                    alignment: .bottom
+                )
 
                 VStack(alignment: .leading, spacing: 16) {
                     Text("책 추가")
                         .font(.customDungGeunMo(size: 20))
                         .foregroundColor(Color.customLb)
+                        .padding(.top, 16)
 
                     // 탭 선택
                     HStack(spacing: 0) {
@@ -360,8 +406,10 @@ struct AddBookPopupView: View {
                                 .foregroundColor(Color.customLb)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(selectedTab == 0 ? Color.white : Color.customBt)
-                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 0.7))
+                                .background(selectedTab == 0 ? Color.customBg : Color.customBt)
+                                .overlay(
+                                    Rectangle().stroke(Color.customLb, lineWidth: 1)
+                                )
                         }
                         Button(action: { selectedTab = 1 }) {
                             Text("히스토리")
@@ -369,12 +417,15 @@ struct AddBookPopupView: View {
                                 .foregroundColor(Color.customLb)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(selectedTab == 1 ? Color.white : Color.customBt)
-                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 0.7))
+                                .background(selectedTab == 1 ? Color.customBg : Color.customBt)
+                                .overlay(
+                                    Rectangle().stroke(Color.customLb, lineWidth: 1)
+                                )
                         }
                     }
 
                     if selectedTab == 0 {
+                        // 내 서점 탭
                         Text("*읽고 싶은 책이에요.")
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(Color.customLb)
@@ -387,7 +438,7 @@ struct AddBookPopupView: View {
                             .font(.customSansRegular(size: 12))
                             .frame(height: 140)
                             .padding(8)
-                            .background(Color(red: 235/255, green: 235/255, blue: 245/255))
+                            .background(Color.white)
                             .scrollContentBackground(.hidden)
 
                             Text("\(reason.count)/\(maxReasonLength)")
@@ -397,6 +448,7 @@ struct AddBookPopupView: View {
                                 .padding(.bottom, 8)
                         }
                     } else {
+                        // 히스토리 탭
                         Text("*독서 중이거나 완독한 책이에요.")
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(Color.customLb)
@@ -420,41 +472,44 @@ struct AddBookPopupView: View {
                         }
                     }
                 }
-                .padding(16)
-                .background(Color.white)
+                .padding(.horizontal, 16)
 
                 // NO / YES 버튼
-                HStack(spacing: 0) {
-                    Button("NO") { onCancel() }
-                        .font(.customDungGeunMo(size: 12))
-                        .foregroundColor(Color.customLb)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color.customBt)
+                HStack(spacing: 30) {
+                    Button(action: { onCancel() }) {
+                        Text("NO")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 80, height: 30)
+                            .background(Color.customBt)
+                            .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                    }
 
-                    Rectangle()
-                        .frame(width: 1)
-                        .foregroundColor(Color.customLb.opacity(0.3))
-
-                    Button("YES") {
+                    Button(action: {
                         if selectedTab == 0 {
                             onConfirm(reason, nil, nil)
                         } else {
                             onConfirm("히스토리", dateString(startDate), dateString(finishDate))
                         }
+                    }) {
+                        Text("YES")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 80, height: 30)
+                            .background(Color.customBt)
+                            .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
                     }
-                    .font(.customDungGeunMo(size: 12))
-                    .foregroundColor(Color.customLb)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.customBt)
                 }
+                .padding(.top, 24)
+                .padding(.bottom, 24)
             }
+            .background(Color.customBg)
             .frame(width: 300)
-            .border(Color.customLb, width: 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 0)
+                    .stroke(Color.customLb, lineWidth: 1)
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
     }
 }
 
@@ -470,55 +525,68 @@ struct DuplicateBookPopupView: View {
 
             VStack(spacing: 0) {
                 // 타이틀 바
-                HStack {
+                HStack(spacing: 0) {
                     Spacer()
-                    Button("X") { onCancel() }
-                        .font(.customDungGeunMo(size: 12))
+                    Rectangle()
+                        .frame(width: 1)
                         .foregroundColor(Color.customLb)
+                    Button(action: { onCancel() }) {
+                        Text("X")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 30, height: 30)
+                    }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .frame(height: 30)
                 .background(Color.customBt)
+                .overlay(
+                    Rectangle().frame(height: 1).foregroundColor(Color.customLb),
+                    alignment: .bottom
+                )
 
                 VStack(alignment: .leading, spacing: 16) {
                     Text("중복된 책")
                         .font(.customDungGeunMo(size: 20))
                         .foregroundColor(Color.customLb)
+                        .padding(.top, 16)
 
                     Text("이미 저장한 책이에요.\n이 책 정보로 이동하시겠어요?")
                         .font(.customDungGeunMo(size: 12))
                         .foregroundColor(Color.customLb)
                         .lineSpacing(4)
                 }
-                .padding(16)
+                .padding(.horizontal, 16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
 
                 // NO / YES 버튼
-                HStack(spacing: 0) {
-                    Button("NO") { onCancel() }
-                        .font(.customDungGeunMo(size: 12))
-                        .foregroundColor(Color.customLb)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color.customBt)
+                HStack(spacing: 30) {
+                    Button(action: { onCancel() }) {
+                        Text("NO")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 80, height: 30)
+                            .background(Color.customBt)
+                            .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                    }
 
-                    Rectangle()
-                        .frame(width: 1)
-                        .foregroundColor(Color.customLb.opacity(0.3))
-
-                    Button("YES") { onConfirm() }
-                        .font(.customDungGeunMo(size: 12))
-                        .foregroundColor(Color.customLb)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color.customBt)
+                    Button(action: { onConfirm() }) {
+                        Text("YES")
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 80, height: 30)
+                            .background(Color.customBt)
+                            .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                    }
                 }
+                .padding(.top, 24)
+                .padding(.bottom, 24)
             }
+            .background(Color.customBg)
             .frame(width: 280)
-            .border(Color.customLb, width: 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 0)
+                    .stroke(Color.customLb, lineWidth: 1)
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
     }
 }
