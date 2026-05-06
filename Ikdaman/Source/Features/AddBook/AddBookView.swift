@@ -47,7 +47,12 @@ struct AddBookView: View {
             AddBookDetailView()
         }
         .fullScreenCover(isPresented: $showBarcodEntry) {
-            BarcodeScanView()
+            BarcodeScanView(onBookFound: { book in
+                showBarcodEntry = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    selectedBook = book
+                }
+            })
         }
         .fullScreenCover(item: $selectedBook) { book in
             AddBookDetailView(bookData: book)

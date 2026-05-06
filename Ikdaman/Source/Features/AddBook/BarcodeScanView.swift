@@ -11,6 +11,8 @@ struct BarcodeScanView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = BarcodeScanViewModel()
     
+    var onBookFound: ((Books) -> Void)? = nil
+    
     var body: some View {
         ZStack {
             // 카메라 배경
@@ -93,7 +95,8 @@ struct BarcodeScanView: View {
         }
         .background(.black)
         .onChange(of: viewModel.foundBook?.id) { _, newId in
-            if newId != nil {
+            if newId != nil, let book = viewModel.foundBook {
+                onBookFound?(book)
                 dismiss() // 바코드 인식 후 결과를 찾으면 화면 닫기 (원하는 동작으로 추후 수정 가능)
             }
         }
