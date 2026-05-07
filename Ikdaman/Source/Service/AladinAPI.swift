@@ -158,10 +158,12 @@ actor AladinAPIService {
     func getBook(isbn: String) async throws -> AladinBook {
         let endpoint = "\(baseURL)/ItemLookUp.aspx"
         
+        let itemIdType = isbn.count == 13 ? "ISBN13" : "ISBN"
+        
         var components = URLComponents(string: endpoint)
         components?.queryItems = [
             URLQueryItem(name: "ttbkey", value: apiKey),
-            URLQueryItem(name: "itemIdType", value: "ISBN"),
+            URLQueryItem(name: "itemIdType", value: itemIdType),
             URLQueryItem(name: "ItemId", value: isbn),
             URLQueryItem(name: "output", value: "js"),
             URLQueryItem(name: "Version", value: "20131101"),

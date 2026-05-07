@@ -33,14 +33,14 @@ final class BarcodeScanViewModel: ObservableObject {
                 bookInfo: BookInfo(
                     source: "ALADIN",
                     aladinId: aladinBook.itemId,
-                    isbn: aladinBook.isbn,
+                    isbn: aladinBook.isbn13 ?? aladinBook.isbn,
                     title: aladinBook.title,
                     author: aladinBook.author,
                     publisher: aladinBook.publisher,
                     description: aladinBook.description ?? "",
                     totalPage: Int(pageCount) ?? aladinBook.subInfo?.itemPage ?? 0,
                     publishDate: aladinBook.pubDate,
-                    coverImage: aladinBook.cover,
+                    coverImage: aladinBook.cover.replacingOccurrences(of: "http://", with: "https://"),
                     link: aladinBook.link
                 )
             )
