@@ -12,22 +12,25 @@ struct CustomHeader<RightContent: View>: View {
     
     let title: String
     var showBackButton: Bool = true
+    var titleColor: Color = .primary
     let rightContent: RightContent
     
     // 초기화: 우측 버튼이 있는 경우
     init(
         title: String,
         showBackButton: Bool = true,
+        titleColor: Color = .primary,
         @ViewBuilder rightContent: () -> RightContent
     ) {
         self.title = title
         self.showBackButton = showBackButton
+        self.titleColor = titleColor
         self.rightContent = rightContent()
     }
     
     // 초기화: 우측 버튼이 없는 경우 (편의용)
-    init(title: String, showBackButton: Bool = true) where RightContent == EmptyView {
-        self.init(title: title, showBackButton: showBackButton) {
+    init(title: String, showBackButton: Bool = true, titleColor: Color = .primary) where RightContent == EmptyView {
+        self.init(title: title, showBackButton: showBackButton, titleColor: titleColor) {
             EmptyView()
         }
     }
@@ -37,7 +40,7 @@ struct CustomHeader<RightContent: View>: View {
             // 1. 중앙 타이틀
             Text(title)
                 .font(.customDungGeunMo(size: 22)) // 이미지의 느낌을 살려 둥근모 적용
-                .foregroundColor(.primary)
+                .foregroundColor(titleColor)
             
             HStack {
                 // 2. 좌측 뒤로가기 버튼

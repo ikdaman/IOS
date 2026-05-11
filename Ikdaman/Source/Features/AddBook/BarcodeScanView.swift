@@ -29,7 +29,7 @@ struct BarcodeScanView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    CustomHeader(title: "", showBackButton: true)
+                    CustomHeader(title: "바코드 스캔", showBackButton: true, titleColor: Color(hex: "333333"))
                         .hidden() // 위치 계산용 가짜 헤더
                     
                     VStack(spacing: 10) {
@@ -56,7 +56,7 @@ struct BarcodeScanView: View {
             
             // 3. 실제 UI 그리기 (텍스트, 테두리 등)
             VStack(spacing: 0) {
-                CustomHeader(title: "", showBackButton: true)
+                CustomHeader(title: "바코드 스캔", showBackButton: true, titleColor: Color(hex: "333333"))
                     .overlay(
                         Rectangle()
                              .frame(height: 1)
@@ -71,10 +71,10 @@ struct BarcodeScanView: View {
                         .multilineTextAlignment(.center)
 
                     Image("arrowDown")
+                        .frame(width: 48, height: 48)
 
                     Rectangle()
-                        .strokeBorder(Color.white, lineWidth: 2) // 선만 표시
-                        .background(Color.clear) // 내부는 투명하게
+                        .fill(Color.white.opacity(0.3)) // 스캔 영역에 30% 화이트 오버레이 (카메라는 보이게 유지)
                         .frame(height: 189)
                         .padding(.top, 7)
                 }
