@@ -214,37 +214,9 @@ struct AddBookDetailView: View {
             HStack(alignment: .center) {
                 Spacer()
                 
-                if let coverStr = book.bookInfo.coverImage, let url = URL(string: coverStr) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .overlay(ProgressView())
-                                .frame(width: 180, height: 250)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 180, height: 250)
-                        case .failure(let error):
-                            Rectangle()
-                                .fill(Color.red.opacity(0.3))
-                                .frame(width: 180, height: 250)
-                                .overlay(
-                                    VStack {
-                                        Text("이미지 오류")
-                                            .font(.caption)
-                                        Text(error.localizedDescription)
-                                            .font(.caption2)
-                                            .multilineTextAlignment(.center)
-                                    }
-                                    .padding()
-                                )
-                        @unknown default:
-                            EmptyView()
-                        }
-                    }
+                if let coverStr = book.bookInfo.coverImage {
+                    URLImageView(urlString: coverStr)
+                        .frame(width: 180, height: 250)
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
@@ -256,15 +228,6 @@ struct AddBookDetailView: View {
             }
             .padding(.top, 30)
             .padding(.bottom, 20)
-            
-            // Debug text for URL
-            if let cover = book.bookInfo.coverImage {
-                Text(cover)
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                    .lineLimit(3)
-                    .padding(.horizontal)
-            }
                
             
             // 책 제목
@@ -625,5 +588,74 @@ struct DuplicateBookPopupView: View {
                     .stroke(Color.customLb, lineWidth: 1)
             )
         }
+    }
+}
+
+// MARK: - Custom Image Loader (To fix AsyncImage cancellation bug)
+struct URLImageView: View {
+    let urlString: String
+    @State private var image: UIImage? = nil
+    @State private var isLoading: Bool = false
+    @State private var errorMsg: String? = nil
+    
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if isLoading {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .overlay(ProgressView())
+            } else if let errorMsg = errorMsg {
+                Rectangle()
+                    .fill(Color.red.opacity(0.3))
+                    .overlay(
+                        VStack {
+                            Text("오류")
+                                .font(.caption)
+                            Text(errorMsg)
+                                .font(.caption2)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                    )
+            } else {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .overlay(Text("URL 없음").font(.caption))
+            }
+        }
+        .onAppear {
+            loadImage()
+        }
+    }
+    
+    private func loadImage() {
+        guard let url = URL(string: urlString) else {
+            errorMsg = "Invalid URL"
+            return
+        }
+        isLoading = true
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                if let error = error as? URLError {
+                    if error.code == .cancelled { return }
+                    self.errorMsg = error.localizedDescription
+                    return
+                } else if let error = error {
+                    self.errorMsg = error.localizedDescription
+                    return
+                }
+                
+                if let data = data, let uiImage = UIImage(data: data) {
+                    self.image = uiImage
+                } else {
+                    self.errorMsg = "Data is not an image"
+                }
+            }
+        }.resume()
     }
 }
