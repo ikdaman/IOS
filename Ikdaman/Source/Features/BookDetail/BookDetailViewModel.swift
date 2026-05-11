@@ -11,6 +11,8 @@ final class BookDetailViewModel: ObservableObject {
     @Published var savedDate: String = ""
     @Published var startedDate: String = ""
     @Published var finishedDate: String = ""
+    @Published var rawStartedDate: String? = nil
+    @Published var rawFinishedDate: String? = nil
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var shouldDismiss: Bool = false
@@ -43,6 +45,8 @@ final class BookDetailViewModel: ObservableObject {
             savedDate = formatDate(response.createdDate)
             startedDate = formatDate(response.historyInfo.startedDate ?? "")
             finishedDate = formatDate(response.historyInfo.finishedDate ?? "")
+            rawStartedDate = response.historyInfo.startedDate
+            rawFinishedDate = response.historyInfo.finishedDate
         } catch {
             handleError(error)
         }
@@ -57,8 +61,10 @@ final class BookDetailViewModel: ObservableObject {
 
         do {
             try await repository.deleteBook(bookId: book.myBookId)
+            ToastManager.shared.show("책을 정리했어요!")
             shouldDismiss = true
         } catch {
+            ToastManager.shared.show("삭제에 실패했어요.")
             handleError(error)
         }
 
@@ -78,8 +84,10 @@ final class BookDetailViewModel: ObservableObject {
                 bookInfo: nil
             )
             try await repository.modifyBook(bookId: book.myBookId, modifyBook: modify)
+            ToastManager.shared.show("책 정보를 수정했어요")
             await fetchDetail()
         } catch {
+            ToastManager.shared.show("수정에 실패했어요")
             handleError(error)
         }
 
@@ -99,8 +107,10 @@ final class BookDetailViewModel: ObservableObject {
                 bookInfo: nil
             )
             try await repository.modifyBook(bookId: book.myBookId, modifyBook: modify)
+            ToastManager.shared.show("책 정보를 수정했어요")
             await fetchDetail()
         } catch {
+            ToastManager.shared.show("수정에 실패했어요")
             handleError(error)
         }
 

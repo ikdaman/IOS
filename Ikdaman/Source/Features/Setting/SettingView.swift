@@ -133,6 +133,7 @@ struct SettingsView: View {
         }
         .background(Color.customBg)
         .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
         .task {
             await viewModel.onAppear()
         }

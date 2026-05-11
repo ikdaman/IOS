@@ -40,7 +40,7 @@ final class BarcodeScanViewModel: ObservableObject {
                     description: aladinBook.description ?? "",
                     totalPage: Int(pageCount) ?? aladinBook.subInfo?.itemPage ?? 0,
                     publishDate: aladinBook.pubDate,
-                    coverImage: aladinBook.cover,
+                    coverImage: aladinBook.highResCoverURL,
                     link: aladinBook.link
                 )
             )

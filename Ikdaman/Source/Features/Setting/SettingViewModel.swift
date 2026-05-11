@@ -91,6 +91,7 @@ final class SettingViewModel: ObservableObject {
             UserDefaults.standard.set(nickname, forKey: "nickname")
             isEditingNickname = false
             nicknameError = nil
+            ToastManager.shared.show("닉네임이 변경되었어요")
         } catch {
             if let networkError = error as? NetworkError {
                 nicknameError = networkError.errorDescription

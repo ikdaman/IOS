@@ -74,6 +74,7 @@ struct ContentView: View {
             }
         }
         .background(Color.customBg)
+        .withToast()
     }
 }
 

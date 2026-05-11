@@ -235,7 +235,7 @@ struct BookSearchResultRow: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                     
-                    Text(book.bookInfo.publisher)
+                    Text(book.bookInfo.publisher ?? "")
                         .font(.customSansRegular(size: 12))
                         .foregroundColor(.gray)
                         .padding(.horizontal, 10)

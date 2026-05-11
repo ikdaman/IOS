@@ -43,7 +43,7 @@ struct BookInfo: Codable {
     var isbn: String?        // Optional: 직접 추가인 경우 nil
     var title: String
     var author: String
-    var publisher: String    // Necessary
+    var publisher: String?
     var description: String?
     var totalPage: Int
     var publishDate: String  // "yyyy-MM-dd" 형식

@@ -361,8 +361,8 @@ struct AddBookPopupView: View {
     private let maxReasonLength = 400
 
     private func dateString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter.string(from: date)
     }
 

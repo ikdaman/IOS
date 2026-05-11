@@ -7,118 +7,72 @@ struct SignupView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 커스텀 헤더
-            ZStack {
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.black)
-                    }
-                    Spacer()
+            CustomHeader(title: "닉네임 입력", showBackButton: true) {
+                Button("완료") {
+                    Task { await viewModel.signup() }
                 }
-                
-                Text("완료")
-                    .font(.system(size: 16, weight: .medium))
+                .font(.customDungGeunMo(size: 16))
+                .foregroundColor(.black)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            
-            VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: 80)
-                
-                // 메인 타이틀
-                Text("닉네임을 입력해주세요.")
-                    .font(.system(size: 24, weight: .bold))
-                    .padding(.bottom, 40)
-                
-                // 입력 필드
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("닉네임", text: $viewModel.nickname)
-                        .textFieldStyle(PlainTextFieldStyle())
-                        .font(.system(size: 16))
-                        .padding()
-                        .frame(height: 56)
-                        .background(Color.white)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(hex: "E0E0E0"), lineWidth: 1)
-                        )
-                        .cornerRadius(8)
-                        .onChange(of: viewModel.nickname) { oldValue, newValue in
-                            viewModel.validateNickname()
-                        }
-                    
-                    // 설명 텍스트
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("중복을 체크하고있어요!")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(hex: "4A90E2"))
-                        
-                        Text("닉네임은 다시 바꾸지 못 해요.")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(hex: "4A90E2"))
-                    }
-                    .padding(.top, 4)
-                    
-                    // 에러 메시지
-                    if let errorMessage = viewModel.errorMessage {
-                        Text(errorMessage)
-                            .font(.system(size: 12))
-                            .foregroundColor(.red)
-                            .padding(.top, 4)
-                    }
-                    
-                    // 중복 체크 상태
-                    if viewModel.isChecking {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("중복 확인 중...")
-                                .font(.system(size: 12))
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.top, 4)
-                    } else if viewModel.isNicknameAvailable && !viewModel.nickname.isEmpty {
-                        Text("사용 가능한 닉네임입니다.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.green)
-                            .padding(.top, 4)
-                    }
-                }
-                .padding(.horizontal, 20)
-                
-                Spacer()
-            }
-            
-            // 완료 버튼 (하단 고정)
-            Button {
-                Task {
-                    await viewModel.signup()
-                }
-            } label: {
-                Text("완료")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(viewModel.isValidNickname ? .black : .gray)
+
+            Spacer().frame(height: 60)
+
+            Text("닉네임을 입력해주세요.")
+                .font(.customDungGeunMo(size: 22))
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+
+            Spacer().frame(height: 60)
+
+            // 입력 필드 (PixelShadow 스타일)
+            VStack(alignment: .leading, spacing: 6) {
+                TextField("", text: $viewModel.nickname)
+                    .textFieldStyle(.plain)
+                    .font(.customSansRegular(size: 16))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 14)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(viewModel.isValidNickname ? Color(hex: "D9D9D9") : Color(hex: "F5F5F5"))
-                    .cornerRadius(8)
+                    .background(Color.white)
+                    .overlay(alignment: .top) {
+                        Rectangle().fill(Color.white).frame(height: 1).padding(.trailing, 1)
+                    }
+                    .overlay(alignment: .leading) {
+                        Rectangle().fill(Color.white).frame(width: 1).padding(.bottom, 1)
+                    }
+                    .overlay(alignment: .bottom) {
+                        Rectangle().fill(Color.black).frame(height: 1).padding(.leading, 1)
+                    }
+                    .overlay(alignment: .trailing) {
+                        Rectangle().fill(Color.black).frame(width: 1).padding(.top, 1)
+                    }
+                    .padding(.trailing, 1)
+                    .padding(.bottom, 1)
+                    .background(Color.black)
+                    .onChange(of: viewModel.nickname) { _, _ in
+                        viewModel.validateNickname()
+                    }
+
+                if let errorMessage = viewModel.errorMessage {
+                    Spacer().frame(height: 6)
+                    Text(errorMessage)
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color(hex: "#010196"))
+                    Text("닉네임을 다시 확인해주세요.")
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color(hex: "#010196"))
+                }
             }
-            .disabled(!viewModel.isValidNickname)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 40)
+            .padding(.horizontal, 16)
+
+            Spacer()
         }
         .background(Color.customBg)
         .navigationBarBackButtonHidden(true)
-        // 회원가입 완료 후 LoginView와 SignupView를 모두 dismiss하여 메인으로 이동
+        .toolbar(.hidden, for: .tabBar)
         .onChange(of: authService.authState) { _, newState in
-            if newState == .loggedIn {
-                // NavigationStack을 완전히 pop하여 메인 화면으로 이동
-                dismiss()
-            }
+            if newState == .loggedIn { dismiss() }
         }
     }
 }

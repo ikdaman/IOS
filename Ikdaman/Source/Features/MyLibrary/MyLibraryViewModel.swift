@@ -19,9 +19,7 @@ final class MyLibraryViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var sortType: BookSortType = .latest
-    @Published var selectedBook: Books?
-    @Published var showBookDetail: Bool = false
-    @Published var shouldNavigateToSettings: Bool = false
+@Published var shouldNavigateToSettings: Bool = false
 
     // MARK: - Pagination
 
@@ -40,7 +38,10 @@ final class MyLibraryViewModel: ObservableObject {
     // MARK: - Public Methods
 
     func onAppear() async {
-        guard AuthService.shared.isLogin else { return }
+        guard AuthService.shared.isLogin else {
+            books = []
+            return
+        }
         await fetchBookList(refresh: true)
     }
 
@@ -96,7 +97,7 @@ final class MyLibraryViewModel: ObservableObject {
 
         do {
             try await repository.startReading(bookId: bookId, startDate: date, finishDate: finishDate)
-            // 로컬 목록은 그대로 유지 (서버에서 상태가 변경되었음을 알림으로만 처리)
+            ToastManager.shared.show("시작한 책은 히스토리에서 볼 수 있어요.")
         } catch {
             handleError(error)
         }
@@ -112,6 +113,7 @@ final class MyLibraryViewModel: ObservableObject {
         do {
             try await repository.deleteBook(bookId: bookId)
             books.removeAll { $0.myBookId == bookId }
+            ToastManager.shared.show("책이 삭제되었어요.")
         } catch {
             handleError(error)
         }
@@ -119,28 +121,7 @@ final class MyLibraryViewModel: ObservableObject {
         isLoading = false
     }
 
-    /// 책 상세 조회
-    func fetchBookDetail(bookId: Int) async {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let response = try await repository.getBookDetail(bookId: bookId)
-            selectedBook = Books(from: response)
-            showBookDetail = true
-        } catch {
-            handleError(error)
-        }
-
-        isLoading = false
-    }
-
-    /// BookRowView의 탭 → 상세 조회
-    func viewBookDetail(_ book: Books) {
-        Task { await fetchBookDetail(bookId: book.myBookId) }
-    }
-
-    /// 정렬 방식 변경 → API 재호출
+/// 정렬 방식 변경 → API 재호출
     func changeSortType(to newSort: BookSortType) {
         guard sortType != newSort else { return }
         sortType = newSort

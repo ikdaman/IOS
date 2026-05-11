@@ -201,7 +201,7 @@ final class APIClient: ObservableObject {
             if let bookEndpoint = endpoint as? BookEndpoint {
                 if let socialToken = AuthService.shared.loginType?.token {
                     switch bookEndpoint {
-                    case .login:
+                    case .login, .signup:
                         headers["social-token"] = socialToken
                     case .login2:
                         headers["social-id-token"] = socialToken

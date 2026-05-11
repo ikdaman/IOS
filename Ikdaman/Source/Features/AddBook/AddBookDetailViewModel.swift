@@ -82,15 +82,17 @@ final class AddBookDetailViewModel: ObservableObject {
 
         do {
             let bookInfo = BookInfo(
-                source: "ALADIN",
-                aladinId: bookData?.bookInfo.aladinId ?? 0,
-                isbn: isbn,
+                source: bookData != nil ? "ALADIN" : "CUSTOM",
+                aladinId: bookData?.bookInfo.aladinId,
+                isbn: isbn.isEmpty ? nil : isbn,
                 title: title,
                 author: author,
                 publisher: publisher,
+                description: description,
                 totalPage: Int(pageCount) ?? bookData?.bookInfo.totalPage ?? 0,
-                publishDate: Date().toString(),
-                coverImage: bookData?.bookInfo.coverImage ?? ""
+                publishDate: publishDate.isEmpty ? "" : publishDate,
+                coverImage: bookData?.bookInfo.coverImage,
+                link: bookData?.bookInfo.link
             )
             let historyInfo = HistoryInfo(startedDate: startDate, finishedDate: finishDate)
             try await repository.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: reason)

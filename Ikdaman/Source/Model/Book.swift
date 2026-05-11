@@ -61,7 +61,7 @@ extension Books {
             isbn: detail.bookInfo.isbn,
             title: detail.bookInfo.title,
             author: detail.bookInfo.author,
-            publisher: detail.bookInfo.publisher ?? "",
+            publisher: detail.bookInfo.publisher,
             description: detail.bookInfo.description,
             totalPage: detail.bookInfo.totalPage ?? 0,
             publishDate: detail.bookInfo.publishDate ?? "",

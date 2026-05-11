@@ -189,12 +189,26 @@ extension BookEndpoint: APIEndpoint {
                 "nickname": nickname
             ]
         case .startRead(_, let bookDate):
-            params = [
-                "startedDate": bookDate.startDate,
-                "finishedDate": bookDate.finishedDate ?? nil
-            ]
+            var startDict: [String: Any] = ["startedDate": bookDate.startDate]
+            startDict["finishedDate"] = bookDate.finishedDate.map { $0 as Any } ?? NSNull()
+            return try? JSONSerialization.data(withJSONObject: startDict)
         case .modifyMyBook(_, let modifyBook):
-            return try? encoder.encode(modifyBook)
+            let historyValue: Any
+            if let h = modifyBook.historyInfo {
+                historyValue = [
+                    "startedDate":  h.startedDate.map  { $0 as Any } ?? NSNull(),
+                    "finishedDate": h.finishedDate.map { $0 as Any } ?? NSNull()
+                ] as [String: Any]
+            } else {
+                historyValue = NSNull()
+            }
+            let dict: [String: Any] = [
+                "shelfType":   modifyBook.shelfType.map { $0 as Any } ?? NSNull(),
+                "reason":      modifyBook.reason.map    { $0 as Any } ?? NSNull(),
+                "historyInfo": historyValue,
+                "bookInfo":    NSNull()
+            ]
+            return try? JSONSerialization.data(withJSONObject: dict)
             
         case .addBook(let bookInfo, let historyInfo, let reason):
             // ✅ 딕셔너리 직접 구성 - null이 구조적으로 포함될 수 없음
@@ -202,11 +216,11 @@ extension BookEndpoint: APIEndpoint {
                 "source":      bookInfo.source,
                 "title":       bookInfo.title,
                 "author":      bookInfo.author,
-                "publisher":   bookInfo.publisher,
                 "totalPage":   max(bookInfo.totalPage, 1),  // 0이면 1로 폴백
                 "publishDate": bookInfo.publishDate          // "yyyy-MM-dd"
             ]
             // Optional 필드 - nil이면 키 자체를 추가하지 않음
+            if let publisher  = bookInfo.publisher, !publisher.isEmpty { bookInfoDict["publisher"]  = publisher }
             if let aladinId   = bookInfo.aladinId    { bookInfoDict["aladinId"]    = aladinId }
             if let isbn       = bookInfo.isbn         { bookInfoDict["isbn"]        = isbn }
             if let coverImage = bookInfo.coverImage   { bookInfoDict["coverImage"] = coverImage }

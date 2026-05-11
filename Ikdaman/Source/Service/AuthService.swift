@@ -26,7 +26,7 @@ enum SnsType: String {
     case apple = "APPLE"
 }
 
-enum AuthState {
+enum AuthState: Equatable {
     case loggedOut           // 로그아웃 상태
     case loggedIn            // 로그인 완료
 }
@@ -55,9 +55,16 @@ class AuthService: NSObject, ObservableObject {
     
     /// 앱 시작 시 로그인 상태 확인
     private func checkLoginStatus() {
-        if let _ = KeychainService.shared.load(forKey: .accessToken) {
+        let hasAccess = KeychainService.shared.load(forKey: .accessToken) != nil
+        let hasRefresh = KeychainService.shared.load(forKey: .refreshToken) != nil
+
+        if hasAccess && hasRefresh {
             authState = .loggedIn
         } else {
+            // 둘 중 하나만 있는 비정상 상태도 로그아웃 처리
+            let _ = KeychainService.shared.delete(forKey: .accessToken)
+            let _ = KeychainService.shared.delete(forKey: .refreshToken)
+            UserDefaults.standard.removeObject(forKey: "nickname")
             authState = .loggedOut
         }
     }
@@ -165,24 +172,28 @@ class AuthService: NSObject, ObservableObject {
     
     /// 로그아웃
     func logout() async {
+        // 토큰 먼저 삭제 (앱 크래시 등 예외 상황에도 자동로그인 방지)
+        let _ = KeychainService.shared.delete(forKey: .accessToken)
+        let _ = KeychainService.shared.delete(forKey: .refreshToken)
+
+        // 유저 데이터 전체 초기화
+        UserDefaults.standard.removeObject(forKey: "nickname")
+
+        // 소셜 SDK 로그아웃
         switch loginType?.provider {
         case .google:
             googleLogout()
         case .naver:
-            // 델리게이트 메서드 직접 호출 대신 SDK 메서드 호출
             NaverThirdPartyLoginConnection.getSharedInstance()?.requestDeleteToken()
         case .kakao:
             try? await kakaoUnlink()
         case .apple, .none:
             break
         }
-        
+
         loginType = nil
         authState = .loggedOut
         requestSignup = false
-        
-        let _ = KeychainService.shared.delete(forKey: .accessToken)
-        let _ = KeychainService.shared.delete(forKey: .refreshToken)
     }
 }
 

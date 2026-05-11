@@ -15,8 +15,6 @@ struct MyLibraryView: View {
     @State private var showStartReadingPopup = false
     @State private var selectedBookForReading: Books?
 
-    let sortOptions: [(label: String, type: BookSortType)] = [("최신순", .latest), ("오래된순", .oldest)]
-    
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ScrollView {
@@ -44,7 +42,7 @@ struct MyLibraryView: View {
                             BookRowView(
                                 book: book,
                                 onTap: {
-                                    viewModel.viewBookDetail(book)
+                                    navigationPath.append(book.myBookId)
                                 },
                                 onStartReading: {
                                     selectedBookForReading = book
@@ -88,6 +86,9 @@ struct MyLibraryView: View {
         }
         .task {
             await viewModel.onAppear()
+        }
+        .onChange(of: AuthService.shared.authState) { _, _ in
+            Task { await viewModel.onAppear() }
         }
         .overlay {
             if showStartReadingPopup, let book = selectedBookForReading {
@@ -149,29 +150,18 @@ struct MyLibraryView: View {
     private var sortAndSearchBar: some View {
         HStack {
             Spacer()
-            
-            Menu {
-                ForEach(sortOptions, id: \.label) { option in
-                    Button(action: {
-                        viewModel.changeSortType(to: option.type)
-                    }) {
-                        HStack {
-                            Text(option.label)
-                            if viewModel.sortType == option.type {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
+
+            Button(action: {
+                viewModel.changeSortType(to: viewModel.sortType == .latest ? .oldest : .latest)
+            }) {
                 HStack(spacing: 4) {
-                    Text(sortOptions.first { $0.type == viewModel.sortType }?.label ?? "최신순")
+                    Text(viewModel.sortType == .latest ? "최신순" : "오래된순")
                         .font(.customDungGeunMo(size: 10))
                         .foregroundColor(Color.customLb)
                     Image("arrowDropDown")
                 }
             }
-            
+
             Button(action: {
                 navigationPath.append("SearchView")
             }) {
@@ -307,9 +297,9 @@ struct StartReadingPopupView: View {
     @State private var showFinishPicker = false
 
     private func dateString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: date)
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
     }
 
     private func displayString(_ date: Date) -> String {

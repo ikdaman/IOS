@@ -28,13 +28,13 @@ struct HistoryView: View {
                             Image(systemName: "list.bullet")
                                 .frame(width: 36, height: 36)
                                 .background(viewModel.displayMode == .list ? Color.gray.opacity(0.3) : Color.clear)
-                                .border(Color.black, width: 1)
+                                .retroTabBorder(isSelected: viewModel.displayMode == .list)
                         }
                         Button(action: { viewModel.toggleViewType() }) {
                             Image(systemName: "square.grid.2x2.fill")
                                 .frame(width: 36, height: 36)
                                 .background(viewModel.displayMode == .grid ? Color.gray.opacity(0.3) : Color.clear)
-                                .border(Color.black, width: 1)
+                                .retroTabBorder(isSelected: viewModel.displayMode == .grid)
                         }
                     }
                     .foregroundColor(.black)
@@ -49,7 +49,10 @@ struct HistoryView: View {
                             }
                         }
                         .foregroundColor(.black)
-                        Image("search")
+                        Button(action: { navigationPath.append("SearchView") }) {
+                            Image("search")
+                        }
+                        .foregroundColor(.black)
                     }
                     .font(.customDungGeunMo(size: 14))
                 }
@@ -72,6 +75,13 @@ struct HistoryView: View {
                 BookDetailView(book: Books(myBookId: myBookId))
                     .onAppear { hideTabBar = true }
                     .onDisappear { hideTabBar = false }
+            }
+            .navigationDestination(for: String.self) { value in
+                if value == "SearchView" {
+                    MyBookSearchView()
+                        .onAppear { hideTabBar = true }
+                        .onDisappear { hideTabBar = false }
+                }
             }
             .task {
                 await viewModel.onAppear()
@@ -168,6 +178,34 @@ struct HistoryView: View {
                 .frame(height: 1)
                 .padding(.leading, 1)
         }
+    }
+}
+
+private extension View {
+    /// 선택됨: 위·왼 검정 / 오른·아래 흰색 (전체)
+    /// 미선택: 위·왼 흰색 1px 짧게 / 오른·아래 검정 1px 짧게
+    func retroTabBorder(isSelected: Bool) -> some View {
+        self
+            .overlay(alignment: .top) {
+                Rectangle().fill(isSelected ? Color.black : Color.white)
+                    .frame(height: 1)
+                    .padding(.trailing, isSelected ? 0 : 1)
+            }
+            .overlay(alignment: .leading) {
+                Rectangle().fill(isSelected ? Color.black : Color.white)
+                    .frame(width: 1)
+                    .padding(.bottom, isSelected ? 0 : 1)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(isSelected ? Color.white : Color.black)
+                    .frame(height: 1)
+                    .padding(.leading, isSelected ? 0 : 1)
+            }
+            .overlay(alignment: .trailing) {
+                Rectangle().fill(isSelected ? Color.white : Color.black)
+                    .frame(width: 1)
+                    .padding(.top, isSelected ? 0 : 1)
+            }
     }
 }
 

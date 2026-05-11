@@ -17,14 +17,29 @@ struct PixelButtonStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.customDungGeunMo(size: fontSize)) // 파라미터 적용
+        let pressed = configuration.isPressed
+        return configuration.label
+            .font(.customDungGeunMo(size: fontSize))
             .foregroundColor(.customLb)
             .padding(.horizontal, 7)
-            .padding(.vertical, 4) // 패딩도 조절 가능
+            .padding(.vertical, 4)
             .background(Color.customBt)
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .overlay(alignment: .top) {
+                Rectangle().fill(pressed ? Color.black : Color.white)
+                    .frame(height: 1).padding(.trailing, pressed ? 0 : 1)
+            }
+            .overlay(alignment: .leading) {
+                Rectangle().fill(pressed ? Color.black : Color.white)
+                    .frame(width: 1).padding(.bottom, pressed ? 0 : 1)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(pressed ? Color.white : Color.black)
+                    .frame(height: 1).padding(.leading, pressed ? 0 : 1)
+            }
+            .overlay(alignment: .trailing) {
+                Rectangle().fill(pressed ? Color.white : Color.black)
+                    .frame(width: 1).padding(.top, pressed ? 0 : 1)
+            }
     }
 }
 

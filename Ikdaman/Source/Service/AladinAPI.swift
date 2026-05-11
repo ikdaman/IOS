@@ -22,19 +22,11 @@ struct AladinBook: Decodable {
 }
 
 extension AladinBook {
-//    static let empty = AladinBook(
-//        title: "",
-//        link: "",
-//        author: "",
-//        publisher: "",
-//        pubDate: "",
-//        cover: "",
-//        isbn: "",
-//        itemId: 0,
-//        priceStandard: 0,
-//        description: nil,
-//        subInfo: nil
-//    )
+    var highResCoverURL: String {
+        cover
+            .replacingOccurrences(of: "http://", with: "https://")
+            .replacingOccurrences(of: "/coversum/", with: "/cover/")
+    }
 }
 
 struct AladinBookItem: Decodable {
@@ -105,6 +97,7 @@ actor AladinAPIService {
             URLQueryItem(name: "MaxResults", value: "\(maxResults)"),
             URLQueryItem(name: "start", value: "\(page)"),
             URLQueryItem(name: "SearchTarget", value: "Book"),
+            URLQueryItem(name: "cover", value: "Big"),
             URLQueryItem(name: "output", value: "js"),
             URLQueryItem(name: "Version", value: "20131101")
         ]
@@ -163,12 +156,11 @@ actor AladinAPIService {
         var components = URLComponents(string: endpoint)
         components?.queryItems = [
             URLQueryItem(name: "ttbkey", value: apiKey),
-            URLQueryItem(name: "itemIdType", value: itemIdType),
             URLQueryItem(name: "ItemId", value: isbn),
+            URLQueryItem(name: "itemIdType", value: itemIdType),
+            URLQueryItem(name: "cover", value: "Big"),
             URLQueryItem(name: "output", value: "js"),
-            URLQueryItem(name: "Version", value: "20131101"),
-            URLQueryItem(name: "Cover", value: "Big"),
-            URLQueryItem(name: "OptResult", value: "ebookList,usedList,reviewList")
+            URLQueryItem(name: "Version", value: "20131101")
         ]
         
         guard let url = components?.url else {

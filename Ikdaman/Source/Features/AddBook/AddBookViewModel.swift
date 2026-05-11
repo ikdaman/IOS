@@ -74,7 +74,7 @@ class AddBookViewModel: ObservableObject {
                 description: aladinBook.description,
                 totalPage: Int(aladinBook.subInfo?.itemPage ?? 0),
                 publishDate: aladinBook.pubDate,       // "yyyy-MM-dd" → saveBook에서 변환
-                coverImage: aladinBook.cover,          // String?
+                coverImage: aladinBook.highResCoverURL,
                 link: aladinBook.link
             )
         )

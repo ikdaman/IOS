@@ -10,6 +10,9 @@ import SwiftUI
 struct BookDetailView: View {
     @StateObject private var viewModel: BookDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showEditPopup = false
+    @State private var editInitialTab = 0
+    @State private var showDeleteConfirmation = false
 
     init(book: Books) {
         _viewModel = StateObject(wrappedValue: BookDetailViewModel(book: book))
@@ -19,7 +22,7 @@ struct BookDetailView: View {
         VStack(spacing: 0) {
             CustomHeader(title: "", showBackButton: true) {
                 Button("삭제") {
-                    Task { await viewModel.deleteBook() }
+                    showDeleteConfirmation = true
                 }
                 .font(.customDungGeunMo(size: 16))
                 .foregroundColor(.black)
@@ -31,7 +34,9 @@ struct BookDetailView: View {
                     HStack(alignment: .top) {
                         Spacer()
                         
-                        AsyncImage(url: URL(string: viewModel.book.bookInfo.coverImage ?? "")) { phase in
+                        AsyncImage(url: URL(string: (viewModel.book.bookInfo.coverImage ?? "")
+                            .replacingOccurrences(of: "http://", with: "https://")
+                            .replacingOccurrences(of: "/coversum/", with: "/cover/"))) { phase in
                             switch phase {
                             case .success(let image):
                                 image
@@ -53,12 +58,19 @@ struct BookDetailView: View {
                     .padding(.top, 30)
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(viewModel.shelfType.isEmpty ? "읽고 싶은 책" : viewModel.shelfType)
+                        Text({
+                            switch viewModel.readingStatus {
+                            case "TODO": return "읽고 싶은 책"
+                            case "INPROGRESS": return "읽는 중"
+                            case "DONE": return "완독"
+                            default: return "읽고 싶은 책"
+                            }
+                        }())
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(.white)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color.blue)
+                            .background(viewModel.readingStatus == "TODO" ? Color(hex: "#010196") : Color(hex: "#333333"))
 
                         Text(viewModel.book.bookInfo.title)
                             .font(.customSemiBold(size: 18))
@@ -75,7 +87,10 @@ struct BookDetailView: View {
                     
                     // 독서 이력 섹션
                     VStack(spacing: 0) {
-                        SectionHeader(title: "독서 이력")
+                        SectionHeader(title: "독서 이력", onEdit: {
+                            editInitialTab = 1
+                            showEditPopup = true
+                        })
                         VStack(alignment: .leading, spacing: 8) {
                             historyRow(label: "SAVE", value: viewModel.savedDate)
                             historyRow(label: "START", value: viewModel.startedDate)
@@ -89,7 +104,10 @@ struct BookDetailView: View {
                     
                     // 읽고 싶었던 이유
                     VStack(spacing: 0) {
-                        SectionHeader(title: "읽고 싶었던 이유")
+                        SectionHeader(title: "읽고 싶었던 이유", onEdit: {
+                            editInitialTab = 0
+                            showEditPopup = true
+                        })
                         Text(viewModel.book.reason.isEmpty ? "이유를 입력해주세요" : viewModel.book.reason)
                             .font(.customRegular(size: 14))
                             .padding(15)
@@ -143,6 +161,41 @@ struct BookDetailView: View {
         .onChange(of: viewModel.shouldDismiss) { _, value in
             if value { dismiss() }
         }
+        .overlay {
+            if showEditPopup {
+                BookDetailEditPopupView(
+                    initialTab: editInitialTab,
+                    currentReason: viewModel.book.reason,
+                    rawStartedDate: viewModel.rawStartedDate,
+                    rawFinishedDate: viewModel.rawFinishedDate,
+                    onConfirm: { tab, reason, startedDate, finishedDate in
+                        showEditPopup = false
+                        Task {
+                            if tab == 1 {
+                                await viewModel.updateReadingHistory(
+                                    startedDate: startedDate,
+                                    finishedDate: finishedDate
+                                )
+                            } else {
+                                await viewModel.updateReason(reason)
+                            }
+                        }
+                    },
+                    onCancel: { showEditPopup = false }
+                )
+            }
+        }
+        .overlay {
+            if showDeleteConfirmation {
+                DeleteConfirmationView(
+                    onConfirm: {
+                        showDeleteConfirmation = false
+                        Task { await viewModel.deleteBook() }
+                    },
+                    onCancel: { showDeleteConfirmation = false }
+                )
+            }
+        }
         .alert("오류", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("확인") { viewModel.errorMessage = nil }
         } message: {
@@ -164,7 +217,8 @@ struct BookDetailView: View {
 struct SectionHeader: View {
     let title: String
     var showEdit: Bool = true
-    
+    var onEdit: (() -> Void)? = nil
+
     var body: some View {
         HStack {
             Text(title)
@@ -172,7 +226,7 @@ struct SectionHeader: View {
             Spacer()
             if showEdit {
                 Button("수정") {
-                    
+                    onEdit?()
                 }
                 .font(.customDungGeunMo(size: 14))
                 .foregroundStyle(.black)
@@ -204,6 +258,272 @@ struct InfoField: View {
                 .background(Color.white)
                 .pixelBorder()
         }
+    }
+}
+
+// MARK: - Book Detail Edit Popup
+
+struct BookDetailEditPopupView: View {
+    let initialTab: Int
+    let currentReason: String
+    let rawStartedDate: String?
+    let rawFinishedDate: String?
+    let onConfirm: (Int, String, String?, String?) -> Void
+    let onCancel: () -> Void
+
+    @State private var selectedTab: Int
+    @State private var reason: String
+    @State private var startDate: Date
+    @State private var finishDate: Date?
+    @State private var showStartPicker = false
+    @State private var showFinishPicker = false
+
+    private let maxReasonLength = 400
+
+    init(
+        initialTab: Int,
+        currentReason: String,
+        rawStartedDate: String?,
+        rawFinishedDate: String?,
+        onConfirm: @escaping (Int, String, String?, String?) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.initialTab = initialTab
+        self.currentReason = currentReason
+        self.rawStartedDate = rawStartedDate
+        self.rawFinishedDate = rawFinishedDate
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
+        _selectedTab = State(initialValue: initialTab)
+        _reason = State(initialValue: currentReason)
+        _startDate = State(initialValue: Self.parseDate(rawStartedDate))
+        _finishDate = State(initialValue: rawFinishedDate.map { Self.parseDate($0) })
+    }
+
+    private static func parseDate(_ raw: String?) -> Date {
+        guard let raw, !raw.isEmpty else { return Date() }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        for fmt in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd"] {
+            f.dateFormat = fmt
+            if let date = f.date(from: raw) { return date }
+        }
+        return Date()
+    }
+
+    private func toISO8601(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
+    }
+
+    private func displayString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy.MM.dd"
+        return f.string(from: date)
+    }
+
+    var body: some View {
+        Color.black.opacity(0.4)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 0) {
+                    // 타이틀 바
+                    HStack(spacing: 0) {
+                        Spacer()
+                        Rectangle().frame(width: 1).foregroundColor(Color.customLb)
+                        Button("X") { onCancel() }
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 30, height: 30)
+                    }
+                    .frame(height: 30)
+                    .background(Color.customBt)
+                    .overlay(Rectangle().frame(height: 1).foregroundColor(Color.customLb), alignment: .bottom)
+
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("책 정보 수정")
+                            .font(.customDungGeunMo(size: 20))
+                            .foregroundColor(Color.customLb)
+                            .padding(.top, 16)
+
+                        // 탭 선택
+                        HStack(spacing: 0) {
+                            Button(action: { selectedTab = 0 }) {
+                                Text("내 서점")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .padding(.horizontal, 12).padding(.vertical, 6)
+                                    .background(selectedTab == 0 ? Color.customBg : Color.customBt)
+                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                            }
+                            Button(action: { selectedTab = 1 }) {
+                                Text("히스토리")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .padding(.horizontal, 12).padding(.vertical, 6)
+                                    .background(selectedTab == 1 ? Color.customBg : Color.customBt)
+                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                            }
+                        }
+
+                        if selectedTab == 0 {
+                            // 내 서점 탭: 읽고 싶은 이유
+                            Text("*읽고 싶은 책이에요.")
+                                .font(.customDungGeunMo(size: 12))
+                                .foregroundColor(Color.customLb)
+
+                            ZStack(alignment: .bottomTrailing) {
+                                TextEditor(text: Binding(
+                                    get: { reason },
+                                    set: { reason = String($0.prefix(maxReasonLength)) }
+                                ))
+                                .font(.customSansRegular(size: 12))
+                                .frame(height: 140)
+                                .padding(8)
+                                .background(Color.white)
+                                .scrollContentBackground(.hidden)
+                                Text("\(reason.count)/\(maxReasonLength)")
+                                    .font(.customSansRegular(size: 10))
+                                    .foregroundColor(.gray)
+                                    .padding(.trailing, 8).padding(.bottom, 8)
+                            }
+                        } else {
+                            // 히스토리 탭: 독서 시작/종료 날짜
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("START").font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                Button(action: {
+                                    showStartPicker.toggle()
+                                    if showStartPicker { showFinishPicker = false }
+                                }) {
+                                    HStack {
+                                        Text(displayString(startDate))
+                                            .font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                        Spacer()
+                                        Text("▼").font(.customDungGeunMo(size: 10)).foregroundColor(Color.customLb)
+                                    }
+                                    .padding(.horizontal, 8).padding(.vertical, 6)
+                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                                }
+                                if showStartPicker {
+                                    DatePicker("", selection: $startDate, displayedComponents: .date)
+                                        .datePickerStyle(.graphical).labelsHidden().tint(Color.customLb)
+                                }
+                            }
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("FINISH").font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                Button(action: {
+                                    if finishDate == nil { finishDate = Date() }
+                                    showFinishPicker.toggle()
+                                    if showFinishPicker { showStartPicker = false }
+                                }) {
+                                    HStack {
+                                        Text(finishDate.map { displayString($0) } ?? "읽는 중")
+                                            .font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                        Spacer()
+                                        Text("▼").font(.customDungGeunMo(size: 10)).foregroundColor(Color.customLb)
+                                    }
+                                    .padding(.horizontal, 8).padding(.vertical, 6)
+                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                                }
+                                if showFinishPicker, let finish = finishDate {
+                                    DatePicker("", selection: Binding(get: { finish }, set: { finishDate = $0 }),
+                                               displayedComponents: .date)
+                                        .datePickerStyle(.graphical).labelsHidden().tint(Color.customLb)
+                                    Button("읽는 중으로 변경") {
+                                        finishDate = nil
+                                        showFinishPicker = false
+                                    }
+                                    .font(.customDungGeunMo(size: 10)).foregroundColor(Color.customLb.opacity(0.6))
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+
+                    // NO / YES 버튼
+                    HStack(spacing: 30) {
+                        Button(action: { onCancel() }) {
+                            Text("NO").font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                .frame(width: 80, height: 30).background(Color.customBt)
+                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                        }
+                        Button(action: {
+                            if selectedTab == 1 {
+                                onConfirm(1, reason, toISO8601(startDate), finishDate.map { toISO8601($0) })
+                            } else {
+                                onConfirm(0, reason, nil, nil)
+                            }
+                        }) {
+                            Text("YES").font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                .frame(width: 80, height: 30).background(Color.customBt)
+                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                        }
+                    }
+                    .padding(.top, 24).padding(.bottom, 24)
+                }
+                .background(Color.customBg)
+                .frame(width: 300)
+                .overlay(RoundedRectangle(cornerRadius: 0).stroke(Color.customLb, lineWidth: 1))
+            }
+    }
+}
+
+// MARK: - Delete Confirmation Popup
+
+struct DeleteConfirmationView: View {
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        Color.black.opacity(0.4)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Spacer()
+                        Rectangle().frame(width: 1).foregroundColor(Color.customLb)
+                        Button("X") { onCancel() }
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 30, height: 30)
+                    }
+                    .frame(height: 30)
+                    .background(Color.customBt)
+                    .overlay(Rectangle().frame(height: 1).foregroundColor(Color.customLb), alignment: .bottom)
+
+                    VStack(spacing: 12) {
+                        Text("책 삭제")
+                            .font(.customDungGeunMo(size: 20))
+                            .foregroundColor(Color.customLb)
+                            .padding(.top, 16)
+
+                        Text("책을 삭제하면 모든 기록이 사라져요.\n정말로 삭제하시겠어요?")
+                            .font(.customSansRegular(size: 14))
+                            .foregroundColor(Color.customLb)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                    }
+
+                    HStack(spacing: 30) {
+                        Button(action: { onCancel() }) {
+                            Text("NO").font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                .frame(width: 80, height: 30).background(Color.customBt)
+                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                        }
+                        Button(action: { onConfirm() }) {
+                            Text("YES").font(.customDungGeunMo(size: 12)).foregroundColor(Color.customLb)
+                                .frame(width: 80, height: 30).background(Color.customBt)
+                                .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
+                        }
+                    }
+                    .padding(.top, 24).padding(.bottom, 24)
+                }
+                .background(Color.customBg)
+                .frame(width: 300)
+                .overlay(RoundedRectangle(cornerRadius: 0).stroke(Color.customLb, lineWidth: 1))
+            }
     }
 }
 
