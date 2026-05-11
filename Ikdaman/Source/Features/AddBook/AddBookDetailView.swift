@@ -214,20 +214,57 @@ struct AddBookDetailView: View {
             HStack(alignment: .center) {
                 Spacer()
                 
-                AsyncImage(url: URL(string: book.bookInfo.coverImage ?? "")) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
+                if let coverStr = book.bookInfo.coverImage, let url = URL(string: coverStr) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                                .overlay(ProgressView())
+                                .frame(width: 180, height: 250)
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 180, height: 250)
+                        case .failure(let error):
+                            Rectangle()
+                                .fill(Color.red.opacity(0.3))
+                                .frame(width: 180, height: 250)
+                                .overlay(
+                                    VStack {
+                                        Text("이미지 오류")
+                                            .font(.caption)
+                                        Text(error.localizedDescription)
+                                            .font(.caption2)
+                                            .multilineTextAlignment(.center)
+                                    }
+                                    .padding()
+                                )
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
+                        .frame(width: 180, height: 250)
+                        .overlay(Text("URL 없음").font(.caption))
                 }
-                .frame(width: 180, height: 250)
                 
                 Spacer()
             }
             .padding(.top, 30)
             .padding(.bottom, 20)
+            
+            // Debug text for URL
+            if let cover = book.bookInfo.coverImage {
+                Text(cover)
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+                    .lineLimit(3)
+                    .padding(.horizontal)
+            }
                
             
             // 책 제목
