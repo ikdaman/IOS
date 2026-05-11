@@ -65,5 +65,10 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>모아북에서 사진을 촬형하고 동영상을 녹화하도록 허용하시겠습니까?</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
