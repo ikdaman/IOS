@@ -15,6 +15,7 @@ struct CustomTabBar: View {
         case addBook = "책 추가"
         case history = "히스토리"
     }
+    private let selectedColor = Color(hex: "#010196")
     
     var body: some View {
         HStack(spacing: 0) {
@@ -22,17 +23,19 @@ struct CustomTabBar: View {
                 Button {
                     selectedTab = tab
                 } label: {
-                    HStack(spacing: 4) {
-                        if selectedTab == tab {
-                            Image("angleDown")
-                        }
-                        
-                        Text(tab.rawValue)
-                            .font(.customDungGeunMo(size: 14))
-                    }
-                    .foregroundColor(.primary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    let isSelected = selectedTab == tab
+                    
+                    Text(tab.rawValue)
+                        .font(.customDungGeunMo(size: 14))
+                        .foregroundColor(isSelected ? .white : .primary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            Rectangle()
+                                .fill(isSelected ? selectedColor : Color.clear)
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
                 }
             }
         }
