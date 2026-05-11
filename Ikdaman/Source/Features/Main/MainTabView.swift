@@ -39,13 +39,8 @@ struct CustomTabBar: View {
                 }
             }
         }
-        .background(Color(.systemBackground))
-        .overlay(
-            Rectangle()
-                .frame(height: 0.5)
-                .foregroundColor(Color(.separator)),
-            alignment: .top
-        )
+        .background(Color.customBg)
+        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: -4)
     }
 }
 

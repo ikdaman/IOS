@@ -172,23 +172,17 @@ class AuthService: NSObject, ObservableObject {
     
     /// 로그아웃
     func logout() async {
-        // 토큰 먼저 삭제 (앱 크래시 등 예외 상황에도 자동로그인 방지)
+        // 토큰 먼저 삭제
         let _ = KeychainService.shared.delete(forKey: .accessToken)
         let _ = KeychainService.shared.delete(forKey: .refreshToken)
-
-        // 유저 데이터 전체 초기화
         UserDefaults.standard.removeObject(forKey: "nickname")
 
-        // 소셜 SDK 로그아웃
-        switch loginType?.provider {
-        case .google:
-            googleLogout()
-        case .naver:
-            NaverThirdPartyLoginConnection.getSharedInstance()?.requestDeleteToken()
-        case .kakao:
+        // loginType과 무관하게 모든 소셜 SDK 세션 초기화
+        // (앱 재시작 후 loginType이 nil이어도 SDK 토큰이 남아있을 수 있음)
+        GIDSignIn.sharedInstance.signOut()
+        NaverThirdPartyLoginConnection.getSharedInstance()?.resetToken()
+        if loginType?.provider == .kakao {
             try? await kakaoUnlink()
-        case .apple, .none:
-            break
         }
 
         loginType = nil

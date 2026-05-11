@@ -88,8 +88,12 @@ struct SettingsView: View {
                     // MARK: - 메뉴 항목
                     VStack(alignment: .leading, spacing: 0) {
                         settingMenuItem("공지사항") { }
-                        settingMenuItem("서비스 이용약관") { }
-                        settingMenuItem("개인정보 처리방침") { }
+                        settingMenuItem("서비스 이용약관") {
+                            UIApplication.shared.open(URL(string: "https://scientific-ferryboat-eb1.notion.site/3354710961a98025a529d8e3bb765d2a")!)
+                        }
+                        settingMenuItem("개인정보 처리방침") {
+                            UIApplication.shared.open(URL(string: "https://scientific-ferryboat-eb1.notion.site/3354710961a9809caafdf17937d5dc80")!)
+                        }
                     }
                     .padding(.top, 40)
 

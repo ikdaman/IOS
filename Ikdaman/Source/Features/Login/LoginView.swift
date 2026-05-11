@@ -59,9 +59,17 @@ struct LoginView: View {
             // 약관 동의 문구
             HStack(spacing: 0) {
                 Text("가입시 ")
-                Text("이용약관").underline()
+                Button {
+                    UIApplication.shared.open(URL(string: "https://scientific-ferryboat-eb1.notion.site/3354710961a98025a529d8e3bb765d2a")!)
+                } label: {
+                    Text("이용약관").underline()
+                }
                 Text(" 및 ")
-                Text("개인정보처리방침").underline()
+                Button {
+                    UIApplication.shared.open(URL(string: "https://scientific-ferryboat-eb1.notion.site/3354710961a9809caafdf17937d5dc80")!)
+                } label: {
+                    Text("개인정보처리방침").underline()
+                }
                 Text("에 동의하게 됩니다.")
             }
             .font(.customSansRegular(size: 14))
