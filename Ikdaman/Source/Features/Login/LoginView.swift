@@ -21,7 +21,7 @@ struct LoginView: View {
 
             // 앱 로고 + 타이틀
             VStack(spacing: 12) {
-                Image("BookLogo")
+                Image("moaBook")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 100, height: 100)
