@@ -11,6 +11,7 @@ import AuthenticationServices
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @Environment(\.dismiss) private var dismiss
+    var hideTabBar: Binding<Bool>? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,6 +84,7 @@ struct LoginView: View {
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $viewModel.showSignup) {
             SignupView()
+                .onAppear { hideTabBar?.wrappedValue = true }
         }
         .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
             if shouldDismiss { dismiss() }

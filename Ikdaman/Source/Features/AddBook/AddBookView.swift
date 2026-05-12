@@ -45,6 +45,7 @@ struct AddBookView: View {
         }
         .fullScreenCover(isPresented: $showManualEntry) {
             AddBookDetailView()
+                .withToast()
         }
         .fullScreenCover(isPresented: $showBarcodEntry) {
             BarcodeScanView(onBookFound: { book in
@@ -56,6 +57,7 @@ struct AddBookView: View {
         }
         .fullScreenCover(item: $selectedBook) { book in
             AddBookDetailView(bookData: book)
+                .withToast()
         }
     }
     

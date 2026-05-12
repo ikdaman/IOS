@@ -26,11 +26,11 @@ struct ToastOverlayModifier: ViewModifier {
             content
             if let msg = manager.message {
                 Text(msg)
-                    .font(.customSansRegular(size: 14))
+                    .font(.customDungGeunMo(size: 16))
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.82))
+                    .background(Color(hex: "#515151"))
                     .cornerRadius(4)
                     .padding(.bottom, 80)
                     .transition(.opacity.animation(.easeInOut(duration: 0.25)))

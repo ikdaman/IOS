@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 @MainActor
 final class AddBookDetailViewModel: ObservableObject {
@@ -97,6 +98,9 @@ final class AddBookDetailViewModel: ObservableObject {
             let historyInfo = HistoryInfo(startedDate: startDate, finishedDate: finishDate)
             try await repository.addBook(bookInfo: bookInfo, historyInfo: historyInfo, reason: reason)
             shouldDismiss = true
+            let message = startDate != nil ? "책을 히스토리에 추가했어요" : "책을 서점에 추가했어요."
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            ToastManager.shared.show(message)
         } catch NetworkError.httpError(statusCode: 409) {
             showAddPopup = false
             showDuplicatePopup = true

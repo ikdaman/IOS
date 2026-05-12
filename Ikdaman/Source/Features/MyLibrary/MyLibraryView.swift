@@ -14,6 +14,8 @@ struct MyLibraryView: View {
     @StateObject private var viewModel = MyLibraryViewModel()
     @State private var showStartReadingPopup = false
     @State private var selectedBookForReading: Books?
+    @State private var showDeletePopup = false
+    @State private var selectedBookForDelete: Books?
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -37,41 +39,47 @@ struct MyLibraryView: View {
                     sortAndSearchBar
                     
                     // MARK: - 책 리스트
-                    VStack(spacing: 16) {
-                        ForEach(viewModel.books, id: \.myBookId) { book in
-                            BookRowView(
-                                book: book,
-                                onTap: {
-                                    navigationPath.append(book.myBookId)
-                                },
-                                onStartReading: {
-                                    selectedBookForReading = book
-                                    showStartReadingPopup = true
-                                },
-                                onDelete: {
-                                    Task {
-                                        await viewModel.deleteBook(bookId: book.myBookId)
+                    if viewModel.books.isEmpty {
+                        emptyBookList
+                            .padding(.horizontal, 16)
+                            .padding(.top, 16)
+                            .padding(.bottom, 56)
+                    } else {
+                        VStack(spacing: 16) {
+                            ForEach(viewModel.books, id: \.myBookId) { book in
+                                BookRowView(
+                                    book: book,
+                                    onTap: {
+                                        navigationPath.append(book.myBookId)
+                                    },
+                                    onStartReading: {
+                                        selectedBookForReading = book
+                                        showStartReadingPopup = true
+                                    },
+                                    onDelete: {
+                                        selectedBookForDelete = book
+                                        showDeletePopup = true
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                        .padding(.bottom, 56)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 56)
                 }
             }
             .background(Color.customBg)
             .navigationBarHidden(true)
+            .onAppear { hideTabBar = false }
             .navigationDestination(for: String.self) { value in
                 if value == "SettingView" {
                     SettingsView()
                         .onAppear { hideTabBar = true }
                         .onDisappear { hideTabBar = false }
                 } else if value == "LoginView" {
-                    LoginView()
+                    LoginView(hideTabBar: $hideTabBar)
                         .onAppear { hideTabBar = true }
-                        .onDisappear { hideTabBar = false }
                 } else if value == "SearchView" {
                     MyBookSearchView()
                         .onAppear { hideTabBar = true }
@@ -90,6 +98,12 @@ struct MyLibraryView: View {
         .onChange(of: AuthService.shared.authState) { _, _ in
             Task { await viewModel.onAppear() }
         }
+        .onChange(of: AuthService.shared.didJustSignup) { _, didSignup in
+            if didSignup {
+                ToastManager.shared.show("가입을 축하드려요!!")
+                AuthService.shared.didJustSignup = false
+            }
+        }
         .overlay {
             if showStartReadingPopup, let book = selectedBookForReading {
                 StartReadingPopupView(
@@ -106,6 +120,16 @@ struct MyLibraryView: View {
                     },
                     onCancel: {
                         showStartReadingPopup = false
+                    }
+                )
+            } else if showDeletePopup, let book = selectedBookForDelete {
+                DeleteBookPopupView(
+                    onConfirm: {
+                        showDeletePopup = false
+                        Task { await viewModel.deleteBook(bookId: book.myBookId) }
+                    },
+                    onCancel: {
+                        showDeletePopup = false
                     }
                 )
             }
@@ -146,6 +170,48 @@ struct MyLibraryView: View {
         .frame(height: 192)
     }
     
+    // MARK: - Empty Book List
+    private var emptyBookList: some View {
+        VStack(spacing: 0) {
+            // 헤더 행
+            VStack(spacing: 0) {
+                Rectangle()
+                    .background()
+                    .frame(maxWidth: .infinity, maxHeight: 1)
+                HStack {
+                    Text("NO.00 (0000.00.00)")
+                        .font(.customDungGeunMo(size: 12))
+                        .foregroundColor(Color.customLb)
+                        .padding(.leading, 8)
+                        .padding(.vertical, 7.5)
+                    Spacer()
+                }
+                .background(Color.customBt)
+            }
+            // 본문 카드
+            HStack(spacing: 20) {
+                Image("moaBook")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 58, height: 58)
+                    .padding(.leading, 14.5)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("지금 읽고 싶은 책을 저장하기")
+                        .font(.customSansSemiBold(size: 16))
+                        .foregroundColor(Color.customLb)
+                    Text("왜 읽고 싶었는지, 같이 남겨두세요.")
+                        .font(.customSansRegular(size: 14))
+                        .foregroundColor(Color.customLb)
+                }
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 164)
+            .background(Color.white)
+        }
+    }
+
     // MARK: - Sort and Search Bar
     private var sortAndSearchBar: some View {
         HStack {
@@ -290,24 +356,172 @@ struct StartReadingPopupView: View {
     let book: Books
     let onConfirm: (String, String?) -> Void
     let onCancel: () -> Void
-
+    
     @State private var startDate: Date = Date()
-    @State private var finishDate: Date? = nil
-    @State private var showStartPicker = false
-    @State private var showFinishPicker = false
+    @State private var showStartCalendar = false
+    @State private var calX: CGFloat = 0
+    @State private var calY: CGFloat = 0
 
     private func dateString(_ date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter.string(from: date)
     }
-
+    
     private func displayString(_ date: Date) -> String {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy.MM.dd"
         return f.string(from: date)
     }
+    
+    var body: some View {
+        Color.black.opacity(0.4)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 0) {
+                    // 상단 타이틀 바 (회색 빈 바 + X 버튼)
+                    HStack(spacing: 0) {
+                        Color.customBt
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .border(Color.black, width: 1)
+                        Button("X") { onCancel() }
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 29, height: 28)
+                            .background(Color.customBt)
+                            .border(Color.black, width: 1)
+                    }
+                    .frame(height: 28)
+
+                    // 본문
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("책 시작하기")
+                            .font(.customDungGeunMo(size: 20))
+                            .foregroundColor(Color.customLb)
+
+                        Spacer().frame(height: 35)
+
+                        Text(book.bookInfo.title)
+                            .font(.customSansRegular(size: 16))
+                            .foregroundColor(Color.customLb)
+                            .lineLimit(2)
+
+                        Spacer().frame(height: 30)
+
+                        // START
+                        HStack {
+                            Spacer()
+                            HStack(spacing: 8) {
+                                Text("START")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .frame(width: 64, alignment: .leading)
+
+                                Button(action: { showStartCalendar.toggle() }) {
+                                    HStack(spacing: 0) {
+                                        Text(displayString(startDate))
+                                            .font(.customDungGeunMo(size: 12))
+                                            .foregroundColor(Color.customLb)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 10)
+                                            .frame(height: 28)
+                                        Color.customBt
+                                            .frame(width: 28, height: 28)
+                                            .overlay(Text("▼").font(.customDungGeunMo(size: 10)).foregroundColor(Color.customLb))
+                                    }
+                                    .background(Color.white)
+                                    .retroPixelBorder()
+                                }
+                                .frame(width: 208)
+                                .background(GeometryReader { geo in
+                                    Color.clear.onAppear {
+                                        let f = geo.frame(in: .named("sPopup"))
+                                        calX = f.minX
+                                        calY = f.maxY
+                                    }
+                                })
+                            }
+                            Spacer()
+                        }
+
+                        Spacer().frame(height: 16)
+
+                        // FINISH (비대화형 - 읽는 중 고정)
+                        HStack {
+                            Spacer()
+                            HStack(spacing: 8) {
+                                Text("FINISH")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .frame(width: 64, alignment: .leading)
+
+                                HStack(spacing: 0) {
+                                    Text("읽는 중")
+                                        .font(.customDungGeunMo(size: 12))
+                                        .foregroundColor(Color.customLb.opacity(0.4))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 10)
+                                        .frame(height: 28)
+                                    Color.customBt
+                                        .frame(width: 28, height: 28)
+                                        .overlay(Text("▼").font(.customDungGeunMo(size: 10)).foregroundColor(Color.customLb))
+                                }
+                                .frame(width: 208)
+                                .background(Color.white)
+                                .retroPixelBorder()
+                            }
+                            Spacer()
+                        }
+
+                        Spacer().frame(height: 43)
+
+                        // NO / YES 버튼
+                        HStack {
+                            Spacer()
+                            Button(action: { onCancel() }) {
+                                Text("NO")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .padding(.horizontal, 16).padding(.vertical, 4)
+                                    .background(Color.customBt)
+                                    .retroPixelBorder()
+                            }
+                            Spacer().frame(width: 50)
+                            Button(action: { onConfirm(dateString(startDate), nil) }) {
+                                Text("YES")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .padding(.horizontal, 16).padding(.vertical, 4)
+                                    .background(Color.customBt)
+                                    .retroPixelBorder()
+                            }
+                            Spacer()
+                        }
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.customBg)
+                }
+                .coordinateSpace(name: "sPopup")
+                .retroPopupShadow()
+                .overlay(alignment: .topLeading) {
+                    if showStartCalendar {
+                        RetroCalendarDropdown(date: $startDate, onDismiss: { showStartCalendar = false })
+                            .frame(width: 208)
+                            .offset(x: calX, y: calY)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+    }
+}
+// MARK: - Delete Book Popup View
+
+struct DeleteBookPopupView: View {
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
 
     var body: some View {
         Color.black.opacity(0.4)
@@ -315,145 +529,68 @@ struct StartReadingPopupView: View {
             .overlay {
                 VStack(spacing: 0) {
                     // 타이틀 바
-                    HStack {
-                        Text("팝업 – 책 시작하기")
-                            .font(.customDungGeunMo(size: 12))
-                            .foregroundColor(Color.customLb)
-                        Spacer()
+                    HStack(spacing: 0) {
+                        Color.customBt
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .border(Color.black, width: 1)
                         Button("X") { onCancel() }
                             .font(.customDungGeunMo(size: 12))
                             .foregroundColor(Color.customLb)
+                            .frame(width: 29, height: 28)
+                            .background(Color.customBt)
+                            .border(Color.black, width: 1)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.customBt)
+                    .frame(height: 28)
 
                     // 본문
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("책 시작하기")
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("책 삭제")
+                            .font(.customDungGeunMo(size: 18))
+                            .foregroundColor(Color.customLb)
+
+                        Spacer().frame(height: 24)
+
+                        Text("책을 삭제하면 모든 기록이 사라져요!\n정말로 삭제하시겠어요?")
                             .font(.customDungGeunMo(size: 14))
                             .foregroundColor(Color.customLb)
+                            .lineSpacing(0)
 
-                        Text(book.bookInfo.title)
-                            .font(.customRegular(size: 10))
-                            .foregroundColor(Color.customLb)
-                            .lineLimit(2)
+                        Spacer().frame(height: 32)
 
-                        // START
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 12) {
-                                Text("START")
+                        HStack {
+                            Spacer()
+                            Button(action: { onCancel() }) {
+                                Text("NO")
                                     .font(.customDungGeunMo(size: 12))
                                     .foregroundColor(Color.customLb)
-                                    .frame(width: 50, alignment: .leading)
-
-                                Button(action: {
-                                    showStartPicker.toggle()
-                                    if showStartPicker { showFinishPicker = false }
-                                }) {
-                                    HStack {
-                                        Text(displayString(startDate))
-                                            .font(.customDungGeunMo(size: 12))
-                                            .foregroundColor(Color.customLb)
-                                        Spacer()
-                                        Text("▼")
-                                            .font(.customDungGeunMo(size: 10))
-                                            .foregroundColor(Color.customLb)
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 6)
-                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
-                                }
+                                    .padding(.horizontal, 16).padding(.vertical, 4)
+                                    .background(Color.customBt)
+                                    .retroPixelBorder()
                             }
-
-                            if showStartPicker {
-                                DatePicker("", selection: $startDate, displayedComponents: .date)
-                                    .datePickerStyle(.graphical)
-                                    .labelsHidden()
-                                    .tint(Color.customLb)
-                            }
-                        }
-
-                        // FINISH
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 12) {
-                                Text("FINISH")
+                            Spacer().frame(width: 50)
+                            Button(action: { onConfirm() }) {
+                                Text("YES")
                                     .font(.customDungGeunMo(size: 12))
                                     .foregroundColor(Color.customLb)
-                                    .frame(width: 50, alignment: .leading)
-
-                                Button(action: {
-                                    if finishDate == nil { finishDate = Date() }
-                                    showFinishPicker.toggle()
-                                    if showFinishPicker { showStartPicker = false }
-                                }) {
-                                    HStack {
-                                        Text(finishDate.map { displayString($0) } ?? "읽는 중")
-                                            .font(.customDungGeunMo(size: 12))
-                                            .foregroundColor(Color.customLb)
-                                        Spacer()
-                                        Text("▼")
-                                            .font(.customDungGeunMo(size: 10))
-                                            .foregroundColor(Color.customLb)
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 6)
-                                    .overlay(Rectangle().stroke(Color.customLb, lineWidth: 1))
-                                }
+                                    .padding(.horizontal, 16).padding(.vertical, 4)
+                                    .background(Color.customBt)
+                                    .retroPixelBorder()
                             }
-
-                            if showFinishPicker, let finish = finishDate {
-                                DatePicker("", selection: Binding(
-                                    get: { finish },
-                                    set: { finishDate = $0 }
-                                ), displayedComponents: .date)
-                                .datePickerStyle(.graphical)
-                                .labelsHidden()
-                                .tint(Color.customLb)
-
-                                Button("읽는 중으로 변경") {
-                                    finishDate = nil
-                                    showFinishPicker = false
-                                }
-                                .font(.customDungGeunMo(size: 10))
-                                .foregroundColor(Color.customLb.opacity(0.6))
-                            }
+                            Spacer()
                         }
                     }
+                    .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(Color.white)
-
-                    // NO / YES
-                    HStack(spacing: 0) {
-                        Button("NO") { onCancel() }
-                            .font(.customDungGeunMo(size: 12))
-                            .foregroundColor(Color.customLb)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Color.customBt)
-
-                        Color.customLb.opacity(0.3)
-                            .frame(width: 1)
-
-                        Button("YES") {
-                            onConfirm(dateString(startDate), finishDate.map { dateString($0) })
-                        }
-                        .font(.customDungGeunMo(size: 12))
-                        .foregroundColor(Color.customLb)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color.customBt)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
+                    .background(Color.customBg)
                 }
-                .frame(width: 280)
-                .border(Color.customLb, width: 1)
+                .retroPopupShadow()
+                .padding(.horizontal, 16)
+                .fixedSize(horizontal: false, vertical: true)
             }
     }
 }
 
 // MARK: - Preview
-#Preview {
-//    MyLibraryView(selectedTab: .constant(.addBook), hideTabBar: .)
-}
+//#Preview {
+////    MyLibraryView(selectedTab: .constant(.addBook), hideTabBar: .)
+//}

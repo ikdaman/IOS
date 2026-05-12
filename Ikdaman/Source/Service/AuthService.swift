@@ -39,6 +39,7 @@ class AuthService: NSObject, ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var authState: AuthState = .loggedOut
     @Published var requestSignup: Bool = false
+    @Published var didJustSignup: Bool = false
     
     private let repository: BookRepositoryProtocol
     
@@ -163,6 +164,7 @@ class AuthService: NSObject, ObservableObject {
             authState = .loggedIn
             requestSignup = false
             errorMessage = nil
+            didJustSignup = true
 
         } catch {
             errorMessage = "회원가입에 실패했습니다."
@@ -194,29 +196,43 @@ class AuthService: NSObject, ObservableObject {
 // MARK: - Kakao Login
 extension AuthService {
     func kakaoLogin() async throws {
+        // 기존 유효 토큰이 있으면 me()로 검증만 하고, 없으면 신규 로그인
+        // (Kakao SDK는 loginWithKakaoTalk/Account가 내부적으로 기존 세션을 재사용함)
+        if AuthApi.hasToken() {
+            let isValid = await withCheckedContinuation { continuation in
+                UserApi.shared.accessTokenInfo { _, error in
+                    continuation.resume(returning: error == nil)
+                }
+            }
+            if !isValid {
+                // 토큰 만료 → 로컬 토큰 초기화 후 신규 로그인 진행
+                try? await kakaoUnlink()
+            }
+        }
+
         let oauthToken: OAuthToken = try await withCheckedThrowingContinuation { continuation in
             let completion: (OAuthToken?, Error?) -> Void = { token, error in
                 if let error = error { continuation.resume(throwing: error) }
                 else if let token = token { continuation.resume(returning: token) }
+                else { continuation.resume(throwing: NSError(domain: "Kakao", code: -1)) }
             }
-            
             if UserApi.isKakaoTalkLoginAvailable() {
                 UserApi.shared.loginWithKakaoTalk(completion: completion)
             } else {
                 UserApi.shared.loginWithKakaoAccount(completion: completion)
             }
         }
-        
+
         let user: KakaoSDKUser.User = try await withCheckedThrowingContinuation { continuation in
             UserApi.shared.me { user, error in
                 if let error = error { continuation.resume(throwing: error) }
                 else if let user = user { continuation.resume(returning: user) }
+                else { continuation.resume(throwing: NSError(domain: "Kakao", code: -1)) }
             }
         }
-        
+
         if let uid = user.id {
             self.loginType = LoginType(token: oauthToken.accessToken, provider: .kakao, providerId: String(uid))
-            // 서버 인증 시도
             await authenticateWithServer()
         }
     }
@@ -236,6 +252,24 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
     func naverLogin() {
         guard let instance = NaverThirdPartyLoginConnection.getSharedInstance() else { return }
         instance.delegate = self
+
+        // 기존 유효 토큰이 있으면 재사용
+        if instance.isValidAccessTokenExpireTimeNow(), let accessToken = instance.accessToken {
+            Task {
+                do {
+                    let profile = try await NaverProfileAPI.requestProfile(accessToken: accessToken)
+                    await MainActor.run {
+                        self.loginType = LoginType(token: accessToken, provider: .naver, providerId: profile.id)
+                    }
+                    await authenticateWithServer()
+                } catch {
+                    // 토큰 유효하지만 프로필 조회 실패 → 신규 로그인
+                    instance.requestThirdPartyLogin()
+                }
+            }
+            return
+        }
+
         instance.requestThirdPartyLogin()
     }
 
@@ -243,11 +277,9 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
         Task { @MainActor in
             guard let instance = NaverThirdPartyLoginConnection.getSharedInstance(),
                   let accessToken = instance.accessToken else { return }
-            
             do {
                 let profile = try await NaverProfileAPI.requestProfile(accessToken: accessToken)
                 AuthService.shared.loginType = LoginType(token: accessToken, provider: .naver, providerId: profile.id)
-                // 서버 인증 시도
                 await AuthService.shared.authenticateWithServer()
             } catch {
                 AuthService.shared.errorMessage = "네이버 프로필 조회 실패"
@@ -255,7 +287,20 @@ extension AuthService: NaverThirdPartyLoginConnectionDelegate {
         }
     }
 
-    nonisolated func oauth20ConnectionDidFinishRequestACTokenWithRefreshToken() { }
+    // 토큰 자동 갱신 완료 시에도 동일하게 서버 인증 처리
+    nonisolated func oauth20ConnectionDidFinishRequestACTokenWithRefreshToken() {
+        Task { @MainActor in
+            guard let instance = NaverThirdPartyLoginConnection.getSharedInstance(),
+                  let accessToken = instance.accessToken else { return }
+            do {
+                let profile = try await NaverProfileAPI.requestProfile(accessToken: accessToken)
+                AuthService.shared.loginType = LoginType(token: accessToken, provider: .naver, providerId: profile.id)
+                await AuthService.shared.authenticateWithServer()
+            } catch {
+                AuthService.shared.errorMessage = "네이버 프로필 조회 실패"
+            }
+        }
+    }
 
     nonisolated public func oauth20ConnectionDidFinishDeleteToken() {
         Task { @MainActor in
@@ -304,20 +349,33 @@ extension AuthService: ASAuthorizationControllerDelegate {
 // MARK: - Google Login
 extension AuthService {
     func googleLogin() async throws {
+        // 기존 세션 복원 시도 (signIn 대신 restore → 불필요한 UI 없이 재사용)
+        if GIDSignIn.sharedInstance.hasPreviousSignIn() {
+            do {
+                let user = try await GIDSignIn.sharedInstance.restorePreviousSignIn()
+                let refreshed = try await user.refreshTokensIfNeeded()
+                guard let idToken = refreshed.idToken?.tokenString,
+                      let userId = refreshed.userID else {
+                    throw NSError(domain: "GoogleLogin", code: -1)
+                }
+                self.loginType = LoginType(token: idToken, provider: .google, providerId: userId)
+                await authenticateWithServer()
+                return
+            } catch {
+                // 복원 실패(토큰 만료 등) → 신규 로그인 UI 표시
+            }
+        }
+
         guard let viewController = await getRootViewController() else { return }
-        
         let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: viewController)
-        
         guard let idToken = result.user.idToken?.tokenString,
               let userId = result.user.userID else {
             throw NSError(domain: "GoogleLogin", code: -1)
         }
-        
         self.loginType = LoginType(token: idToken, provider: .google, providerId: userId)
-        // 서버 인증 시도
         await authenticateWithServer()
     }
-    
+
     func googleLogout() {
         GIDSignIn.sharedInstance.signOut()
     }

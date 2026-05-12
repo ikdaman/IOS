@@ -147,14 +147,18 @@ struct SettingsView: View {
         .onChange(of: viewModel.shouldWithdraw) { _, value in
             if value { dismiss() }
         }
-        // MARK: - 회원탈퇴 확인 다이얼로그
-        .alert("회원탈퇴", isPresented: $showWithdrawDialog) {
-            Button("취소", role: .cancel) { }
-            Button("탈퇴", role: .destructive) {
-                Task { await viewModel.withdraw() }
+        .overlay {
+            if showWithdrawDialog {
+                WithdrawPopupView(
+                    onConfirm: {
+                        showWithdrawDialog = false
+                        Task { await viewModel.withdraw() }
+                    },
+                    onCancel: {
+                        showWithdrawDialog = false
+                    }
+                )
             }
-        } message: {
-            Text("탈퇴하면 모든 데이터가 삭제되며\n복구할 수 없어요.\n정말로 탈퇴하시겠어요?")
         }
     }
 
@@ -167,6 +171,77 @@ struct SettingsView: View {
                 .frame(height: 32)
                 .padding(.horizontal, 10)
         }
+    }
+}
+
+// MARK: - Withdraw Popup View
+
+struct WithdrawPopupView: View {
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        Color.black.opacity(0.4)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Color.customBt
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .border(Color.black, width: 1)
+                        Button("X") { onCancel() }
+                            .font(.customDungGeunMo(size: 12))
+                            .foregroundColor(Color.customLb)
+                            .frame(width: 29, height: 28)
+                            .background(Color.customBt)
+                            .border(Color.black, width: 1)
+                    }
+                    .frame(height: 28)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("회원 탈퇴")
+                            .font(.customDungGeunMo(size: 20))
+                            .foregroundColor(Color.customLb)
+
+                        Spacer().frame(height: 24)
+
+                        Text("탈퇴하시겠습니까?")
+                            .font(.customDungGeunMo(size: 14))
+                            .foregroundColor(Color.customLb)
+                            .lineSpacing(0)
+
+                        Spacer().frame(height: 32)
+
+                        HStack {
+                            Spacer()
+                            Button(action: { onCancel() }) {
+                                Text("NO")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .padding(.horizontal, 16).padding(.vertical, 4)
+                                    .background(Color.customBt)
+                                    .retroPixelBorder()
+                            }
+                            Spacer().frame(width: 50)
+                            Button(action: { onConfirm() }) {
+                                Text("YES")
+                                    .font(.customDungGeunMo(size: 12))
+                                    .foregroundColor(Color.customLb)
+                                    .padding(.horizontal, 16).padding(.vertical, 4)
+                                    .background(Color.customBt)
+                                    .retroPixelBorder()
+                            }
+                            Spacer()
+                        }
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.customBg)
+                }
+                .retroPopupShadow()
+                .padding(.horizontal, 16)
+                .fixedSize(horizontal: false, vertical: true)
+            }
     }
 }
 

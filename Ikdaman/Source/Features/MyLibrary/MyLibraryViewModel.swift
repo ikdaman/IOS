@@ -113,7 +113,7 @@ final class MyLibraryViewModel: ObservableObject {
         do {
             try await repository.deleteBook(bookId: bookId)
             books.removeAll { $0.myBookId == bookId }
-            ToastManager.shared.show("책이 삭제되었어요.")
+            ToastManager.shared.show("책을 정리했어요!")
         } catch {
             handleError(error)
         }
