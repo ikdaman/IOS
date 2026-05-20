@@ -12,8 +12,6 @@ enum BookEndpoint {
     case logout
     /// 소셜 로그인 - 네이버, 카카오
     case login(type: SocialLogin)
-    /// 소셜 로그인 - 구글, 애플
-    case login2(type: SocialLogin)
     /// access token 재발급
     case reissueToken
     /// 소셜 회원가입
@@ -67,8 +65,6 @@ extension BookEndpoint: APIEndpoint {
             return "/auth/logout"
         case .login:
             return "/auth/login"
-        case .login2:
-            return "/auth/login/idToken"
         case .reissueToken:
             return "/auth/reissue"
         case .signup:
@@ -101,7 +97,7 @@ extension BookEndpoint: APIEndpoint {
     
     var method: HTTPMethod {
         switch self {
-        case .login, .login2, .reissueToken,.signup, .addBook:
+        case .login, .reissueToken,.signup, .addBook:
             return .post
         case .logout, .withdrawal, .deleteBook:
             return .delete
@@ -122,7 +118,7 @@ extension BookEndpoint: APIEndpoint {
             headers["Authorization"] = accessToken
             headers["refresh-token"] = refreshToken
 
-        case .login, .login2, .signup:
+        case .login, .signup:
             // social-token은 APIClient에서 주입됨
             break
 
@@ -171,7 +167,7 @@ extension BookEndpoint: APIEndpoint {
 
         var params: [String: Any] = [: ]
         switch self {
-        case .login(let type), .login2(let type):
+        case .login(let type):
             params = [
                 "provider": type.provider,
                 "providerId": type.providerId

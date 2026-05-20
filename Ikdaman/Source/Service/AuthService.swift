@@ -67,6 +67,16 @@ class AuthService: NSObject, ObservableObject {
             let _ = KeychainService.shared.delete(forKey: .refreshToken)
             UserDefaults.standard.removeObject(forKey: "nickname")
             authState = .loggedOut
+            clearSocialSessions()
+        }
+    }
+
+    /// 로그아웃 상태일 때 잔류 소셜 SDK 세션 일괄 초기화
+    private func clearSocialSessions() {
+        GIDSignIn.sharedInstance.signOut()
+        NaverThirdPartyLoginConnection.getSharedInstance()?.resetToken()
+        if AuthApi.hasToken() {
+            Task { try? await kakaoUnlink() }
         }
     }
     
@@ -126,11 +136,13 @@ class AuthService: NSObject, ObservableObject {
                 errorMessage = error.errorDescription
                 authState = .loggedOut
                 self.loginType = nil
+                clearSocialSessions()
             }
         } catch {
             errorMessage = error.localizedDescription
             authState = .loggedOut
             self.loginType = nil
+            clearSocialSessions()
         }
     }
     

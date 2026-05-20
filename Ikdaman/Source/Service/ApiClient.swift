@@ -203,8 +203,6 @@ final class APIClient: ObservableObject {
                     switch bookEndpoint {
                     case .login, .signup:
                         headers["social-token"] = socialToken
-                    case .login2:
-                        headers["social-id-token"] = socialToken
                     default: break
                     }
                 }

@@ -5,7 +5,6 @@ import Foundation
 protocol BookRepositoryProtocol {
     // MARK: - Auth
     func login(type: SocialLogin) async throws -> LoginAPIResponse
-    func login2(type: SocialLogin) async throws -> LoginAPIResponse
     func logout() async throws
     func signup(type: SocialLogin) async throws -> LoginAPIResponse
     func reissueToken() async throws
@@ -43,10 +42,6 @@ final class BookRepository: BookRepositoryProtocol {
 
     func login(type: SocialLogin) async throws -> LoginAPIResponse {
         try await apiClient.request(BookEndpoint.login(type: type), responseType: LoginAPIResponse.self)
-    }
-
-    func login2(type: SocialLogin) async throws -> LoginAPIResponse {
-        try await apiClient.request(BookEndpoint.login2(type: type), responseType: LoginAPIResponse.self)
     }
 
     func logout() async throws {
