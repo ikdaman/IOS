@@ -7,6 +7,7 @@
 
 import UIKit
 import KakaoSDKCommon
+import KakaoSDKAuth
 import NaverThirdPartyLogin
 import GoogleSignIn
 import UserNotifications
@@ -58,6 +59,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-        NaverThirdPartyLoginConnection.getSharedInstance().application(app, open: url, options: options)
+        if AuthApi.isKakaoTalkLoginUrl(url) {
+            return AuthController.handleOpenUrl(url: url)
+        }
+        return NaverThirdPartyLoginConnection.getSharedInstance().application(app, open: url, options: options)
     }
 }
